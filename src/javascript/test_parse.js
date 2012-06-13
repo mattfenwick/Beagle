@@ -1,5 +1,5 @@
 
-function testLang(lang) {
+function testParse(lang) {
 
     module("tokenizer");
     

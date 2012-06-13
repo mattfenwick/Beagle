@@ -1,5 +1,5 @@
 
-function testEvaluate(evaluate) {
+function testEvaluate(evaluate, data) {
 
     var ev = evaluate;
 
@@ -18,7 +18,7 @@ function testEvaluate(evaluate) {
           list1 = ["+", '"str1"', "345"],
           list2 = ["+", ["-", "34.32"], '"omg'];
           
-      deepEqual(ev.Number(345), ev.makePrimitives(int_));
+      deepEqual(data.Number(345), ev.makePrimitives(int_));
           
       try {
         var e = ev.makePrimitives(empty);
@@ -27,86 +27,64 @@ function testEvaluate(evaluate) {
         ok(1, "can't make primitive of empty string");
       };
           
-      deepEqual(ev.Number(3), ev.makePrimitives(float1));
+      deepEqual(data.Number(3), ev.makePrimitives(float1));
           
-      deepEqual(ev.Number(3.456), evaluate.makePrimitives(float2));
+      deepEqual(data.Number(3.456), evaluate.makePrimitives(float2));
           
-      deepEqual(ev.Number(0.001), evaluate.makePrimitives(float3));
+      deepEqual(data.Number(0.001), evaluate.makePrimitives(float3));
           
-      deepEqual(ev.Number(0.01), evaluate.makePrimitives(float4));
+      deepEqual(data.Number(0.01), evaluate.makePrimitives(float4));
           
-      deepEqual(ev.String("yes this is a string"), ev.makePrimitives(str));
+      deepEqual(data.String("yes this is a string"), ev.makePrimitives(str));
           
-      deepEqual(ev.Symbol('"open'), evaluate.makePrimitives(notstr));
+      deepEqual(data.Symbol('"open'), evaluate.makePrimitives(notstr));
           
-      deepEqual(ev.Symbol('*?#""/'), evaluate.makePrimitives(sym1));
+      deepEqual(data.Symbol('*?#""/'), evaluate.makePrimitives(sym1));
           
-      var l1 = ev.List([ev.Symbol('+'), ev.String('str1'), ev.Number(345)]);
+      var l1 = data.List([ev.Symbol('+'), data.String('str1'), data.Number(345)]);
       deepEqual(l1, ev.makePrimitives(list1));
           
-      var l2 = ev.List([
-          ev.Symbol('+'),
-          ev.List([ev.Symbol('-'), ev.Number(34.32)]),
-          ev.Symbol('"omg')
+      var l2 = data.List([
+          data.Symbol('+'),
+          data.List([ev.Symbol('-'), data.Number(34.32)]),
+          data.Symbol('"omg')
       ]);
       deepEqual(l2, evaluate.makePrimitives(list2));
     });
     
     
     
-
-    module("evaluate");
-
-    test("cons, list, car, cdr", function() {
-    
-      deepEqual(3, evaluate.environment.car.value(ev.List([3, 4])));
-    
-      // uh-oh, empty list!
-      deepEqual(ev.Nil(), evaluate.environment.car.value(ev.List([])));
-    
-      deepEqual(
-          ev.List([4, 10, 'hello']), 
-          evaluate.environment.cdr.value(ev.List([3, 4, 10, 'hello']))
-      );
-    
-      // uh-oh !!
-      deepEqual(ev.Nil(), evaluate.environment.cdr.value(ev.List([])));
-      
-      deepEqual(ev.List([3, 4, 5]), ev.environment.list.value(3, 4, 5));
-      
-    });
-    
     test("evaluate", function() {
-      var int_ = ev.Number(31),
-          str = ev.String("abcde"),
-          sym = ev.Symbol('cons'),
-          l1 = ev.List([
-              ev.Symbol('car'),
-              ev.List([ev.Symbol('list'), ev.Number(87)])
+      var int_ = data.Number(31),
+          str = data.String("abcde"),
+          sym = data.Symbol('cons'),
+          l1 = data.List([
+              data.Symbol('car'),
+              data.List([data.Symbol('list'), data.Number(87)])
           ]),
-          l2 = ev.List([
-              ev.Symbol('cons'),
-              ev.String('what?'),
-              ev.List([ev.Symbol('list')])
+          l2 = data.List([
+              data.Symbol('cons'),
+              data.String('what?'),
+              data.List([data.Symbol('list')])
           ])
           ;
           
-      deepEqual(ev.Number(31), evaluate.eval(int_));
+      deepEqual(data.Number(31), evaluate.eval(int_));
           
-      deepEqual(ev.String("abcde"), evaluate.eval(str));
+      deepEqual(data.String("abcde"), evaluate.eval(str));
           
-      deepEqual(ev.Function(evaluate.environment.cons.value), evaluate.eval(sym));
+      deepEqual(data.Function(evaluate.environment.cons.value), evaluate.eval(sym));
     
-      deepEqual(ev.List([]), ev.eval(ev.List([ev.Symbol('list')])));
+      deepEqual(data.List([]), data.eval(data.List([data.Symbol('list')])));
     
-      deepEqual(ev.List([ev.Number(4)]), ev.eval(ev.List([ev.Symbol('list'), ev.Number(4)])));
+      deepEqual(data.List([data.Number(4)]), data.eval(data.List([data.Symbol('list'), data.Number(4)])));
           
       deepEqual(
-        ev.Number(87),
+        data.Number(87),
         evaluate.eval(l1)
       );
           
-      deepEqual(ev.List([ev.String('what?')]), evaluate.eval(l2));
+      deepEqual(data.List([data.String('what?')]), evaluate.eval(l2));
       
     });
 

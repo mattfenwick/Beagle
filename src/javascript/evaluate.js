@@ -1,42 +1,5 @@
 
-var evaluate = (function() {
-
-function MyNumber(value) {
-  this.value = value;
-  this.type = 'number';
-}
-
-
-function MyString(value) {
-  this.value = value;
-  this.type = 'string';
-}
-
-
-function Symbol(value) {
-  this.value = value;
-  this.type = 'symbol';
-}
-
-
-function List(value) {
-  this.value = value;
-  this.type = 'list';
-}
-
-
-function MyFunction(value) {
-  this.value = value;
-  this.type = 'function';
-}
-
-
-function Nil() {
-  this.value = false;
-  this.type = 'nil';
-}
-
-
+var Evaluate = (function(Data, Environment) {
 
 var INTEGER = /^\d+$/;
 
@@ -49,19 +12,19 @@ function makePrimitives(sexpr) {
 
   if(typeof(sexpr) === "string") {
       if( value = sexpr.match(INTEGER) ) {
-          return new MyNumber(Number(value[0]));
+          return Data.Number(Number(value[0]));
       } 
     
       if( value = sexpr.match(FLOAT) ) {
-          return new MyNumber(Number(value[0]));
+          return Data.Number(Number(value[0]));
       } 
     
       if( value = sexpr.match(STRING) ) {
-          return new MyString(value[1]); // the second value is the match *without* the " marks
+          return Data.String(value[1]); // the second value is the match *without* the " marks
       }
     
       if( sexpr.length > 0 ) {
-          return new Symbol(sexpr);
+          return Data.Symbol(sexpr);
       } 
     
       // empty string -> Error
@@ -75,63 +38,13 @@ function makePrimitives(sexpr) {
     elems.push(makePrimitives(sexpr[i]));
   }
     
-  return new List(elems);
+  return Data.List(elems);
 }
-
-
-function cons(elem, list) {
-  var newList = [elem];
-  for(var i = 0; i < list.value.length; i++) {
-    newList.push(list.value[i]);
-  }
-  return new List(newList);
-};
-
-
-function car(list) {
-  if( list.value.length > 0 ) {
-    return list.value[0];
-  }
-  
-  return new Nil();
-}
-
-
-function cdr(list) {
-  if( list.value.length == 0 ) {
-    return new Nil();
-  }
-  
-  return new List(list.value.slice(1));
-}
-
-
-function list() {
-  var args = [];
-  for(var i = 0; i < arguments.length; i++) {
-    args.push(arguments[i]);
-  }
-  return new List(args);
-}
-
-
-var environment = {
-
-  'cons': new MyFunction(cons),
-  
-  'car': new MyFunction(car),
-  
-  'cdr': new MyFunction(cdr),
-  
-  'list': new MyFunction(list)
-  
-};
 
 
 function myapply(f, args) {
   return f.apply(null, args);
 }
-
 
 
 function evaluate(sexpr, env) {
@@ -175,20 +88,12 @@ function evaluate(sexpr, env) {
 
 
 function evalHead(sexpr) {
-  return evaluate(sexpr, environment);
+  return evaluate(sexpr, Environment.defaultEnv);
 }
 
 
 return {
   'makePrimitives' : makePrimitives,
-  'apply'          : myapply,
-  'eval'           : evalHead,
-  'environment'    : environment,
-  'Number'         : function(x) {return new MyNumber(x)},
-  'String'         : function(x) {return new MyString(x)},
-  'Function'       : function(x) {return new MyFunction(x)},
-  'List'           : function(x) {return new List(x)},
-  'Symbol'         : function(x) {return new Symbol(x)},
-  'Nil'            : function(x) {return new Nil(x)}
+  'eval'           : evalHead
 };
-})();
+})(Data, Environment);

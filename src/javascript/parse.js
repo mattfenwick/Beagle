@@ -1,6 +1,5 @@
 
-
-var lang = (function() {
+var Parse = (function() {
 
 var SYMBOL = /^[^\s\(\)]+/;
 
@@ -11,12 +10,12 @@ function nextToken(string) {
   //   3. leading whitespace -> taken care of by trimming
   //   4. leading chars not in {whitespace or ( or ) }
   string = string.trim();
-  if(!string) {
+  if( !string ) {
     return {
       token: false,
       rest: false
     };
-  } else if(string[0] === "(" || string[0] === ")") {
+  } else if( string[0] === "(" || string[0] === ")" ) {
     return {
       token: string[0],
       rest: string.substring(1)
@@ -30,10 +29,11 @@ function nextToken(string) {
   }
 }
 
+
 function tokenize(string) {
   var tokens = [],
       next;
-  while(1) {
+  while( 1 ) {
     next = nextToken(string);
     if(next.token) {
       tokens.push(next.token);
@@ -46,10 +46,9 @@ function tokenize(string) {
 }
 
 
-
 function getSymbol(tokens) {
   var first = tokens[0];
-  if(first === "(" || first === ")") {
+  if( first === "(" || first === ")" ) {
     return false;
   } else {
     return {
@@ -59,8 +58,9 @@ function getSymbol(tokens) {
   }
 }
 
+
 function getList(tokens) {
-  if(tokens[0] !== "(") {
+  if( tokens[0] !== "(" ) {
     return false;
   }
 
@@ -76,7 +76,7 @@ function getList(tokens) {
     tokens = sexpr.rest;
   }
 
-  if(tokens[0] == ")") {
+  if( tokens[0] === ")" ) {
     return {
       result: elems,
       rest: tokens.slice(1)
@@ -86,17 +86,19 @@ function getList(tokens) {
   }
 }
 
+
 function getSExpression(tokens) {
   var res = getSymbol(tokens);
   if(res) {
     return res;
   }
   res = getList(tokens);
-  if(res) {
+  if( res ) {
     return res;
   }
   return false;
 }
+
 
 function parse(string) {
   var tokens = tokenize(string);
@@ -108,7 +110,7 @@ function parse(string) {
   var sexpr = getSExpression(tokens);
   if( sexpr && (sexpr.rest.length === 0) ) { // got an s-expression and nothing but an s-expression
     return sexpr.result;
-  } else if (sexpr) { // got an s-expression but there was stuff after it
+  } else if ( sexpr ) { // got an s-expression but there was stuff after it
     return false;
   } else { // couldn't get an s-expression
     return false;
