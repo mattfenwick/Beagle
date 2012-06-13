@@ -45,58 +45,79 @@ function tokenize(string) {
   return tokens;
 }
 
-function getSymbol(string) {
+
+
+function getSymbol(tokens) {
+  var first = tokens[0];
+  if(first === "(" || first === ")") {
+    return false;
+  } else {
+    return {
+      result: first,
+      rest: tokens.slice(1)
+    };
+  }
+}
+
+function getList(tokens) {
+  if(tokens[0] !== "(") {
+    return false;
+  }
+
+  var elems = [];
+  tokens = tokens.slice(1);
   
+  while( tokens[0] && (tokens[0] !== ")") ) {
+    sexpr = getSExpression(tokens);
+    if(!sexpr) {
+      return false;
+    }
+    elems.push(sexpr.result);
+    tokens = sexpr.rest;
+  }
+
+  if(tokens[0] == ")") {
+    return {
+      result: elems,
+      rest: tokens.slice(1)
+    };
+  } else {
+    return false;
+  }
 }
 
-function getList(string) {
-
-}
-
-function getSExpression(string) {
-  // returns {
-  //   parsed: ...
-  //   remaining: ...string...
-  // } if successful ...
-  // but {
-  //   error: ...
-  //   ??
-  // } if not !
-  var sym = getSymbol(string);
-  if(sym.parsed) {
-    return sym;
+function getSExpression(tokens) {
+  var res = getSymbol(tokens);
+  if(res) {
+    return res;
   }
-  var list = getList(string);
-  if(list.parsed) {
-    return list;
+  res = getList(tokens);
+  if(res) {
+    return res;
   }
-  return {
-    error: 'could not parse <' + string + '> as symbol or list'
-  };
+  return false;
 }
 
 function parse(string) {
-  // trim whitespace
-  var trimmed = string.trim();
-  // get an s-expression
-  var sexpr = getSExpression(trimmed);
-  if(sexpr.error) {
-    return sexpr;
-  } else if (sexpr.remaining) {
-    // should only be whitespace left
-    return {
-      error: 'tried to parse string but found extra content: ' + sexpr.remaining
-    };
-  } else {// success?
-    return sexpr;
+  var tokens = tokenize(string);
+  var sexpr = getSExpression(tokens);
+  if( sexpr && (sexpr.rest.length === 0) ) { // got an s-expression and nothing but an s-expression
+    return sexpr.result;
+  } else if (sexpr) { // got an s-expression but there was stuff after it
+    return false;
+  } else { // couldn't get an s-expression
+    return false;
   }    
 }
 
 
 return {
-  'parse': parse,
-  'nextToken': nextToken,
-  'tokenize': tokenize
+  'getSymbol'      : getSymbol,
+  'getList'        : getList,
+  'getSExpression' : getSExpression,
+  'parse'          : parse,
+  'nextToken'      : nextToken,
+  'tokenize'       : tokenize
 }
 
 })();
