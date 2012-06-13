@@ -1,0 +1,81 @@
+<!doctype html>
+<html>
+ <head>
+  <title>Tests</title>
+  <link href="qunit.css" rel="stylesheet" type="text/css" />
+  <script type="text/javascript" src="../repl/jquery1.7.2.js"></script>
+  <script type="text/javascript" src="qunit.js"></script>
+
+  <script type="text/javascript" src="lang.js"></script>
+ </head>
+
+
+<script>
+  $(document).ready(function(){
+    
+	  
+    module("tokenizer");
+    
+    test("nextToken", function() {
+    	expect(8);
+
+      var open = "  ((duh",
+          close = ") what's going on",
+          symbol = " abc)(()",
+          number = " 12345 )";
+
+      var o = lang.nextToken(open);
+    	equal('(', o.token);
+      equal('(duh', o.rest);
+
+      var c = lang.nextToken(close);
+    	equal(')', c.token);
+      equal(" what's going on", c.rest);
+
+      var s = lang.nextToken(symbol);
+    	equal('abc', s.token);
+      equal(')(()', s.rest);
+
+      var n = lang.nextToken(number);
+    	equal('12345', n.token);
+      equal(' )', n.rest);
+    });
+
+    test("tokenize", function() {
+      var s1 = "  (abc)",
+          s2 = "(((((((  ",
+          s3 = "))) \t)\n(((",
+          s4 = "abc123    abc(der)",
+          s5 = "(+ 1 2 (+ 3 4 (+ 5 (/ 6 7))))";
+
+      deepEqual(["(", "abc", ")"], lang.tokenize(s1));
+
+      deepEqual(["(", "(", "(", "(", "(", "(", "("], lang.tokenize(s2));
+
+      deepEqual([")", ")", ")", ")", "(", "(", "("], lang.tokenize(s3));
+
+      deepEqual(["abc123", "abc", "(", "der", ")"], lang.tokenize(s4));
+
+      deepEqual(["(", "+", "1", "2", "(", "+", "3", "4",
+                 "(", "+", "5", "(", "/", "6", "7", ")",
+                 ")", ")", ")"], 
+          lang.tokenize(s5)
+      );
+
+    });
+
+
+  });
+  </script>
+
+
+<body>
+ <h1 id="qunit-header">QUnit example</h1>
+ <h2 id="qunit-banner"></h2>
+ <div id="qunit-testrunner-toolbar"></div>
+ <h2 id="qunit-userAgent"></h2>
+ <ol id="qunit-tests"></ol>
+ <div id="qunit-fixture">test markup, will be hidden</div>
+</body>
+
+</html>
