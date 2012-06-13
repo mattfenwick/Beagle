@@ -1,4 +1,13 @@
-A simple programming language
+Beagle
+======
+
+A simple, experimental language for teaching and learning
+
+
+
+
+
+Goals
 -----------------------------
 
  - bare bones:  minimalist core
@@ -12,3 +21,4 @@ A simple programming language
  - extensible and composable
 
  - as much as possible defined in libraries
+
