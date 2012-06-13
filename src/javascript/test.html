@@ -17,12 +17,13 @@
     module("tokenizer");
     
     test("nextToken", function() {
-    	expect(8);
+    	expect(9);
 
       var open = "  ((duh",
           close = ") what's going on",
           symbol = " abc)(()",
-          number = " 12345 )";
+          number = " 12345 )",
+          empty = "";
 
       var o = lang.nextToken(open);
       equal('(', o.token);
@@ -39,6 +40,9 @@
       var n = lang.nextToken(number);
       equal('12345', n.token);
       equal(' )', n.rest);
+
+      var p = lang.nextToken(empty);
+      deepEqual({token: false, rest: false}, p);
     });
 
     test("tokenize", function() {
@@ -46,7 +50,8 @@
           s2 = "(((((((  ",
           s3 = "))) \t)\n(((",
           s4 = "abc123    abc(der)",
-          s5 = "(+ 1 2 (+ 3 4 (+ 5 (/ 6 7))))";
+          s5 = "(+ 1 2 (+ 3 4 (+ 5 (/ 6 7))))",
+          s6 = "";
 
       deepEqual(["(", "abc", ")"], lang.tokenize(s1));
 
@@ -61,6 +66,8 @@
                  ")", ")", ")"], 
           lang.tokenize(s5)
       );
+
+      deepEqual([], lang.tokenize(s6));
 
     });    
 	  
@@ -123,7 +130,8 @@
           p3 = "(+ (- (* 4 5 (abc (quote def)) 17)))",
           p4 = "(+ (- (* 4 5 (abc (quote def)) 17))",
           p5 = "()",
-          p6 = "abc";
+          p6 = "abc",
+          p7 = "";
 
       var a = lang.parse(p1);
       deepEqual(["+", "3", "2"], a);
@@ -149,6 +157,9 @@
 
       var f = lang.parse(p6);
       equal("abc", f);
+
+      var g = lang.parse(p7);
+      equal(false, g);
 
     });
 

@@ -100,6 +100,11 @@ function getSExpression(tokens) {
 
 function parse(string) {
   var tokens = tokenize(string);
+
+  if( tokens.length === 0 ) {
+    return false;
+  }
+
   var sexpr = getSExpression(tokens);
   if( sexpr && (sexpr.rest.length === 0) ) { // got an s-expression and nothing but an s-expression
     return sexpr.result;
