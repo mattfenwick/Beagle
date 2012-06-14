@@ -1,6 +1,10 @@
 
 var Evaluate = (function(Data, Functions) {
 
+var TRUE = /^true$/;
+
+var FALSE = /^false$/;
+
 var INTEGER = /^\d+$/;
 
 var FLOAT = /^(?:\d*\.\d+|\d+\.\d*)$/;
@@ -11,6 +15,14 @@ function makePrimitives(sexpr) {
   var i, value, elems;
 
   if(typeof(sexpr) === "string") {
+      if( value = sexpr.match(TRUE) ) {
+          return Data.Boolean(true);
+      }
+      
+      if( value = sexpr.match(FALSE) ) {
+          return Data.Boolean(false);
+      }
+  
       if( value = sexpr.match(INTEGER) ) {
           return Data.Number(Number(value[0]));
       } 
@@ -43,6 +55,8 @@ function makePrimitives(sexpr) {
 
 
 
+//////// Special forms
+
 function define(env, name, sexpr) {
   if( name.type !== "symbol" ) {
     throw new Error("define needs a symbol as its first argument (got " + name.type + ")");
@@ -52,6 +66,23 @@ function define(env, name, sexpr) {
   return Data.Nil();
 }
 
+
+function myif(env, condition, ifTrue, ifFalse) {
+  var cond = evaluate(condition, env);
+
+  if( cond.type !== 'boolean' ) {
+    throw new Error("if needs a boolean as first argument");
+  }
+
+  if( cond.value ) {
+    return evaluate(ifTrue, env);
+  }
+  
+  return evaluate(ifFalse, env);
+}
+
+
+///////////
 
 
 function Env(parent, bindings) {
@@ -104,6 +135,7 @@ function getDefaultEnv() {
   });
   
   bindings['define'] = Data.SpecialForm(define);
+  bindings['if'] = Data.SpecialForm(myif);
 
   return new Env(null, bindings);
 }
@@ -163,7 +195,7 @@ function evaluate(sexpr, env) {
     }
   } 
   
-  if ( sexpr.type === 'number' || sexpr.type === 'string' ) {
+  if ( sexpr.type === 'number' || sexpr.type === 'string' || sexpr.type === 'boolean' ) {
     return sexpr;
   } 
 

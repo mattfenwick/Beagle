@@ -42,6 +42,12 @@ function SpecialForm(value) {
 }
 
 
+function MyBoolean(value) {
+  this.value = value;
+  this.type = 'boolean';
+}
+
+
 return {
   'Number'         : function(x) {return new MyNumber(x)},
   'String'         : function(x) {return new MyString(x)},
@@ -49,7 +55,8 @@ return {
   'List'           : function(x) {return new List(x)},
   'Symbol'         : function(x) {return new Symbol(x)},
   'Nil'            : function()  {return new Nil()},
-  'SpecialForm'    : function(x) {return new SpecialForm(x);}
+  'SpecialForm'    : function(x) {return new SpecialForm(x);},
+  'Boolean'        : function(x) {return new MyBoolean(x);}
 };
 
 })();

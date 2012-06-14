@@ -16,7 +16,8 @@ function testEvaluate(evaluate, funcs, data) {
           notstr = '"open',
           sym1 = '*?#""/',
           list1 = ["+", '"str1"', "345"],
-          list2 = ["+", ["-", "34.32"], '"omg'];
+          list2 = ["+", ["-", "34.32"], '"omg']
+          b1 = "true";
           
       deepEqual(data.Number(345), ev.makePrimitives(int_));
           
@@ -50,6 +51,8 @@ function testEvaluate(evaluate, funcs, data) {
           data.Symbol('"omg')
       ]);
       deepEqual(l2, evaluate.makePrimitives(list2));
+      
+      deepEqual(data.Boolean(true), evaluate.makePrimitives(b1));
     });
     
     
@@ -78,6 +81,14 @@ function testEvaluate(evaluate, funcs, data) {
       deepEqual(Data.String("derr"), env.getBinding('c'));
       ok(env.hasOwnBinding('c'));
       ok(!par.hasBinding('c'));
+    });
+    
+    
+    test("if", function() {
+      var i = evaluate.i;
+      
+      deepEqual(Data.String("huh?"), evaluate.eval(Data.List([Data.Symbol('if'), Data.Boolean(false),
+          Data.Number(4), Data.String("huh?")])));
     });
     
     
