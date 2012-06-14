@@ -8,13 +8,74 @@
   <link href="style.css" rel="stylesheet" type="text/css" />
 
   <script type="text/javascript" src="jquery1.7.2.js"></script>
-  <script type="text/javascript" src="../javascript/lang.js"></script>
+  <script type="text/javascript" src="underscore1.3.3.js"></script>
+  <script type="text/javascript" src="backbone0.9.2.js"></script>
+
+  <script type="text/javascript" src="../javascript/data.js"></script>
+  <script type="text/javascript" src="../javascript/environment.js"></script>
+  <script type="text/javascript" src="../javascript/evaluate.js"></script>
+  <script type="text/javascript" src="../javascript/parse.js"></script>
+  <script type="text/javascript" src="../javascript/beagle.js"></script>
+
+  <script type="text/javascript" src="repl.js"></script>
  </head>
  <body>
 
-  <div id="history"></div>
+  <ul id="history"></ul>
 
-  <div id="current"></div>
+  <div id="current">
+   <textarea id="expr"></textarea>
+  </div>
+  
+  <button id="runner">Evaluate</button>
+
+
+
+ <script type="text/javascript">
+
+
+function printer(obj) {
+  if( obj.type !== 'list' ) {
+    return obj.value;
+  }
+
+  var q = [];
+  for(var i = 0; i < obj.value.length; i++) {
+    q.push(printer(obj.value[i]));
+  }
+
+  return q;
+}
+
+
+ $(document).ready(function() {
+
+  var evaler = new Repl.Evaluator();
+
+  //$("#runner").click(function(e) { //
+  $("#expr").bind('keydown', function(e) {
+    var code = (e.keyCode ? e.keyCode : e.which);
+    if( code == 13 ) {
+      var str = $("#expr").val();
+      evaler.evalString(str); // which then runs the lisper, calls listeners ...
+      return false;
+    }
+    return true;
+  });
+
+  evaler.bind("success", function(obj) {
+    $("#history").append("<ul>" + _.escape("> " + obj.expression) + "</ul>");
+    $("#history").append("<ul>" + _.escape(JSON.stringify(printer(obj.result))) + "</ul>"); // uh -- needs printing
+  });
+
+  evaler.bind("error", function(obj) {
+    $("#history").append("<ul>" + _.escape("> " + obj.expression) + "</ul>");
+    $("#history").append("<ul>" + "ERROR: " + _.escape(obj.errormessage) + "</ul>");
+  });
+
+ });
+
+</script>
 
  </body>
 </html>
