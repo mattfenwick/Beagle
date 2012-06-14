@@ -43,31 +43,53 @@ function makePrimitives(sexpr) {
 
 
 
+function define(env, name, sexpr) {
+  if( name.type !== "symbol" ) {
+    throw new Error("define needs a symbol as its first argument (got " + name.type + ")");
+  }
+  var value = evaluate(sexpr, env);
+  env.addBinding(name.value, value);
+  return Data.Nil();
+}
+
+
+
 function Env(parent, bindings) {
   this._parent = parent;
   this._bindings = bindings;
 }
 
 
+Env.prototype.hasOwnBinding = function(name) {
+  return this._bindings.hasOwnProperty(name);
+}
+
+
+Env.prototype.hasBinding = function(name) {
+  if( this.hasOwnBinding(name) ) {
+    return true;
+  }
+  if( this._parent ) {
+    return this._parent.hasBinding(name);
+  }
+  return false;
+}
+
+
 Env.prototype.addBinding = function(name, value) {
-  if( this.hasBinding(name) ) {
+  if( this.hasOwnBinding(name) ) {
     throw new Error("environment already has binding for " + name);
   }
   this._bindings[name] = value;
 }
 
 
-Env.prototype.hasBinding = function(name) {
-  return this._bindings.hasOwnProperty(name);
-}
-
-
 Env.prototype.getBinding = function(name) {
-  if( this.hasBinding(name) ) {
+  if( this.hasOwnBinding(name) ) {
     return this._bindings[name];
   }
-  if( this.parent ) {
-    return this.parent.getBinding(name);
+  if( this._parent ) {
+    return this._parent.getBinding(name);
   }
   throw new Error("could not find value for " + name);
 }
@@ -80,6 +102,8 @@ function getDefaultEnv() {
   funcNames.map(function(name) {
     bindings[name] = Data.Function(Functions[name]);
   });
+  
+  bindings['define'] = Data.SpecialForm(define);
 
   return new Env(null, bindings);
 }
@@ -94,28 +118,41 @@ function myapply(f, args) {
 }
 
 
+function specialapply(f, env, args) {
+  return f.apply(null, [env].concat(args));
+}
+
+
 function evaluate(sexpr, env) {
+  var first, 
+      args,
+      func,
+      evaledArgs;
+      
   if( sexpr.type === 'list' ) {
     // what if it's empty?
     if( !sexpr.value[0] ) {
       throw new Error("cannot evaluate empty list");
     }
     
-    var first = evaluate(sexpr.value[0], env);
+    first = evaluate(sexpr.value[0], env);
+    func = first.value;
+    args = sexpr.value.slice(1);
     
-    if( first.type !== 'function' ) {
-      throw new Error("first element in list must be function");
+    if( first.type === 'function' ) {  
+
+      evaledArgs = args.map(function(a) {
+          return evaluate(a, env);
+      });
+
+      return myapply(func, evaledArgs);
     }
     
-    var args = sexpr.value.slice(1);
+    if( first.type === 'specialform' ) {
+      return specialapply(func, env, args);
+    }
 
-    var evaledArgs = args.map(function(a) {
-        return evaluate(a, env);
-    });
-
-    var func = first.value;
-    var val = myapply(func, evaledArgs);
-    return val;
+    throw new Error("first element in list must be function");    
   }
   
   if ( sexpr.type === 'symbol' ) {
@@ -130,7 +167,7 @@ function evaluate(sexpr, env) {
     return sexpr;
   } 
 
-  throw new Error("unrecognized type: " + sexpr.type);
+  throw new Error("unrecognized type: " + sexpr.type + " in " + JSON.stringify(sexpr));
 }
 
 
@@ -144,7 +181,8 @@ return {
   'eval'           : evalHead,
   'evalEnv'        : evaluate,
   'defaultEnv'     : defaultEnv,
-  'Environment'    : function(parent, bindings) {return new Env(parent, bindings);}
+  'Environment'    : function(parent, bindings) {return new Env(parent, bindings);},
+  'define'         : define
 };
 
 })(Data, Functions);

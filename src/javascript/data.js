@@ -36,12 +36,20 @@ function Nil() {
 }
 
 
+function SpecialForm(value) {
+  this.value = value;
+  this.type = 'specialform';
+}
+
+
 return {
   'Number'         : function(x) {return new MyNumber(x)},
   'String'         : function(x) {return new MyString(x)},
   'Function'       : function(x) {return new MyFunction(x)},
   'List'           : function(x) {return new List(x)},
   'Symbol'         : function(x) {return new Symbol(x)},
-  'Nil'            : function(x) {return new Nil(x)}
+  'Nil'            : function()  {return new Nil()},
+  'SpecialForm'    : function(x) {return new SpecialForm(x);}
 };
+
 })();
