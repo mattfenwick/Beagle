@@ -1,5 +1,5 @@
 
-var Evaluate = (function(Data, Environment) {
+var Evaluate = (function(Data, Functions) {
 
 var INTEGER = /^\d+$/;
 
@@ -40,6 +40,53 @@ function makePrimitives(sexpr) {
     
   return Data.List(elems);
 }
+
+
+
+function Env(parent, bindings) {
+  this._parent = parent;
+  this._bindings = bindings;
+}
+
+
+Env.prototype.addBinding = function(name, value) {
+  if( this.hasBinding(name) ) {
+    throw new Error("environment already has binding for " + name);
+  }
+  this._bindings[name] = value;
+}
+
+
+Env.prototype.hasBinding = function(name) {
+  return this._bindings.hasOwnProperty(name);
+}
+
+
+Env.prototype.getBinding = function(name) {
+  if( this.hasBinding(name) ) {
+    return this._bindings[name];
+  }
+  if( this.parent ) {
+    return this.parent.getBinding(name);
+  }
+  throw new Error("could not find value for " + name);
+}
+
+
+function getDefaultEnv() {
+  var bindings = {},
+      funcNames = ['cons', 'car', 'cdr', 'list'];
+
+  funcNames.map(function(name) {
+    bindings[name] = Data.Function(Functions[name]);
+  });
+
+  return new Env(null, bindings);
+}
+
+var defaultEnv = getDefaultEnv();
+
+
 
 
 function myapply(f, args) {
@@ -88,12 +135,16 @@ function evaluate(sexpr, env) {
 
 
 function evalHead(sexpr) {
-  return evaluate(sexpr, Environment.defaultEnv);
+  return evaluate(sexpr, defaultEnv);
 }
 
 
 return {
   'makePrimitives' : makePrimitives,
-  'eval'           : evalHead
+  'eval'           : evalHead,
+  'evalEnv'        : evaluate,
+  'defaultEnv'     : defaultEnv,
+  'Environment'    : function(parent, bindings) {return new Env(parent, bindings);}
 };
-})(Data, Environment);
+
+})(Data, Functions);

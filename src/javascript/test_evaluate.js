@@ -1,5 +1,5 @@
 
-function testEvaluate(evaluate, env, data) {
+function testEvaluate(evaluate, funcs, data) {
 
     var ev = evaluate;
 
@@ -73,7 +73,7 @@ function testEvaluate(evaluate, env, data) {
           
       deepEqual(data.String("abcde"), evaluate.eval(str));
           
-      deepEqual(env.getBinding('cons'), evaluate.eval(sym));
+      deepEqual(data.Function(funcs.cons), evaluate.eval(sym));
     
       deepEqual(data.List([]), ev.eval(data.List([data.Symbol('list')])));
     
