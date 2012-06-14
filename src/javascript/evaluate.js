@@ -72,8 +72,8 @@ function evaluate(sexpr, env) {
   }
   
   if ( sexpr.type === 'symbol' ) {
-    if( sexpr.value in env ) { // uh ... has own property?
-      return env[sexpr.value];
+    if( env.hasBinding(sexpr.value) ) { // uh ... has own property?
+      return env.getBinding(sexpr.value);
     } else {
       throw new Error("could not find symbol " + sexpr.value);
     }

@@ -22,9 +22,9 @@
 	
 	testParse(Parse);
 	
-	testEnvironment(Environment, Data);
+	testEnvironment(Environment.defaultEnv, Data);
 	
-	testEvaluate(Evaluate, Data);
+	testEvaluate(Evaluate, Environment.defaultEnv, Data);
     
   });
 </script>

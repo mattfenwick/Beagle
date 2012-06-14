@@ -9,20 +9,23 @@ function testEnvironment(environment, data) {
 
     test("cons, list, car, cdr", function() {
     
-      deepEqual(3, environment.car.value(data.List([3, 4])));
+      var car = environment.getBinding('car').value;
+      deepEqual(3, car(data.List([3, 4])));
     
       // uh-oh, empty list!
-      deepEqual(data.Nil(), environment.car.value(data.List([])));
+      deepEqual(data.Nil(), car(data.List([])));
     
+      var cdr = environment.getBinding('cdr').value;
       deepEqual(
-          ev.List([4, 10, 'hello']), 
-          environment.cdr.value(ev.List([3, 4, 10, 'hello']))
+          data.List([4, 10, 'hello']), 
+          cdr(data.List([3, 4, 10, 'hello']))
       );
     
       // uh-oh !!
-      deepEqual(data.Nil(), environment.cdr.value(data.List([])));
+      deepEqual(data.Nil(), cdr(data.List([])));
       
-      deepEqual(data.List([3, 4, 5]), environment.list.value(3, 4, 5));
+      var list = environment.getBinding('list').value;
+      deepEqual(data.List([3, 4, 5]), list(3, 4, 5));
       
     });
     

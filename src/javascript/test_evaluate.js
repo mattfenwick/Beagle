@@ -1,5 +1,5 @@
 
-function testEvaluate(evaluate, data) {
+function testEvaluate(evaluate, env, data) {
 
     var ev = evaluate;
 
@@ -41,12 +41,12 @@ function testEvaluate(evaluate, data) {
           
       deepEqual(data.Symbol('*?#""/'), evaluate.makePrimitives(sym1));
           
-      var l1 = data.List([ev.Symbol('+'), data.String('str1'), data.Number(345)]);
+      var l1 = data.List([data.Symbol('+'), data.String('str1'), data.Number(345)]);
       deepEqual(l1, ev.makePrimitives(list1));
           
       var l2 = data.List([
           data.Symbol('+'),
-          data.List([ev.Symbol('-'), data.Number(34.32)]),
+          data.List([data.Symbol('-'), data.Number(34.32)]),
           data.Symbol('"omg')
       ]);
       deepEqual(l2, evaluate.makePrimitives(list2));
@@ -73,11 +73,11 @@ function testEvaluate(evaluate, data) {
           
       deepEqual(data.String("abcde"), evaluate.eval(str));
           
-      deepEqual(data.Function(evaluate.environment.cons.value), evaluate.eval(sym));
+      deepEqual(env.getBinding('cons'), evaluate.eval(sym));
     
-      deepEqual(data.List([]), data.eval(data.List([data.Symbol('list')])));
+      deepEqual(data.List([]), ev.eval(data.List([data.Symbol('list')])));
     
-      deepEqual(data.List([data.Number(4)]), data.eval(data.List([data.Symbol('list'), data.Number(4)])));
+      deepEqual(data.List([data.Number(4)]), ev.eval(data.List([data.Symbol('list'), data.Number(4)])));
           
       deepEqual(
         data.Number(87),

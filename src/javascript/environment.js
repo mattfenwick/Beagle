@@ -65,6 +65,7 @@ Env.prototype.getBinding = function(name) {
   throw new Error("could not find value for " + name);
 }
 
+
 var defaultEnv = new Env(null, {
 
   'cons': Data.Function(cons),
@@ -76,6 +77,7 @@ var defaultEnv = new Env(null, {
   'list': Data.Function(list)
   
 });
+
 
 return {
   'defaultEnv': defaultEnv
