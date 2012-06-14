@@ -27,6 +27,7 @@ Evaluator.prototype.evalString = function(str) {
     };
     this._history.push(obj);
     this.trigger("error", obj);
+    throw e; // give the browser the chance to do something with it
   };
 }
 

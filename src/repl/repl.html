@@ -80,8 +80,10 @@ function printer(obj) {
   });
 
   evaler.bind("success", function(obj) {
-    $("#history").append("<ul>" + _.escape("> " + obj.expression) + "</ul>");
-    $("#history").append("<ul>" + _.escape(JSON.stringify(printer(obj.result))) + "</ul>"); // uh -- needs printing
+    var h = $("#history");
+    h.append("<ul>" + _.escape("> " + obj.expression) + "</ul>");
+    h.append("<ul>" + _.escape(JSON.stringify(printer(obj.result))) + "</ul>"); // uh -- needs printing
+    h.scrollTop(h.prop("scrollHeight"));
   });
   
   evaler.bind("success", function() {

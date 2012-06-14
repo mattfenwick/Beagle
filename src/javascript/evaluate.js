@@ -82,6 +82,44 @@ function myif(env, condition, ifTrue, ifFalse) {
 }
 
 
+function lambda(env, args, body) {
+  if( args.type !== 'list' ) {
+    throw new Error("lambda requires a list as first argument");
+  }
+  
+  var names = [],
+      i, sym;
+      
+  for(i = 0; i < args.value.length; i++) {
+    sym = args.value[i];
+    if( sym.type !== 'symbol' ) {
+      throw new Error("all parameter names in lambda must be symbols");
+    }
+    names.push(sym);
+  }
+
+  function closure() {
+      var ln = names.length,
+          la = arguments.length,
+          newEnv = new Env(env, {});
+
+      if( ln !== la ) {
+          throw new Error("length of parameter list of lambda does not match arguments list: " + ln + " vs " + la);
+      }
+
+      for(var j = 0; j < names.length; j++) {
+          // arguments already evaluated
+          newEnv.addBinding(names[j].value, arguments[j]);
+      }
+
+      return evaluate(body, newEnv);
+  }
+  
+  // could create a new data type (closure) later if desired
+  return Data.Function(closure);
+}
+
+
 ///////////
 
 
@@ -135,7 +173,8 @@ function getDefaultEnv() {
   });
   
   bindings['define'] = Data.SpecialForm(define);
-  bindings['if'] = Data.SpecialForm(myif);
+  bindings['if']     = Data.SpecialForm(myif);
+  bindings['lambda'] = Data.SpecialForm(lambda);
 
   return new Env(null, bindings);
 }
@@ -158,6 +197,10 @@ function evaluate(sexpr, env) {
       args,
       func,
       evaledArgs;
+      
+  if( !env || !sexpr ) {
+    throw new Error("evaluate missing sexpr or environment");
+  }
       
   if( sexpr.type === 'list' ) {
     // what if it's empty?
@@ -182,7 +225,7 @@ function evaluate(sexpr, env) {
       return specialapply(func, env, args);
     }
 
-    throw new Error("first element in list must be function");    
+    throw new Error("first element in list must be function or special form (was " + first.type + ")");    
   }
   
   if ( sexpr.type === 'symbol' ) {
