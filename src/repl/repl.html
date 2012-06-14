@@ -21,20 +21,36 @@
  </head>
  <body>
 
-  <ul id="history"></ul>
+  <div id="container">
+   
+   <div id="left">
+    <ul id="history"></ul>
 
-  <div id="current">
-   <textarea id="expr"></textarea>
-  </div>
+    <div id="current">
+     <textarea id="expr"></textarea>
+    </div>
+   </div>
   
-  <button id="runner">Evaluate</button>
-
+   <div id="right">
+    <div id="env"></div>
+    <div id="analysis"></div><!-- for analyzing s-expressions -->
+   </div>
+   
+  </div>
 
 
  <script type="text/javascript">
 
 
 function printer(obj) {
+  if( obj.type === 'function' ) {
+    return '<function>';
+  }
+  
+  if( obj.type === 'specialform' ) {
+    return '<specialform>';
+  }
+  
   if( obj.type !== 'list' ) {
     return obj.value;
   }
@@ -66,6 +82,15 @@ function printer(obj) {
   evaler.bind("success", function(obj) {
     $("#history").append("<ul>" + _.escape("> " + obj.expression) + "</ul>");
     $("#history").append("<ul>" + _.escape(JSON.stringify(printer(obj.result))) + "</ul>"); // uh -- needs printing
+  });
+  
+  evaler.bind("success", function() {
+    var env = evaler.getEnvironment(),
+        parse = Repl.getLastParse(),
+        prims = Repl.getLastPrims();
+        
+    $("#env").text(JSON.stringify(env));
+    $("#analysis").text(JSON.stringify([parse, prims]));
   });
 
   evaler.bind("error", function(obj) {

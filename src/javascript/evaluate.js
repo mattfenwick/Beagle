@@ -140,8 +140,6 @@ function getDefaultEnv() {
   return new Env(null, bindings);
 }
 
-var defaultEnv = getDefaultEnv();
-
 
 
 
@@ -203,16 +201,11 @@ function evaluate(sexpr, env) {
 }
 
 
-function evalHead(sexpr) {
-  return evaluate(sexpr, defaultEnv);
-}
-
 
 return {
   'makePrimitives' : makePrimitives,
-  'eval'           : evalHead,
-  'evalEnv'        : evaluate,
-  'defaultEnv'     : defaultEnv,
+  'eval'           : evaluate,
+  'getDefaultEnv'  : getDefaultEnv,
   'Environment'    : function(parent, bindings) {return new Env(parent, bindings);},
   'define'         : define
 };

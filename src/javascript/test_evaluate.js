@@ -57,7 +57,7 @@ function testEvaluate(evaluate, funcs, data) {
     
     
     test("default env", function() {
-      var env = Evaluate.defaultEnv;
+      var env = Evaluate.getDefaultEnv();
       var names = ['cons', 'car', 'cdr', 'list', 'define', 'lambda', 'if', '='];
       names.map(function(n) {ok(env.hasBinding(n), 'binding ' + n);});
     });
@@ -86,9 +86,10 @@ function testEvaluate(evaluate, funcs, data) {
     
     test("if", function() {
       var i = evaluate.i;
+      var env = evaluate.getDefaultEnv();
       
       deepEqual(Data.String("huh?"), evaluate.eval(Data.List([Data.Symbol('if'), Data.Boolean(false),
-          Data.Number(4), Data.String("huh?")])));
+          Data.Number(4), Data.String("huh?")]), env));
     });
     
     
@@ -149,6 +150,7 @@ function testEvaluate(evaluate, funcs, data) {
     
     
     test("evaluate", function() {
+      var env = evaluate.getDefaultEnv();
       var int_ = data.Number(31),
           str = data.String("abcde"),
           sym = data.Symbol('cons'),
@@ -163,22 +165,22 @@ function testEvaluate(evaluate, funcs, data) {
           ])
           ;
           
-      deepEqual(data.Number(31), evaluate.eval(int_));
+      deepEqual(data.Number(31), evaluate.eval(int_, env));
           
-      deepEqual(data.String("abcde"), evaluate.eval(str));
+      deepEqual(data.String("abcde"), evaluate.eval(str, env));
           
-      deepEqual(data.Function(funcs.cons), evaluate.eval(sym));
+      deepEqual(data.Function(funcs.cons), evaluate.eval(sym, env));
     
-      deepEqual(data.List([]), ev.eval(data.List([data.Symbol('list')])));
+      deepEqual(data.List([]), ev.eval(data.List([data.Symbol('list')]), env));
     
-      deepEqual(data.List([data.Number(4)]), ev.eval(data.List([data.Symbol('list'), data.Number(4)])));
+      deepEqual(data.List([data.Number(4)]), ev.eval(data.List([data.Symbol('list'), data.Number(4)]), env));
           
       deepEqual(
         data.Number(87),
-        evaluate.eval(l1)
+        evaluate.eval(l1, env)
       );
           
-      deepEqual(data.List([data.String('what?')]), evaluate.eval(l2));
+      deepEqual(data.List([data.String('what?')]), evaluate.eval(l2, env));
       
     });
 

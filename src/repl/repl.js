@@ -5,13 +5,15 @@ var Repl = (function(_, Backbone, Beagle) {
 
 function Evaluator() {
   this._history = [];
+  this._lisp = Beagle.lisp;
+  this._environment = Beagle.environment;
 }
 
 
 Evaluator.prototype.evalString = function(str) {
   var evaled, obj;
   try {
-    evaled = Beagle.lisp(str);
+    evaled = this._lisp(str);
     obj = {
       'expression': str,
       'result': evaled
@@ -29,11 +31,18 @@ Evaluator.prototype.evalString = function(str) {
 }
 
 
+Evaluator.prototype.getEnvironment = function() {
+  return this._environment;
+}
+
+
 _.extend(Evaluator.prototype, Backbone.Events);
 
 
 return {
-  'Evaluator': function() {return new Evaluator();}
+  'Evaluator': function() {return new Evaluator();},
+  'getLastParse': Beagle.getLastParse,
+  'getLastPrims': Beagle.getLastPrims
 };
 
 })(_, Backbone, Beagle);
