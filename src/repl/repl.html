@@ -53,6 +53,10 @@ function printer(obj) {
     return '<specialform>';
   }
   
+  if( obj.type === 'nil' ) {
+	return '<nil>';
+  }
+  
   if( obj.type !== 'list' ) {
     return obj.value;
   }
@@ -84,8 +88,7 @@ function printer(obj) {
   evaler.bind("success", function(obj) {
     var h = $("#history");
     h.append("<ul>" + _.escape("> " + obj.string) + "</ul>");
-    h.append("<ul>" + _.escape(JSON.stringify(printer(obj.result))) + "</ul>"); // uh -- needs printing
-    h.scrollTop(h.prop("scrollHeight"));
+    h.append("<ul>" + _.escape(JSON.stringify(printer(obj.result))) + "</ul>");
   });
   
   evaler.bind("success", function(obj) {
@@ -98,6 +101,11 @@ function printer(obj) {
   evaler.bind("error", function(obj) {
     $("#history").append("<ul>" + _.escape("> " + obj.string) + "</ul>");
     $("#history").append("<ul>" + "ERROR: " + _.escape(obj.errormessage) + "</ul>");
+  });
+  
+  evaler.bind('all', function() {
+    var h = $("#history");
+    h.scrollTop(h.prop("scrollHeight"));
   });
 
  });
