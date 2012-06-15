@@ -10,5 +10,28 @@ var logic = [
 
 Beagle.execAll(logic);
 
+
+var lists = ['\
+(define map \
+  (lambda (f xs) \
+    (if (= xs (list))\
+        (list) \
+        (cons (f (car xs)) \
+              (map f (cdr xs)))))) \
+\
+(define filter \
+  (lambda (f xs) \
+    (if (= xs (list)) \
+        (list) \
+        (if (f (car xs)) \
+            (cons (car xs) (filter f (cdr xs))) \
+            (filter f (cdr xs))))))\
+\
+(define id \
+  (lambda (x) x))'
+].join('');
+
+
+Beagle.execAll(lists);
 	
 })(Beagle);
