@@ -166,7 +166,7 @@ Env.prototype.getBinding = function(name) {
 
 function getDefaultEnv() {
   var bindings = {},
-      funcNames = ['cons', 'car', 'cdr', 'list'];
+      funcNames = ['cons', 'car', 'cdr', 'list', '='];
 
   funcNames.map(function(name) {
     bindings[name] = Data.Function(Functions[name]);
