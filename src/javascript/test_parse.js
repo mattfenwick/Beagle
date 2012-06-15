@@ -64,28 +64,34 @@ function testParse(lang) {
     test("getSymbol", function() {
 
       var t1 = ["(", "duh"],
-          t2 = ["123abc", "("],
-          t3 = [")", "abc", "("];
+          t2 = ["123abc", "(", 'barf'],
+          t3 = [")", "abc", "("],
+          t4 = [];
 
       var o = lang.getSymbol(t1);
-      equal(false, o);
+      equal(false, o, "( is not a symbol");
 
       var p = lang.getSymbol(t2);
-      equal("123abc", p.result);
+      equal("123abc", p.result, "symbol");
+      deepEqual(["(", 'barf'], p.rest, "rest of token stream");
 
       var q = lang.getSymbol(t3);
-      equal(false, q);
+      equal(false, q, ") is not a symbol");
+      
+      equal(false, lang.getSymbol(t4), "can't find symbol empty list");
     });
 
     test("getList", function() {
-
+      expect(12);
       var t1 = [")"],
           t2 = ["(", ")"],
           t3 = ["(", "abc", ")", "def"],
           t4 = ["(", "1", "(", "+", ")", "2", ")", "(", "rest!"],
           t5 = ["abc"],
           t6 = [],
-          t7 = ["(", "abc", "(", "-", ")", "ohnoes"];
+          t7 = ["(", "abc", "(", "-", ")", "ohnoes"],
+          t8 = ["(", "(", "(", "(", ")", ")", ")", ")", "12345"],
+          t9 = ["(", "(", "(", "(", ")", ")", ")"];
 
       var o = lang.getList(t1);
       equal(false, o);
@@ -109,9 +115,17 @@ function testParse(lang) {
 
       var u = lang.getList(t7);
       equal(false, u);
+      
+      var v = lang.getList(t8);
+      deepEqual([[[[]]]], v.result);
+      deepEqual(["12345"], v.rest);
+      
+      var w = lang.getList(t9);
+      equal(false, w);
     });
 
-    test("parse", function() {
+    test("parseOne", function() {
+      expect(7);
       var p1 = "(+ 3 2)",
           p2 = "3 4",
           p3 = "(+ (- (* 4 5 (abc (quote def)) 17)))",
@@ -148,6 +162,32 @@ function testParse(lang) {
       var g = lang.parse(p7);
       equal(false, g);
 
+    });
+
+    test("parseAll", function() {
+      expect(7);
+      var p1 = "(+ 3 2)",
+          p2 = "3 4",
+          p3 = "(+ (- (* 4 5 \t 17)))",
+          p4 = "(define x 4) \n (define y 5)",
+          p5 = "()",
+          p6 = "abc 1 2 3 (duh)",
+          p7 = "";
+      
+      deepEqual({'sexprs':[["+", "3", "2"]]}, lang.parseAll(p1));
+      
+      deepEqual({'sexprs':["3", "4"]}, lang.parseAll(p2));
+      
+      deepEqual({'sexprs':[["+", ["-", ["*", "4", "5", "17"]]]]}, lang.parseAll(p3));
+      
+      deepEqual({'sexprs':[["define", "x", "4"], ["define", "y", "5"]]}, lang.parseAll(p4));
+      
+      deepEqual({'sexprs':[[]]}, lang.parseAll(p5));
+      
+      deepEqual({'sexprs':["abc", "1", "2", "3", ["duh"]]}, lang.parseAll(p6));
+      
+      deepEqual({'sexprs':[]}, lang.parseAll(p7));
+      
     });
 
 }

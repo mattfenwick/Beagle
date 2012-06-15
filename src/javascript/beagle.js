@@ -1,35 +1,50 @@
 
 var Beagle = (function(parse, evaluate) {
 
-var env = evaluate.getDefaultEnv(),
-    lastParse = null,
-    lastPrims;
+var env = evaluate.getDefaultEnv();
 
 
-function lisp(str) {
-  var evaled;
-  lastParse = parse.parse(str);
-  lastPrims = evaluate.makePrimitives(lastParse);
-  evaled = evaluate.eval(lastPrims, env);
-  return evaled;
+function exec(str) {
+  var parsed, prims, evaled;
+  
+  parsed = parse.parse(str);
+  
+  prims = evaluate.makePrimitives(parsed);
+  
+  evaled = evaluate.eval(prims, env);
+  
+  return {
+	  'string': str,
+	  'result': evaled,
+	  'parsed': parsed,
+	  'primitives': prims
+  };
 }
 
 
-function getLastParse() {
-  return lastParse;
-}
-
-
-function getLastPrims() {
-  return lastPrims;
+function execAll(str) {
+  var result, prims, evaled;
+  
+  results = parse.parseAll(str);
+  
+  prims = results.sexprs.map(function(sexpr) {return evaluate.makePrimitives(sexpr);});
+  
+  evaled = prims.map(function(p) {return evaluate.eval(p, env)});
+  
+  return {
+	  'string': str,
+	  'result': evaled,
+	  'parsed': result,
+	  'primitives': prims
+  };
+	
 }
 
 
 return {
-  'lisp' : lisp,
-  'environment': env,
-  'getLastParse': getLastParse,
-  'getLastPrims': getLastPrims
+  'exec'         :  exec,
+  'execAll'      :  execAll,
+  'environment'  :  env
 };
 
 })(Parse, Evaluate);

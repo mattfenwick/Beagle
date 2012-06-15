@@ -5,7 +5,7 @@ var Repl = (function(_, Backbone, Beagle) {
 
 function Evaluator() {
   this._history = [];
-  this._lisp = Beagle.lisp;
+  this._lisp = Beagle.exec;
   this._environment = Beagle.environment;
 }
 
@@ -14,15 +14,11 @@ Evaluator.prototype.evalString = function(str) {
   var evaled, obj;
   try {
     evaled = this._lisp(str);
-    obj = {
-      'expression': str,
-      'result': evaled
-    };
-    this._history.push(obj);
-    this.trigger("success", obj);
+    this._history.push(evaled);
+    this.trigger("success", evaled);
   } catch(e) {
     obj = {
-      'expression': str,
+      'string': str,
       'errormessage': e
     };
     this._history.push(obj);
@@ -41,9 +37,7 @@ _.extend(Evaluator.prototype, Backbone.Events);
 
 
 return {
-  'Evaluator': function() {return new Evaluator();},
-  'getLastParse': Beagle.getLastParse,
-  'getLastPrims': Beagle.getLastPrims
+  'Evaluator': function() {return new Evaluator();}
 };
 
 })(_, Backbone, Beagle);

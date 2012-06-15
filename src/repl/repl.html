@@ -16,6 +16,8 @@
   <script type="text/javascript" src="../javascript/evaluate.js"></script>
   <script type="text/javascript" src="../javascript/parse.js"></script>
   <script type="text/javascript" src="../javascript/beagle.js"></script>
+  
+  <script type="text/javascript" src="../javascript/loader.js"></script>
 
   <script type="text/javascript" src="repl.js"></script>
  </head>
@@ -81,22 +83,20 @@ function printer(obj) {
 
   evaler.bind("success", function(obj) {
     var h = $("#history");
-    h.append("<ul>" + _.escape("> " + obj.expression) + "</ul>");
+    h.append("<ul>" + _.escape("> " + obj.string) + "</ul>");
     h.append("<ul>" + _.escape(JSON.stringify(printer(obj.result))) + "</ul>"); // uh -- needs printing
     h.scrollTop(h.prop("scrollHeight"));
   });
   
-  evaler.bind("success", function() {
-    var env = evaler.getEnvironment(),
-        parse = Repl.getLastParse(),
-        prims = Repl.getLastPrims();
+  evaler.bind("success", function(obj) {
+    var env = evaler.getEnvironment();
         
     $("#env").text(JSON.stringify(env));
-    $("#analysis").text(JSON.stringify([parse, prims]));
+    $("#analysis").text(JSON.stringify([obj.parsed, obj.primitives]));
   });
 
   evaler.bind("error", function(obj) {
-    $("#history").append("<ul>" + _.escape("> " + obj.expression) + "</ul>");
+    $("#history").append("<ul>" + _.escape("> " + obj.string) + "</ul>");
     $("#history").append("<ul>" + "ERROR: " + _.escape(obj.errormessage) + "</ul>");
   });
 
