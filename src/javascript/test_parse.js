@@ -4,13 +4,15 @@ function testParse(lang) {
     module("tokenizer");
     
     test("nextToken", function() {
-    	expect(9);
+    	expect(11);
 
       var open = "  ((duh",
           close = ") what's going on",
           symbol = " abc)(()",
           number = " 12345 )",
-          empty = "";
+          empty = "",
+          str = ' "abc" ',
+          wsstr = ' "ab cd" f';
 
       var o = lang.nextToken(open);
       equal('(', o.token);
@@ -30,6 +32,10 @@ function testParse(lang) {
 
       var p = lang.nextToken(empty);
       deepEqual({token: false, rest: false}, p);
+      
+      deepEqual({token: '"abc"', rest: ""}, lang.nextToken(str));
+      
+      deepEqual({token: '"ab cd"', rest: "f"}, lang.nextToken(wsstr));
     });
 
     test("tokenize", function() {
