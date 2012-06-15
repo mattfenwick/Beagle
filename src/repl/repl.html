@@ -26,16 +26,29 @@
   <div id="container">
    
    <div id="left">
+    <div>Expression history</div>
     <ul id="history"></ul>
 
     <div id="current">
+     <div>Enter an expression for evaluation here (press enter to evaluate it):</div>
      <textarea id="expr"></textarea>
     </div>
    </div>
   
    <div id="right">
-    <div id="env"></div>
-    <div id="analysis"></div><!-- for analyzing s-expressions -->
+    <div id="envcontainer">
+     <div>This is the current top-level environment:</div>
+     <table id="env">
+      <tr><th>name</th><th>type</th><th>value</th></tr>
+     </table>
+    </div>
+    
+    <div>
+     <div>parsed s-expression of last expression:</div>
+     <div id="lastsexpr"></div>
+     <div>Primitives of last parse:</div>
+     <div id="lastprims"></div>
+    </div>
    </div>
    
   </div>
@@ -70,9 +83,21 @@ function printer(obj) {
 }
 
 
+function displayEnv(envi) {
+  var tab = $("#env"),
+      q, val;
+  $("#env .envrow").remove();
+  for(q in envi._bindings) {
+    val = envi.getBinding(q);
+    tab.append('<tr class="envrow"><td>' + q + "</td><td>" + val.type + "</td><td>" + _.escape(printer(val)) + "</td></tr>");
+  }
+}
+
+
  $(document).ready(function() {
 
-  var evaler = new Repl.Evaluator();
+  var evaler = new Repl.Evaluator(),
+      env = evaler.getEnvironment();
 
   //$("#runner").click(function(e) { //
   $("#expr").bind('keydown', function(e) {
@@ -92,10 +117,12 @@ function printer(obj) {
   });
   
   evaler.bind("success", function(obj) {
-    var env = evaler.getEnvironment();
         
-    $("#env").text(JSON.stringify(env));
-    $("#analysis").text(JSON.stringify([obj.parsed, obj.primitives]));
+//    $("#env").text(JSON.stringify(env));
+    displayEnv(env);
+    $("#lastsexpr").text(JSON.stringify(obj.parsed));
+    $("#lastprims").text(JSON.stringify(obj.primitives));
+    $("#expr").val("");
   });
 
   evaler.bind("error", function(obj) {
@@ -107,6 +134,9 @@ function printer(obj) {
     var h = $("#history");
     h.scrollTop(h.prop("scrollHeight"));
   });
+  
+  // get the page set-up:  show the environment
+  displayEnv(env);
 
  });
 
