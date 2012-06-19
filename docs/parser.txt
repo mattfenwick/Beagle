@@ -1,0 +1,90 @@
+
+A) tokens:  
+
+ 1. open:    (
+
+ 2. close:   )
+
+ 3. string:  "[^\"]*"
+
+ 4. comment: ;[^\n]*
+
+ 5. symbol:  [^;\"\(\)\s]+
+
+
+
+B) whitespace:
+
+ 1. required: between all consecutive strings and symbols
+    (note that this probably isn't yet implemented)
+
+   so this is fine:
+
+    (abc "def" 1 (2(3))(4 5))
+
+   note that it's okay to have (2( because ( is not a string or
+   a symbol, so it's an OPEN symbol OPEN
+
+   there is no difference between 1 and n whitespace characters
+
+ 2. optional:  
+
+   but this is not:
+
+    (abc "def"1)
+
+   because there's no whitespace between the string '"def"' and the symbol '1'
+
+
+
+C) parsing stages:
+
+ 1. tokenization
+ 2. assembly of tokens to form s-expressions composed of lists and atoms
+
+
+
+D) data types:
+
+ 1. Token
+    type:  see Section A for a complete list of recognized types
+    value: the string from the original input stream
+
+ 2. SExpression
+    type:  'atom' or 'list'
+    value: a list of SExpressions (if a list), or a token (if an atom)
+
+ 3. ParseError
+    type:  ??
+    message:
+
+
+
+E) failure modes
+
+ 1. total functions (none)
+
+ 2. functions that may fail softly -- i.e. without causing an error -- under certain conditions
+  
+  - nextToken:  if the input is empty
+  - getList:  if the input is empty or the first element is an atom
+  - getAtom:  if the input is empty or the first element is not an atom
+  - getSExpression:  if the input is empty
+
+ 3. functions that fail hard under certain conditions -- these should either throw or return instances of ParseError (which one?  have to choose)
+
+  - nextToken:  if a string is opened but not closed
+  - tokenize:  if nextToken fails
+  - getList:  if a list is opened but not closed
+  - parse:  if nextToken or getList fails (this covers the case where some but not all of the input is consumed, right?)
+   
+ 4. all other failures must be considered as programmer errors
+
+
+
+F) public interface
+
+  - SExpression :: (data type)
+  - parse :: String -> [SExpression]
+  - ??? is that it???
+
