@@ -1,10 +1,6 @@
 
 var Evaluate = (function(Data, Functions) {
 
-var TRUE = /^true$/;
-
-var FALSE = /^false$/;
-
 var INTEGER = /^\d+$/;
 
 var FLOAT = /^(?:\d*\.\d+|\d+\.\d*)$/;
@@ -15,14 +11,6 @@ function makePrimitives(sexpr) {
   var i, value, elems;
 
   if(typeof(sexpr) === "string") {
-      if( value = sexpr.match(TRUE) ) {
-          return Data.Boolean(true);
-      }
-      
-      if( value = sexpr.match(FALSE) ) {
-          return Data.Boolean(false);
-      }
-  
       if( value = sexpr.match(INTEGER) ) {
           return Data.Number(Number(value[0]));
       } 
@@ -175,6 +163,9 @@ function getDefaultEnv() {
   bindings['define'] = Data.SpecialForm(define);
   bindings['if']     = Data.SpecialForm(myif);
   bindings['lambda'] = Data.SpecialForm(lambda);
+
+  bindings['true']   = Data.Boolean(true);
+  bindings['false']  = Data.Boolean(false);
 
   return new Env(null, bindings);
 }

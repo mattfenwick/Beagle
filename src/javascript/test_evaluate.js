@@ -6,6 +6,7 @@ function testEvaluate(evaluate, funcs, data) {
     module("primitives");
 
     test("makePrimitives", function() {
+      expect(12);
       var int_ = "345",
           empty = "",
           float1 = "03.",
@@ -52,7 +53,7 @@ function testEvaluate(evaluate, funcs, data) {
       ]);
       deepEqual(l2, evaluate.makePrimitives(list2));
       
-      deepEqual(data.Boolean(true), evaluate.makePrimitives(b1));
+      deepEqual(data.Symbol('true'), evaluate.makePrimitives(b1));
     });
     
     
