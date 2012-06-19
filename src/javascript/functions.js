@@ -36,12 +36,33 @@ function list() {
 }
 
 
+function equalsList(lval, rval) {
+    var i, compare;
+    if( lval.length !== rval.length ) {
+        return Data.Boolean(false);
+    }
+		
+    for(i = 0; i < lval.length; i++) {
+        // first we check the types ...
+        if( lval[i].type !== rval[i].type ) {
+            return Data.Boolean(false);
+        }
+        // ... and continue to the values ...
+        compare = equals(lval[i], rval[i]);
+        if( compare.type === 'nil' || !compare.value ) {
+            return Data.Boolean(false);
+        };
+    }
+    // ... base case, no differences found:  equal
+    return Data.Boolean(true);
+}
+
+
 function equals(left, right) {
 	var ltype = left.type,
 	    rtype = right.type,
 	    lval = left.value,
-	    rval = right.value,
-	    i;
+	    rval = right.value;
 	
 	if( ltype !== rtype ) {
 		return Data.Nil();
@@ -54,19 +75,7 @@ function equals(left, right) {
 	// should a 'nil' in a list cause the comparison to return a 'nil'?
 	// for now, we'll say ... no
 	if( ltype === 'list' ) {
-		if( lval.length !== rval.length ) {
-			return Data.Boolean(false);
-		}
-		
-		for(i = 0; i < lval.length; i++) {
-			if( lval[i].type !== rval[i].type ) {
-				return Data.Boolean(false);
-			}
-			if( !equals(lval[i], rval[i]) ) {
-				return Data.Boolean(false);
-			};
-		}
-		return Data.Boolean(true);
+		return equalsList(lval, rval);
 	}
 	
 	if( ltype === 'number' || ltype === 'string' || ltype === 'symbol' || ltype === 'boolean' ) {
