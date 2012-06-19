@@ -16,8 +16,6 @@
   <script type="text/javascript" src="../javascript/evaluate.js"></script>
   <script type="text/javascript" src="../javascript/parse.js"></script>
   <script type="text/javascript" src="../javascript/beagle.js"></script>
-  
-  <script type="text/javascript" src="../javascript/loader.js"></script>
 
   <script type="text/javascript" src="repl.js"></script>
  </head>
@@ -135,6 +133,25 @@ function displayEnv(envi) {
     h.scrollTop(h.prop("scrollHeight"));
   });
   
+
+  $.ajax({
+    url:       'core.bgl', 
+    type:      'GET',
+    dataType:  'text',
+    data:      {
+      // don't need no stinkin' data
+    },
+    success:   function(resp, message) {
+      Beagle.execAll(resp);
+      displayEnv(env);
+    },
+    error:     function(resp, message) {
+       alert('failed it ' + JSON.stringify(resp) + ' ' + message); // argg ...
+    },
+    timeout:   2000 // is this long enough?
+  });
+
+
   // get the page set-up:  show the environment
   displayEnv(env);
 
