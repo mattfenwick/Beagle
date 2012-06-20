@@ -92,14 +92,9 @@ function nextToken(string) {
 function tokenize(string) {
   var tokens = [],
       next;
-  while( 1 ) {
-    next = nextToken(string);
-    if( next ) {
-      tokens.push(next.token);
-      string = next.rest;
-    } else {
-      break;
-    }
+  while( next = nextToken(string) ) {
+    tokens.push(next.token);
+    string = next.rest;
   }
   return tokens;
 }
