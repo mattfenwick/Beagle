@@ -26,32 +26,8 @@ function ParseError(message, value) {
 var SYMBOL  = /^[^\s\(\)"]+/, /* not ws, (, ), or " */
     OPEN    = "(",
     CLOSE   = ")",
+    STRING  = /^"([^"]*)"/,
     COMMENT = /^;+(.*)/; /* assumes that: 1) * is greedy; 2) . doesn't match \n */
-
-
-function getStringToken(string) {
-    var i, isStringEnded = false;
-    if( string[0] !== '"' ) {
-      throw new ParseError('string must begin with "', string[0]);
-    }
-
-    i = 1;
-    while( i < string.length ) {
-      if( string[i] === '"' ) {
-        isStringEnded = true;
-        break;
-      } else {
-        i += 1;
-      }
-    }
-    if( !isStringEnded ) {
-      throw new ParseError("tokenizer error: end-of-string (\") not found", string);
-    }
-    return {
-      'token': new Token('string', string.substring(1, i)),
-      'rest' : string.substring(i + 1)
-    };
-}
 
 
 // String -> Maybe (Token, String)
@@ -93,7 +69,15 @@ function nextToken(string) {
 
   // 5. string
   if( string[0] === '"' ) {
-    return getStringToken(string);
+    match = string.match(STRING);
+    if( match ) {
+      return {
+        'token': new Token('string', match[1]),
+        'rest': string.substring(match[0].length)
+      };
+    } else {
+      throw new ParseError("tokenizer error: end-of-string (\") not found", string);
+    }
   }
   
   // 6. symbol
