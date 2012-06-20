@@ -175,8 +175,13 @@ function asJson(obj) {
       var t = lang.getList(t6);
       equal(false, t, "can't get list from empty token stream");
 
-      var u = lang.getList(t7);
-      equal(false, u, "can't get list if missing close-paren");
+      var u = true;
+      try {
+        lang.getList(t7);
+        u = false;
+      } catch(e) {
+      };
+      ok(u, "can't get list if missing close-paren");
       
       var v = lang.getList(t8);
       deepEqual({
@@ -197,8 +202,12 @@ function asJson(obj) {
         }, asJson(v.result));
       deepEqual([{'type': 'symbol', 'value': "12345"}], v.rest, "rest of deeply nested list");
       
-      var w = lang.getList(t9);
-      equal(false, w);
+      var w = true;
+      try {
+        lang.getList(t9);
+        w = false;
+      } catch(e) {};
+      ok(w, "missing CLOSE in deeply nested list");
     });
 
 

@@ -22,6 +22,11 @@ function ParseError(message, value) {
   this.value = value;
 }
 
+
+ParseError.prototype.toString = function() {
+  return this.message + " (from " + this.value + ")";
+}
+
 	
 var SYMBOL  = /^[^\s\(\)"]+/, /* not ws, (, ), or " */
     OPEN    = "(",
@@ -39,7 +44,7 @@ function nextToken(string) {
   string = string.trim();
 
   // 1. empty string
-  if( !string ) {
+  if( string === "" ) {
     return false;
   } 
   
@@ -82,10 +87,14 @@ function nextToken(string) {
   
   // 6. symbol
   match = string.match(SYMBOL);
-  return {
+  if( match ) {
+    return {
       'token': new Token('symbol', match[0]),
       'rest' : string.substring(match[0].length)
-  };
+    };
+  }
+
+  throw new ParseError("unexpected tokenizer error:  no tokens match string", string);
 }
 
 
@@ -123,7 +132,7 @@ function getAtom(tokens) {
 
 // [Token] -> Maybe SExpression
 //   returns false if tokens is empty or doesn't start with open
-//   returns false if a properly 'balanced' list can't be found
+//   throws an error if a properly 'balanced' list can't be found
 function getList(tokens) {
   var sexpr, 
       elems = [];
@@ -155,12 +164,16 @@ function getList(tokens) {
   }
   
   // uh-oh!  we didn't find a close-paren ...
-  return false;
+  throw new ParseError("'(' token found but matching ')' token was not found");
 }
 
 
 function getSExpression(tokens) {
   var sexpr;
+
+  if( tokens.length === 0 ) {
+    return false;
+  }
 
   // an s-expression is either a symbol
   sexpr = getAtom(tokens);
@@ -175,7 +188,7 @@ function getSExpression(tokens) {
   }
 
   // no other possibilities
-  return false;
+  throw new ParseError("unexpected error:  couldn't find s-expression and token stream was not empty", tokens);
 }
 
 
@@ -201,12 +214,17 @@ function parse(string) {
 
 
 return {
+  'Token'          : function(t, v) {return new Token(t, v);},
+  'SExpression'    : function(t, v) {return new SExpression(t, v);},
+  'ParseError'     : function(m, v) {return new ParseError(m, v);},
+
   'getAtom'        : getAtom,
   'getList'        : getList,
   'getSExpression' : getSExpression,
-  'parse'          : parse,
   'nextToken'      : nextToken,
+
+  'parse'          : parse,
   'tokenize'       : tokenize
-}
+};
 
 })();
