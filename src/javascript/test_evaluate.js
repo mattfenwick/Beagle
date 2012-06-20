@@ -7,18 +7,30 @@ function testEvaluate(evaluate, funcs, data) {
 
     test("makePrimitives", function() {
       expect(12);
-      var int_ = "345",
-          empty = "",
-          float1 = "03.",
-          float2 = "3.456",
-          float3 = ".001",
-          float4 = "0.01",
-          str = '"yes this is a string"',
-          notstr = '"open',
-          sym1 = '*?#""/',
-          list1 = ["+", '"str1"', "345"],
-          list2 = ["+", ["-", "34.32"], '"omg']
-          b1 = "true";
+
+      function sym(v) {
+        return {'type': 'symbol', 'value': v};
+      }
+
+      var int_ = sym("345"),
+          empty = sym(""),
+          float1 = sym("03."),
+          float2 = sym("3.456"),
+          float3 = sym(".001"),
+          float4 = sym("0.01"),
+          str = {'type': 'string', 'value': "yes this is a string"},
+          notstr = sym('"open'),
+          sym1 = sym('*?#""/'),
+          list1 = {'type': 'list', 'value': [sym("+"), {'type': 'string', 'value': 'str1'}, sym("345")]},
+          list2 = {
+            'type': 'list',
+            'value': [
+              sym("+"), 
+              {'type': 'list', 'value': [sym("-"), sym("34.32")]}, 
+              sym('"omg')
+            ]
+          };
+          b1 = sym("true");
           
       deepEqual(data.Number(345), ev.makePrimitives(int_));
           
@@ -29,22 +41,22 @@ function testEvaluate(evaluate, funcs, data) {
         ok(1, "can't make primitive of empty string");
       };
           
-      deepEqual(data.Number(3), ev.makePrimitives(float1));
+      deepEqual(data.Number(3), ev.makePrimitives(float1), "float with decimal point");
           
-      deepEqual(data.Number(3.456), evaluate.makePrimitives(float2));
+      deepEqual(data.Number(3.456), evaluate.makePrimitives(float2), "float with leading and trailing digits");
           
-      deepEqual(data.Number(0.001), evaluate.makePrimitives(float3));
+      deepEqual(data.Number(0.001), evaluate.makePrimitives(float3), "float with leading decimal point");
           
-      deepEqual(data.Number(0.01), evaluate.makePrimitives(float4));
+      deepEqual(data.Number(0.01), evaluate.makePrimitives(float4), "float with leading 0");
           
-      deepEqual(data.String("yes this is a string"), ev.makePrimitives(str));
+      deepEqual(data.String("yes this is a string"), ev.makePrimitives(str), 'string');
           
-      deepEqual(data.Symbol('"open'), evaluate.makePrimitives(notstr));
+      deepEqual(data.Symbol('"open'), evaluate.makePrimitives(notstr), 'symbol (with leading ")');
           
-      deepEqual(data.Symbol('*?#""/'), evaluate.makePrimitives(sym1));
+      deepEqual(data.Symbol('*?#""/'), evaluate.makePrimitives(sym1), 'symbol with funky chars');
           
       var l1 = data.List([data.Symbol('+'), data.String('str1'), data.Number(345)]);
-      deepEqual(l1, ev.makePrimitives(list1));
+      deepEqual(l1, ev.makePrimitives(list1), 'simple list');
           
       var l2 = data.List([
           data.Symbol('+'),

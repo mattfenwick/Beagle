@@ -5,40 +5,41 @@ var INTEGER = /^\d+$/;
 
 var FLOAT = /^(?:\d*\.\d+|\d+\.\d*)$/;
 
-var STRING = /^"(.*)"$/;
-
 function makePrimitives(sexpr) {
   var i, value, elems;
+  
+  if( sexpr.type === 'list' ) {
+    elems = [];
+    
+    for(i = 0; i < sexpr.value.length; i++) {
+      elems.push(makePrimitives(sexpr.value[i]));
+    }
+    
+    return Data.List(elems);
+  }
 
-  if(typeof(sexpr) === "string") {
-      if( value = sexpr.match(INTEGER) ) {
+  if( sexpr.type === "string" ) {
+    return Data.String(sexpr.value);
+  }
+
+  if( sexpr.type === 'symbol' ) {
+      if( value = sexpr.value.match(INTEGER) ) {
           return Data.Number(Number(value[0]));
       } 
     
-      if( value = sexpr.match(FLOAT) ) {
+      if( value = sexpr.value.match(FLOAT) ) {
           return Data.Number(Number(value[0]));
       } 
     
-      if( value = sexpr.match(STRING) ) {
-          return Data.String(value[1]); // the second value is the match *without* the " marks
-      }
-    
-      if( sexpr.length > 0 ) {
-          return Data.Symbol(sexpr);
+      if( sexpr.value.length > 0 ) {
+          return Data.Symbol(sexpr.value);
       } 
     
-      // empty string -> Error
+      // empty string is an error
       throw new Error("can't extract primitive:  empty value");
   }
-  
-  // assume it's a list/array
-  elems = [];
-    
-  for(i = 0; i < sexpr.length; i++) {
-    elems.push(makePrimitives(sexpr[i]));
-  }
-    
-  return Data.List(elems);
+
+  throw new Error("unrecognized s-expression type: " + sexpr.type);
 }
 
 
