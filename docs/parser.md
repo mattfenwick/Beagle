@@ -1,4 +1,28 @@
 
+## Grammar ##
+
+Loosely using [BNF](http://en.wikipedia.org/wiki/Backus%E2%80%93Naur_Form):
+
+    BeagleCode:     SExpression(+)
+
+    SExpression:    Atom  |  List
+
+    Atom:           String  |  Symbol
+
+    String:         "[^\"]*"
+
+    Symbol:         [^;\"\(\)\s]+
+
+    List:           OPEN  SExpression(*)  CLOSE
+
+    OPEN:           '('
+
+    CLOSE:          ')'
+
+Also, comments are indicated by `;` (when not in a token) and extend to the end of the line.
+**I don't know how to represent comments in formal grammars.**
+
+
 ## Tokens ##
 
  - open 
