@@ -65,4 +65,5 @@ html, body {
 
 #env td, #env th {
   border: solid blue 1px;
+  padding: 5px;
 }
