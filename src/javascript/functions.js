@@ -4,6 +4,9 @@ function cons(elem, list) {
   if( list.type !== 'list' ) {
     throw new Error("second arguments to 'cons' must be list (got " + list.type + ")");
   }
+  if( arguments.length != 2 ) {
+    throw new Error("wrong number of arguments: needed 2, got " + arguments.length);
+  }
 
   var newList = [elem];
   for(var i = 0; i < list.value.length; i++) {
@@ -18,6 +21,9 @@ function car(list) {
   if( list.type !== 'list' ) {
     throw new Error("argument to 'car' must be list (got " + list.type + ")");
   }
+  if( arguments.length != 1 ) {
+    throw new Error("wrong number of arguments: needed 1, got " + arguments.length);
+  }
 
   if( list.value.length > 0 ) {
     return list.value[0];
@@ -30,6 +36,9 @@ function car(list) {
 function cdr(list) {
   if( list.type !== 'list' ) {
     throw new Error("argument to 'cdr' must be list (got " + list.type + ")");
+  }
+  if( arguments.length != 1 ) {
+    throw new Error("wrong number of arguments: needed 1, got " + arguments.length);
   }
 
   if( list.value.length > 0 ) {
@@ -72,6 +81,10 @@ function equalsList(lval, rval) {
 
 
 function equals(left, right) {
+  if( arguments.length != 2 ) {
+    throw new Error("wrong number of arguments: needed 2, got " + arguments.length);
+  }
+
   var ltype = left.type,
       rtype = right.type,
       lval = left.value,
@@ -100,6 +113,10 @@ function equals(left, right) {
 
 
 function plus(left, right) {
+  if( arguments.length != 2 ) {
+    throw new Error("wrong number of arguments: needed 2, got " + arguments.length);
+  }
+
   if( left.type !== 'number' || right.type !== 'number' ) {
     throw new Error("primitive + requires two numbers (got " + left.type + ", " + right.type + ")");
   }
@@ -108,6 +125,10 @@ function plus(left, right) {
 
 
 function neg(num) {
+  if( arguments.length != 1 ) {
+    throw new Error("wrong number of arguments: needed 1, got " + arguments.length);
+  }
+
   if( num.type !== 'number' ) {
     throw new Error("primitive 'neg' requires a number (got " + num.type + ")");
   }
