@@ -1,15 +1,24 @@
 var Functions = (function(Data) {
 
 function cons(elem, list) {
+  if( list.type !== 'list' ) {
+    throw new Error("second arguments to 'cons' must be list (got " + list.type + ")");
+  }
+
   var newList = [elem];
   for(var i = 0; i < list.value.length; i++) {
     newList.push(list.value[i]);
   }
+
   return Data.List(newList);
 };
 
 
 function car(list) {
+  if( list.type !== 'list' ) {
+    throw new Error("argument to 'car' must be list (got " + list.type + ")");
+  }
+
   if( list.value.length > 0 ) {
     return list.value[0];
   }
@@ -19,11 +28,15 @@ function car(list) {
 
 
 function cdr(list) {
-  if( list.value.length == 0 ) {
-    return Data.Nil();
+  if( list.type !== 'list' ) {
+    throw new Error("argument to 'cdr' must be list (got " + list.type + ")");
+  }
+
+  if( list.value.length > 0 ) {
+    return Data.List(list.value.slice(1));
   }
   
-  return Data.List(list.value.slice(1));
+  return Data.Nil();
 }
 
 
