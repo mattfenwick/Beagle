@@ -65,7 +65,7 @@ function printer(obj) {
   }
   
   if( obj.type === 'nil' ) {
-	return '<nil>';
+    return '<nil>';
   }
   
   if( obj.type !== 'list' ) {
@@ -111,7 +111,8 @@ function displayEnv(envi) {
   evaler.bind("success", function(obj) {
     var h = $("#history");
     h.append("<ul>" + _.escape("> " + obj.string) + "</ul>");
-    h.append("<ul>" + _.escape(JSON.stringify(printer(obj.result))) + "</ul>");
+    // remember -- only allowing one form (for now) so just take the first
+    h.append("<ul>" + _.escape(JSON.stringify(printer(obj.result[0]))) + "</ul>");
   });
   
   evaler.bind("success", function(obj) {
@@ -125,7 +126,7 @@ function displayEnv(envi) {
 
   evaler.bind("error", function(obj) {
     $("#history").append("<ul>" + _.escape("> " + obj.string) + "</ul>");
-    $("#history").append("<ul>" + "ERROR: " + _.escape(obj.errormessage) + "</ul>");
+    $("#history").append("<ul>" + "ERROR: " + _.escape(obj.error) + "</ul>");
   });
   
   evaler.bind('all', function() {
@@ -142,7 +143,7 @@ function displayEnv(envi) {
       // don't need no stinkin' data
     },
     success:   function(resp, message) {
-      Beagle.execAll(resp);
+      Beagle.exec(resp);
       displayEnv(env);
     },
     error:     function(resp, message) {

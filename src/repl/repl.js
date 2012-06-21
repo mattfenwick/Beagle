@@ -14,12 +14,15 @@ Evaluator.prototype.evalString = function(str) {
   var evaled, obj;
   try {
     evaled = this._lisp(str);
+    if( evaled.result.length !== 1) {
+      throw new Error("needed exactly one form (found " + evaled.result.length + ")");
+    }
     this._history.push(evaled);
     this.trigger("success", evaled);
   } catch(e) {
     obj = {
       'string': str,
-      'errormessage': e
+      'error': e
     };
     this._history.push(obj);
     this.trigger("error", obj);
