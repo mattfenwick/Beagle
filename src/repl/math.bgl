@@ -1,0 +1,9 @@
+
+(define sum
+  (lambda (nums)
+   (reduce + 0 nums)))
+
+
+(define -
+  (lambda (x y)
+   (+ x (neg y))))

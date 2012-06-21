@@ -1,15 +1,65 @@
 
+(define test-ok
+  (lambda (form message)
+   (if form
+       "ok"
+       message)))
+
+(define test-not-ok
+  (lambda (form message)
+   (if form
+       message
+       "ok")))
+
+
 (define not
   (lambda (x)
-    (if x false true)))
+   (if x false true)))
+
+(define not-test
+  (lambda ()
+   (test-ok
+    (and (= (not false)
+            true)
+         (= (not true)
+            false)))))
+
 
 (define and
   (lambda (x y)
     (if x y x)))
 
+(define and-test
+  (lambda ()
+   (test-ok
+    (all (list (and true true)
+               (not (and true false))
+               (not (and false true))
+               (not (and false false))))
+    "and-tests")))
+
 (define or 
   (lambda (x y)
     (if x x y)))
+       
+(define or-test
+  (lambda ()
+   (test-ok
+    (all (list (or true true)
+               (or true false)
+               (or false true)
+               (not (and false false))))
+    "or-tests")))
+
+
+(define compose
+  (lambda (f g)
+   (lambda (x)
+    (f (g x)))))
+
+(define compose-list 
+  (lambda (fs) 
+   (reduce compose id fs)))
 
 
 (define map
@@ -18,6 +68,18 @@
         (list)
         (cons (f (car xs))
               (map f (cdr xs))))))
+
+(define map-test
+  (lambda ()
+   (test-ok
+    (all 
+     (list (= (map id (list)) (list))
+           (= (map id (list 1 2 3)) (list 1 2 3))
+           (= (map (lambda (x) (cons 4 x))
+                   (list (list 1) (list) (list 3 4)))
+              (list (list 4 1) (list 4) (list 4 3 4)))))
+    "map-tests")))
+
 
 (define filter
   (lambda (f xs)
