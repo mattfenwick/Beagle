@@ -135,7 +135,8 @@ function getAtom(tokens) {
 //   throws an error if a properly 'balanced' list can't be found
 function getList(tokens) {
   var sexpr, 
-      elems = [];
+      elems = [],
+      inputTokens = tokens;
   
   // a list *has* to start with a '('
   if( tokens.length === 0 || tokens[0].type !== 'open' ) {
@@ -164,7 +165,7 @@ function getList(tokens) {
   }
   
   // uh-oh!  we didn't find a close-paren ...
-  throw new ParseError("'(' token found but matching ')' token was not found");
+  throw new ParseError("'(' token found but matching ')' token was not found", inputTokens);
 }
 
 
@@ -192,11 +193,20 @@ function getSExpression(tokens) {
 }
 
 
+function stripComments(tokens) {
+  function isNotComment(token) {
+    return token.type !== 'comment';
+  }
+  return tokens.filter(isNotComment);
+}
+
+
 // String -> Maybe [SExpression]
 //   returns false if, after all s-expressions are extracted,
 //   there are still tokens left in the token stream
 function parse(string) {
-  var tokens = tokenize(string),
+  var allTokens = tokenize(string),
+      tokens = stripComments(allTokens),
       sexprs = [],
       sexpr;
 	
@@ -208,7 +218,7 @@ function parse(string) {
   if( tokens.length !== 0 ) {
     throw new ParseError('unconsumed tokens remaining after parse', tokens);
   }
-	 
+
   return sexprs;
 }
 
@@ -222,6 +232,7 @@ return {
   'getList'        : getList,
   'getSExpression' : getSExpression,
   'nextToken'      : nextToken,
+  'stripComments'  : stripComments,
 
   'parse'          : parse,
   'tokenize'       : tokenize

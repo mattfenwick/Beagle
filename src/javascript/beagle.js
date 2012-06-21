@@ -20,10 +20,10 @@ function exec(str) {
       evaled = prims.map(evaler);
   
   return {
-	  'string': str,
-	  'result': evaled,
-	  'parsed': results,
-	  'primitives': prims
+    'string': str,
+    'result': evaled,
+    'parsed': results,
+    'primitives': prims
   };
 }
 

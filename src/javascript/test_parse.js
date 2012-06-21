@@ -90,7 +90,19 @@ function asJson(obj) {
 
       deepEqual([], lang.tokenize(s6));
 
-    });    
+    });
+
+    test("strip comments", function() {
+
+      var t1 = [Parse.Token('comment', 'abc'), Parse.Token('string', 'derrrr'), Parse.Token('open', '(')]; 
+
+      var t2 = Parse.stripComments(t1);
+
+      deepEqual(t2[0], Parse.Token('string', 'derrrr'), 'first element after stripping');
+
+      equal(2, t2.length, 'tokens left after stripping');
+
+    });  
 	  
 
     module("parse");
