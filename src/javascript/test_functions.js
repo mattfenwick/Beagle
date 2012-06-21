@@ -47,6 +47,17 @@ function testFunctions(funcs, data) {
       
     });
 
+    test("+", function() {
+
+      deepEqual(data.Number(14), funcs['+'](data.Number(18), data.Number(-4)), "18 + (-4) = 14");
+
+    });
+
+    test("neg", function() {
+      deepEqual(data.Number(3), funcs.neg(data.Number(-3)), "simple negation");
+      deepEqual(data.Number(-14), funcs.neg(funcs.neg(data.Number(-14))), "a number is its own double negative");
+    });
+
     test("equals", function() {
       
       var eq = funcs['='],

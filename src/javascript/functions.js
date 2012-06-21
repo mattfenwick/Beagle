@@ -59,39 +59,57 @@ function equalsList(lval, rval) {
 
 
 function equals(left, right) {
-	var ltype = left.type,
-	    rtype = right.type,
-	    lval = left.value,
-	    rval = right.value;
+  var ltype = left.type,
+      rtype = right.type,
+      lval = left.value,
+      rval = right.value;
 	
-	if( ltype !== rtype ) {
-		return Data.Nil();
-	}
+  if( ltype !== rtype ) {
+    return Data.Nil();
+  }
 	
-	if( ltype === 'function' || ltype === 'specialform' || ltype === 'nil' ) {
-		return Data.Nil();
-	}
+  if( ltype === 'function' || ltype === 'specialform' || ltype === 'nil' ) {
+    return Data.Nil();
+  }
 	
-	// should a 'nil' in a list cause the comparison to return a 'nil'?
-	// for now, we'll say ... no
-	if( ltype === 'list' ) {
-		return equalsList(lval, rval);
-	}
+  // should a 'nil' in a list cause the comparison to return a 'nil'?
+  // for now, we'll say ... no
+  if( ltype === 'list' ) {
+    return equalsList(lval, rval);
+  }
 	
-	if( ltype === 'number' || ltype === 'string' || ltype === 'symbol' || ltype === 'boolean' ) {
-		return Data.Boolean(lval === rval);
-	}
+  if( ltype === 'number' || ltype === 'string' || ltype === 'symbol' || ltype === 'boolean' ) {
+    return Data.Boolean(lval === rval);
+  }
 	
-	throw new Error("unrecognized type: " + ltype);
+  throw new Error("unrecognized type: " + ltype);
+}
+
+
+function plus(left, right) {
+  if( left.type !== 'number' || right.type !== 'number' ) {
+    throw new Error("primitive + requires two numbers (got " + left.type + ", " + right.type + ")");
+  }
+  return Data.Number(left.value + right.value);
+}
+
+
+function neg(num) {
+  if( num.type !== 'number' ) {
+    throw new Error("primitive 'neg' requires a number (got " + num.type + ")");
+  }
+  return Data.Number(-num.value);
 }
 
 
 return {
-  'cons': cons,
-  'car': car,
-  'cdr': cdr,
-  'list': list,
-  '=': equals
+  'cons' : cons,
+  'car'  : car,
+  'cdr'  : cdr,
+  'list' : list,
+  '='    : equals,
+  '+'    : plus,
+  'neg'  : neg
 };
 
 })(Data);
