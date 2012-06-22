@@ -216,15 +216,12 @@ function stripTokens(tokens) {
 }
 
 
-// String -> Maybe [SExpression]
-//   returns false if, after all s-expressions are extracted,
-//   there are still tokens left in the token stream
-function parse(string) {
-  var allTokens = tokenize(string),
-      tokens = stripTokens(allTokens),
-      sexprs = [],
+// assumes the tokens are of type 'string', 'symbol', 'open', and 'close'
+//   anything else should throw an exception
+function makeSExpressions(tokens) {
+  var sexprs = [],
       sexpr;
-	
+
   while( sexpr = getSExpression(tokens) ) {
     sexprs.push(sexpr.result);
     tokens = sexpr.rest;
@@ -239,18 +236,21 @@ function parse(string) {
 
 
 return {
-  'Token'          : function(t, v) {return new Token(t, v);},
-  'SExpression'    : function(t, v) {return new SExpression(t, v);},
-  'ParseError'     : function(m, v) {return new ParseError(m, v);},
+  // the data types
+  'Token'            : function(t, v) {return new Token(t, v);},
+  'SExpression'      : function(t, v) {return new SExpression(t, v);},
+  'ParseError'       : function(m, v) {return new ParseError(m, v);},
 
-  'getAtom'        : getAtom,
-  'getList'        : getList,
-  'getSExpression' : getSExpression,
-  'nextToken'      : nextToken,
-  'stripTokens'    : stripTokens,
+  // the helper functions (exported for testing)
+  'getAtom'          : getAtom,
+  'getList'          : getList,
+  'getSExpression'   : getSExpression,
+  'nextToken'        : nextToken,
 
-  'parse'          : parse,
-  'tokenize'       : tokenize
+  // the core public functionality
+  'stripTokens'      : stripTokens,
+  'tokenize'         : tokenize,
+  'makeSExpressions' : makeSExpressions
 };
 
 })();

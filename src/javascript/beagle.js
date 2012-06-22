@@ -14,8 +14,20 @@ function evaler(p) {
 }
 
 
+// String -> Maybe [SExpression]
+//   returns false if, after all s-expressions are extracted,
+//   there are still tokens left in the token stream
+function parseString(str) {
+  var allTokens = parse.tokenize(str),
+      tokens = parse.stripTokens(allTokens),
+      sexprs = parse.makeSExpressions(tokens);
+
+  return sexprs;
+}
+
+
 function exec(str) {
-  var results = parse.parse(str),
+  var results = parseString(str),
       prims = results.map(primMaker),
       evaled = prims.map(evaler);
   
@@ -30,7 +42,8 @@ function exec(str) {
 
 return {
   'exec'         :  exec,
-  'environment'  :  env
+  'environment'  :  env,
+  'parseString'  :  parseString
 };
 
 })(Parse, Evaluate);
