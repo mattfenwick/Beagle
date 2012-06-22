@@ -4,13 +4,13 @@ function testBeagle(beagle, data) {
     module("beagle");
     
     test("single expressions", function() {
-    	expect(4);
+    	expect(5);
 
       var e1 = " ( list ) ",
           e2 = "(cons 3 (list))",
           e3 = '(car (cdr (cons 1 (cons "blargh" (cons 3 (cons 4 (list)))))))',
           e4 = ' 3 ; this is a comment'
-          ;
+          e5 = '"abc"123';
 
       deepEqual([data.List([])], beagle.exec(e1).result);
 
@@ -19,6 +19,13 @@ function testBeagle(beagle, data) {
       deepEqual([data.String('blargh')], beagle.exec(e3).result);
 
       deepEqual([data.Number(3)], beagle.exec(e4).result);
+
+      var m = true;
+      try {
+        beagle.parseString(e5);
+        m = false;
+      } catch(e) {};
+      ok(m, 'strings and symbols must be separated by a space');
     });
     
     test("multiple expressions", function() {
