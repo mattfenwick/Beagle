@@ -1,4 +1,5 @@
 var Data = (function() {
+"use strict";
 
 function MyNumber(value) {
   this.value = value;

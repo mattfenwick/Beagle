@@ -1,5 +1,5 @@
-
 var Beagle = (function(parse, evaluate) {
+"use strict";
 
 var env = evaluate.getDefaultEnv();
 

@@ -1,4 +1,5 @@
 var Functions = (function(Data) {
+"use strict";
 
 function cons(elem, list) {
   if( list.type !== 'list' ) {

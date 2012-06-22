@@ -1,5 +1,5 @@
-
 var Evaluate = (function(Data, Functions) {
+"use strict";
 
 var INTEGER = /^\d+$/;
 
