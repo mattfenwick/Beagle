@@ -171,8 +171,12 @@ function asJson(obj) {
 
       var getVal = function (t) {return t.value;};
 
-      var o = lang.getList(t1);
-      equal(false, o, "list needs an open as well as a close");
+      var o = true;
+      try {
+        lang.getList(t1);
+        o = false;
+      } catch(e) {}
+      ok(o, "list needs an open as well as a close");
 
       var p = lang.getList(t2);
       deepEqual([], p.result.value);

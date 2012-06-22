@@ -138,14 +138,23 @@ function getAtom(tokens) {
 
 // [Token] -> Maybe SExpression
 //   returns false if tokens is empty or doesn't start with open
+//   throws an error if first token is a ')'
 //   throws an error if a properly 'balanced' list can't be found
 function getList(tokens) {
   var sexpr, 
       elems = [],
       inputTokens = tokens;
   
+  if( tokens.length === 0 ) {
+    return false;
+  }
+
+  if( tokens[0].type === 'close' ) {
+    throw new ParseError("')' token found without matching '('", inputTokens);
+  }
+
   // a list *has* to start with a '('
-  if( tokens.length === 0 || tokens[0].type !== 'open' ) {
+  if( tokens[0].type !== 'open' ) {
     return false;
   }
 
@@ -171,7 +180,7 @@ function getList(tokens) {
   }
   
   // uh-oh!  we didn't find a close-paren ...
-  throw new ParseError("'(' token found but matching ')' token was not found", inputTokens);
+  throw new ParseError("'(' token found without matching ')'", inputTokens);
 }
 
 
