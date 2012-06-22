@@ -19,7 +19,7 @@ Loosely using [BNF](http://en.wikipedia.org/wiki/Backus%E2%80%93Naur_Form):
 
     CLOSE:          ')'
 
-Also, comments are indicated by `;` (when not in a token) and extend to the end of the line.
+Also, comments are indicated by `;` (when not in a string) and extend to the end of the line.
 **I don't know how to represent comments in formal grammars.**
 
 
@@ -48,14 +48,35 @@ Also, comments are indicated by `;` (when not in a token) and extend to the end 
  - symbol
 
    - `[^;\"\(\)\s]+`
-   - any number of chars that are not whitespace, or `(` or `)` or `"` or `;`
+   - any positive number of chars that are not whitespace, or `(` or `)` or `"` or `;`
+
+ - whitespace
+
+   - `\s+`
+   - any positive number of whitespace chars
 
 
 
-## Whitespace ##
+## Whitespace requirements ##
 
- - required: between all consecutive strings and symbols
-    (note that this probably isn't yet implemented)
+ - required between these pairs of token:
+
+   - string and symbol
+ 
+   - string and string
+
+   - symbol and symbol
+
+   - symbol and string
+
+   - string and comment
+
+   - symbol and comment
+
+ - optional between all other pairs of non-whitespace tokens
+
+ - examples: `(2(` is fine because `(` is not a string or
+   a symbol, so the token sequence is `OPEN symbol OPEN`
 
    this is fine:
 
@@ -67,22 +88,22 @@ Also, comments are indicated by `;` (when not in a token) and extend to the end 
 
    because there's no whitespace between the string `"def"` and the symbol `1`
 
- - optional:  between an open or
-
-   note that it's okay to have `(2(` because `(` is not a string or
-   a symbol:  the token sequence is `OPEN symbol OPEN`
-
  - number of whitespace characters
 
-   - there is no difference between 1 and n whitespace characters
+   - there is no difference between 1 and n whitespace characters:  each counts
+     as a single whitespace token
+
+   - there cannot be two or more consecutive whitespace tokens because
+     the the first token begins at a ws char and ends at the next non-ws char
 
 
 
 ## Parsing stages ##
 
  1. tokenization
- 2. assembly of tokens to form the AST (s-expressions composed of lists and atoms)
- 3. AST analysis:  nodes are converted to Beagle values
+ 2. discarding of whitespace and comment tokens
+ 3. assembly of tokens to form the AST (s-expressions composed of lists and atoms)
+ 4. AST analysis:  nodes are converted to Beagle values
 
 
 
@@ -120,7 +141,7 @@ Also, comments are indicated by `;` (when not in a token) and extend to the end 
 
   - `nextToken`:  if a string is opened but not closed
   - `tokenize`:  if nextToken fails hard
-  - `getList`:  if a list is opened but not closed
+  - `getList`:  if a list is opened but not closed, or closed but not opened
   - `getSExpression`:  if getList fails hard
   - `parse`:  if nextToken or getSExpression fails hard (this covers the case where some but not all of the input is consumed, right?)
    
@@ -131,14 +152,32 @@ Also, comments are indicated by `;` (when not in a token) and extend to the end 
 
 
 
-## Public interface ##
+## Interface ##
 
-    Token       :: (data type)
-    SExpression :: (data type)
-    ParseError  :: (data type)
+ - helper functions
 
-    parse       :: String -> [SExpression]
-    tokenize    :: String -> [Token]
+   - getAtom 
 
-    ?? should have a public function for [Token] -> [SExpression]
+   - getList
+
+   - getSExpression
+
+   - nextToken
+
+ - the data types
+  
+   - Token
+
+   - SExpression
+
+   - ParseError
+
+ - core, public functions
+
+   - tokenize:  extract a list of tokens from a string
+
+   - stripTokens:  remove comment and whitespace tokens from a list of tokens
+   
+   - makeSExpressions:  assemble a list of tokens into s-expressions
+
 
