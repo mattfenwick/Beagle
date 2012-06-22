@@ -24,15 +24,16 @@ function asJson(obj) {
     module("tokenizer");
     
     test("nextToken", function() {
-    	expect(15);
+    	expect(16);
 
-      var open = "  ((duh",
+      var open = "((duh",
           close = ") what's going on",
-          symbol = " abc)(()",
-          number = " 12345 )",
+          symbol = "abc)(()",
+          number = "12345 )",
           empty = "",
-          str = ' "abc" ',
-          wsstr = ' "ab cd" f';
+          str = '"abc" ',
+          wsstr = '"ab cd" f',
+          semsym = 'wh;at';
 
       var o = lang.nextToken(open);
       equal('(', o.token.value);
@@ -58,15 +59,18 @@ function asJson(obj) {
       equal(false, p, "empty string");
       
       var q = lang.nextToken(str);
-      deepEqual([q.token.type, q.token.value, q.rest], ['string', 'abc', '']);
+      deepEqual({'token': lang.Token('string', 'abc'), 'rest': ' '}, q);
       
       var r = lang.nextToken(wsstr);
       deepEqual([r.token.type, r.token.value, r.rest], ['string', 'ab cd', " f"]);
+
+      var zz = lang.nextToken(semsym);
+      deepEqual(zz, {"rest": ";at", "token": lang.Token('symbol', 'wh')}, "symbols may not include ;'s");
     });
 
     test("tokenize", function() {
-      var s1 = "  (abc)",
-          s2 = "(((((((  ",
+      var s1 = "  \t\n \t(abc)",
+          s2 = "(((((((\n  ",
           s3 = "))) \t)\n(((",
           s4 = "abc123    abc(der)",
           s5 = "(+ 1 2 (+ 3 4 (+ 5 (/ 6 7))))",
@@ -74,16 +78,16 @@ function asJson(obj) {
 
       var getVal = function (t) {return t.value;};
 
-      deepEqual(["(", "abc", ")"], lang.tokenize(s1).map(getVal));
+      deepEqual(["  \t\n \t", "(", "abc", ")"], lang.tokenize(s1).map(getVal));
 
-      deepEqual(["(", "(", "(", "(", "(", "(", "("], lang.tokenize(s2).map(getVal));
+      deepEqual(["(", "(", "(", "(", "(", "(", "(", "\n  "], lang.tokenize(s2).map(getVal));
 
-      deepEqual([")", ")", ")", ")", "(", "(", "("], lang.tokenize(s3).map(getVal));
+      deepEqual([")", ")", ")", " \t", ")", "\n", "(", "(", "("], lang.tokenize(s3).map(getVal));
 
-      deepEqual(["abc123", "abc", "(", "der", ")"], lang.tokenize(s4).map(getVal));
+      deepEqual(["abc123", "    ", "abc", "(", "der", ")"], lang.tokenize(s4).map(getVal));
 
-      deepEqual(["(", "+", "1", "2", "(", "+", "3", "4",
-                 "(", "+", "5", "(", "/", "6", "7", ")",
+      deepEqual(["(", "+", " ", "1", " ", "2", " ", "(", "+", " ", "3", " ", "4", " ", 
+                 "(", "+", " ", "5", " ", "(", "/", " ", "6", " ", "7", ")",
                  ")", ")", ")"], 
           lang.tokenize(s5).map(getVal)
       );
@@ -92,11 +96,15 @@ function asJson(obj) {
 
     });
 
-    test("strip comments", function() {
+    test("strip comments and whitespace", function() {
 
-      var t1 = [Parse.Token('comment', 'abc'), Parse.Token('string', 'derrrr'), Parse.Token('open', '(')]; 
+      var t1 = [Parse.Token('comment', 'abc'), 
+                Parse.Token('string', 'derrrr'), 
+                Parse.Token('whitespace', '\t\n     \n'), 
+                Parse.Token('open', '(')
+      ]; 
 
-      var t2 = Parse.stripComments(t1);
+      var t2 = Parse.stripTokens(t1);
 
       deepEqual(t2[0], Parse.Token('string', 'derrrr'), 'first element after stripping');
 

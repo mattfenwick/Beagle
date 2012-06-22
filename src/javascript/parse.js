@@ -28,25 +28,31 @@ ParseError.prototype.toString = function() {
 }
 
 	
-var SYMBOL  = /^[^\s\(\)"]+/, /* not ws, (, ), or " */
-    OPEN    = "(",
-    CLOSE   = ")",
-    STRING  = /^"([^"]*)"/,
-    COMMENT = /^;+(.*)/; /* assumes that: 1) * is greedy; 2) . doesn't match \n */
+var SYMBOL     = /^[^;\s\(\)"]+/, /* not ;, whitespace, (, ), " */
+    OPEN       = "(",
+    CLOSE      = ")",
+    STRING     = /^"([^"]*)"/,
+    WHITESPACE = /^\s+/,
+    COMMENT    = /^;+(.*)/; /* assumes that: 1) * is greedy; 2) . doesn't match \n */
 
 
 // String -> Maybe (Token, String)
 //   where false is the "empty" value
 function nextToken(string) {
   var match;
-  
-  // throw away leading whitespace -> trim it (also removes trailing ws -- problem?)
-  string = string.trim();
 
-  // 1. empty string
+  // 0. empty string
   if( string === "" ) {
     return false;
   } 
+  
+  // 1. leading whitespace
+  if( match = string.match(WHITESPACE) ) {
+    return {
+      'token': new Token('whitespace', match[0]),
+      'rest': string.substring(match[0].length)
+    };
+  }
   
   // 2. first char is '('
   if( string[0] === OPEN ) {
@@ -193,11 +199,11 @@ function getSExpression(tokens) {
 }
 
 
-function stripComments(tokens) {
-  function isNotComment(token) {
-    return token.type !== 'comment';
+function stripTokens(tokens) {
+  function isNotCommentNorWS(token) {
+    return (token.type !== 'comment' && token.type !== 'whitespace');
   }
-  return tokens.filter(isNotComment);
+  return tokens.filter(isNotCommentNorWS);
 }
 
 
@@ -206,7 +212,7 @@ function stripComments(tokens) {
 //   there are still tokens left in the token stream
 function parse(string) {
   var allTokens = tokenize(string),
-      tokens = stripComments(allTokens),
+      tokens = stripTokens(allTokens),
       sexprs = [],
       sexpr;
 	
@@ -232,7 +238,7 @@ return {
   'getList'        : getList,
   'getSExpression' : getSExpression,
   'nextToken'      : nextToken,
-  'stripComments'  : stripComments,
+  'stripTokens'    : stripTokens,
 
   'parse'          : parse,
   'tokenize'       : tokenize
