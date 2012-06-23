@@ -7,9 +7,9 @@ Parsing Beagle
 
 There are two main steps, starting from the textual form of the code:
 
- - creating an abstract representation of the code
+ 1. creating an abstract representation of the code
 
- - executing or evaluating the representation to produce a result
+ 2. executing or evaluating the representation to produce a result
 
 This article will focus on the first.
 
@@ -17,8 +17,8 @@ This article will focus on the first.
 
 ### Parsing ###
 
-The goal of parsing is to take human input -- text -- 
-and transform it into input the computer understands.  (although computers can produce code too)
+The goal of parsing is to take human- or computer-generated input text -- 
+and transform it into something the computer understands.
 
 There are 2 or 3 major steps to this:
 
@@ -31,6 +31,15 @@ There are 2 or 3 major steps to this:
 So if you're creating a parser, what do you need to do?  You need to define your tokens,
 decide which tokens are important to you, and define how your tokens are assembled to
 build complicated phrases and expressions in your language.
+
+We'll look at two examples throughout this article:
+
+    (define x 4)
+
+and
+
+    (cons 4      ; add an element
+      (list 5))  ; to this list
 
 
 
@@ -63,9 +72,43 @@ we see `BeagleCode`, which is composed of one or more SExpressions.
 
 
 
-## The code ##
+## Examples and the code ##
 
-### Lexing ###
+### Stage 1: Lexing ###
+
+Just a quick reminder:  the input for lexing is a string, and the output is a list
+of tokens.  So we'll expect these tokens from the first example:
+
+    ["(", "define", " ", "x", " ", "4", ")"]
+
+that's 7 tokens -- notice that we're keeping whitespace as a token (for now).  We
+can always throw it away later.  And for the second example, try and figure out for
+yourself how many tokens there are.
+
+Did you make a guess?
+
+[
+ {type:"whitespace", value:"    "}, 
+ {type:"open", value:"("}, 
+ {type:"symbol", value:"cons"}, 
+ {type:"whitespace", value:" "}, 
+ {type:"symbol", value:"4"}, 
+ {type:"whitespace", value:"      "}, 
+ {type:"comment", value:" add an element"}, 
+ {type:"whitespace", value:"\n      "}, 
+ {type:"open", value:"("}, 
+ {type:"symbol", value:"list"}, 
+ {type:"whitespace", value:" "}, 
+ {type:"symbol", value:"5"}, 
+ {type:"close", value:")"}, 
+ {type:"close", value:")"}, 
+ {type:"whitespace", value:"  "}, 
+ {type:"comment", value:" to this list"}
+]
+
+There are 16 tokens!  6 whitespace, 2 comments, 2 opens, 2 closes, and 4 symbols.
+
+Here's the main chunk of code that tokenizes a string:
 
     function nextToken(string) {
       var match;
@@ -132,8 +175,78 @@ we see `BeagleCode`, which is composed of one or more SExpressions.
       throw new ParseError("unexpected tokenizer error:  no tokens match string", string);
     }
 
+That's called in a loop that basically says to "keep giving me tokens until you find
+the end of the string".  
 
-### Parsing ###
+`nextToken` works by successively trying to match the string to each type of token; 
+when one succeeds, it splits a chunk of the string off into the token, and returns
+the Token along with the rest of the string that wasn't consumed.  Just in case none
+of the token types match (which won't happen in theory but will in practice!), `nextToken`
+throws up its hands in despair and makes a helpful error message.
+
+
+### Stage 2: get rid of unwanted tokens ###
+
+We don't need the comments or the whitespace for parsing -- although they would be
+useful to a tool that generates web-based documentation from a source code file, for
+instance.  But since we just want to run the code, we can throw them away.
+
+So now our tokens are:
+
+    ["(", "define", "x", "4", ")"]
+
+down to 5 tokens for the first example, and 8 for the second: 
+
+[
+ {type:"open", value:"("}, 
+ {type:"symbol", value:"cons"}, 
+ {type:"symbol", value:"4"}, 
+ {type:"open", value:"("}, 
+ {type:"symbol", value:"list"}, 
+ {type:"symbol", value:"5"}, 
+ {type:"close", value:")"}, 
+ {type:"close", value:")"}, 
+]
+
+this is the code that does that:
+
+    function stripTokens(tokens) {
+      function isNotCommentNorWS(token) {
+        return (token.type !== 'comment' && token.type !== 'whitespace');
+      }
+      return tokens.filter(isNotCommentNorWS);
+    }
+
+
+
+### Stage 3: Parsing ###
+
+In this step, we assemble the tokens into s-expressions (lists and atoms).
+
+    {
+      type:"list", 
+      value:[
+        {type:"symbol", value:"define"}, 
+        {type:"symbol", value:"x"}, 
+        {type:"symbol", value:"4"}
+      ]
+    }
+
+and for the second example:
+
+    {
+      type:"list", 
+      value:[
+        {type:"symbol", value:"cons"},
+        {type:"symbol", value:"4"},
+        {type:"list",
+         value:[
+            {type:"symbol", value:"list"}, 
+            {type:"symbol", value:"5"}
+         ]
+        }
+      ]
+    }
 
 We saw in the grammar that an SExpression is an atom or a list.
 So here's what that looks like in code:
@@ -166,6 +279,17 @@ Then we try to find an atom; if that succeeds we return it.
 If that fails, we try to find a list; if that succeeds we return it.
 If we can't find a list, then we assume that something unexpected happened
 and throw an error with a (hopefully) meaningful error message.
+
+
+
+### Dealing with faulty input ###
+
+ - error-detection
+
+ - error messages
+
+ - error-tolerance
+
 
 
 ### Summary ###
