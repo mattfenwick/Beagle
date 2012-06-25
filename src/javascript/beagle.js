@@ -14,13 +14,24 @@ function evaler(p) {
 }
 
 
-// String -> Maybe [SExpression]
-//   returns false if, after all s-expressions are extracted,
-//   there are still tokens left in the token stream
+// String -> [SExpression]
+//   returns a list of s-expressions,
+//   throws if strings and symbols aren't properly separated
+//   throws if there are still tokens left in the token stream
 function parseString(str) {
   var allTokens = parse.tokenize(str),
-      tokens = parse.stripTokens(allTokens),
-      sexprs = parse.makeSExpressions(tokens);
+      tokens,
+      sexprs;
+  
+  // throws an exception if any problems found
+  parse.checkTokenSeparation(allTokens);
+
+  // otherwise keep going if tokens are fine
+  // remove whitespace and comment tokens
+  tokens = parse.stripTokens(allTokens);
+
+  // throws an exception if anything weird in 'tokens'
+  sexprs = parse.makeSExpressions(tokens);
 
   return sexprs;
 }

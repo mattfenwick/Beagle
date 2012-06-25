@@ -234,4 +234,31 @@ function asJson(obj) {
       ok(w, "missing CLOSE in deeply nested list");
     });
 
+    test("check token separation", function() {
+
+      var tokens = [lang.Token('symbol', 'abc'), lang.Token('comment', 'nope'),
+                    lang.Token('whitespace', '   '), lang.Token('open', '('),
+                    lang.Token('close', ')'), lang.Token('string', 'hahaha')];
+
+      var types = {'string': 1, 'symbol': 1};
+
+      var i, j, passed, myTokens;
+      for(i = 0; i < tokens.length; i++) {
+        for(j = 0; j < tokens.length; j++) {
+          passed = true;
+          try {
+            myTokens = [tokens[i], tokens[j]];
+            lang.checkTokenSeparation(myTokens);
+            passed = true;
+          } catch(e) {
+            passed = false;
+          };
+          if( types[tokens[i].type] && types[tokens[j].type] ) {
+            ok(!passed, 'consecutive strings/symbols throws an exception');
+          } else {
+            ok(passed, "no problem for tokens " + JSON.stringify(myTokens));
+          }
+        }
+      }
+    });
 }

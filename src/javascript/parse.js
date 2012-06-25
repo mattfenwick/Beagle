@@ -235,6 +235,27 @@ function makeSExpressions(tokens) {
 }
 
 
+// [Token] -> void
+//   - returns nothing if no problems
+//   - throws a SyntaxError 
+//      if a (string or symbol) is immediately followed
+//      by another string or symbol
+function checkTokenSeparation(tokens) {
+  var i, type1, type2;
+  for( i = 0; i < tokens.length - 1; i++ ) {
+    type1 = tokens[i].type;
+    type2 = tokens[i + 1].type;
+    if( type1 === 'string' || type1 === 'symbol' ) {
+      if( type2 === 'string' || type2 === 'symbol' ) {
+        throw new ParseError("found consecutive string/symbol tokens", tokens.slice(i, i + 2));
+      }
+      // good to go
+    }
+    // good to go
+  }
+}
+
+
 return {
   // the data types
   'Token'            : function(t, v) {return new Token(t, v);},
@@ -248,9 +269,10 @@ return {
   'nextToken'        : nextToken,
 
   // the core public functionality
-  'stripTokens'      : stripTokens,
-  'tokenize'         : tokenize,
-  'makeSExpressions' : makeSExpressions
+  'tokenize'             : tokenize,
+  'stripTokens'          : stripTokens,
+  'checkTokenSeparation' : checkTokenSeparation,
+  'makeSExpressions'     : makeSExpressions
 };
 
 })();
