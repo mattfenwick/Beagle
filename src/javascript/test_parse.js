@@ -2,25 +2,6 @@
 function testParse(lang) {
 
 
-function asJson(obj) {
-  var out;
-  if( typeof(obj) === 'object' && obj.length !== undefined ) {
-    out = [];
-    for(var i = 0; i < obj.length; i++) {
-      out.push(asJson(obj[i]));
-    }
-  } else if( typeof(obj) === 'object' ) {
-    out = {};
-    for(var key in obj) {
-      out[key] = asJson(obj[key]);
-    }
-  } else { // it's a number/string
-    out = obj;
-  }
-  return out;
-}
-
-
     module("tokenizer");
     
     test("nextToken", function() {
@@ -167,40 +148,49 @@ function asJson(obj) {
     
     test("getAtom", function() {
 
-      var t1 = [{'type': 'open', 'value': "("}, {'type': 'symbol', 'value': "duh"}],
-          t2 = [{'type': 'symbol', 'value': "123abc"}, 
-                {'type': 'open', 'value': "("},
-                {'type': 'symbol', 'value': 'barf'}
+      var open = lang.Token('open', '('),
+          close = lang.Token('close', ')');
+
+      var t1 = [open, lang.Token('symbol', "duh")],
+          t2 = [
+            lang.Token('symbol', "123abc"), 
+            open,
+            lang.Token('symbol', 'barf')
           ],
-          t3 = [
-            {'type': 'close', 'value': ")"}, 
-            "abc", 
-            {'type': 'open', 'value': "("}
-          ],
-          t4 = [],
-          com = [{'type': 'comment', 'value': 'blargh'}],
-          str = [{'type': 'string', 'value': 'me!'}];
+          t3 = [close, "abc", open],
+          com = [lang.Token('comment', 'blargh')],
+          str = [lang.Token('string', 'me!')],
+          ws = [lang.Token('whitespace', '\n \t')];
 
       var o = lang.getAtom(t1);
-      equal(false, o, "( is not an atom");
+      equal(false, o, "'(' is not an atom");
+      
+      equal(false, lang.getAtom(t3), " ... nor is ')' ...");
+      
+      equal(false, lang.getAtom(com), " ... nor is a comment ...");
+      
+      equal(false, lang.getAtom(ws), " ... nor is whitespace");
 
       var p = lang.getAtom(t2);
-      equal("123abc", p.result.value, "symbols are atoms");
-      deepEqual(t2.slice(1), p.rest, "rest of token stream");
+      deepEqual({
+        'result': lang.SExpression('symbol', "123abc"), 
+        'rest': t2.slice(1)
+      }, p, "however, symbols ARE atoms ...");
 
-      var q = lang.getAtom(t3);
-      equal(false, q, ") is not an atom");
-      
-      equal(false, lang.getAtom(t4), "no atom in empty list");
+      var z = lang.getAtom(str);
+      deepEqual({
+        'result': lang.SExpression('string', 'me!'),
+        'rest': []
+      }, z, "... and so are strings");
+                  
+      equal(false, lang.getAtom([]), "and don't forget:  there's no atoms in an empty list");
 
-      equal(false, lang.getAtom(com), "comments are not atoms");
-
-      var z = lang.getAtom(str).result;
-      deepEqual(str[0], {'type': z.type, 'value': z.value}, "strings are atoms");
     });
 
+
+
     test("getList", function() {
-      expect(13);
+      expect(11);
       function m(t) {
           var o = {'value': t};
           if( t === '(' )      {o.type = 'open'; }
@@ -209,80 +199,87 @@ function asJson(obj) {
           return o;
       }
 
-      var t1 = [")"].map(m),
-          t2 = ["(", ")"].map(m),
-          t3 = ["(", "abc", ")", "def"].map(m),
-          t4 = ["(", "1", "(", "+", ")", "2", ")", "(", "rest!"].map(m),
-          t5 = ["abc"].map(m),
-          t6 = [],
+      var t0 = [],
+          t1 = ["("].map(m),
+          t2 = [")"].map(m),
+          t3 = ["(", ")"].map(m),
+          t4 = ["abc"].map(m),
+          t5 = ["(", "abc", ")", "def"].map(m),
+          t6 = ["(", "1", "(", "+", ")", "2", ")", "(", "rest!"].map(m),
           t7 = ["(", "abc", "(", "-", ")", "ohnoes"].map(m),
           t8 = ["(", "(", "(", "(", ")", ")", ")", ")", "12345"].map(m),
           t9 = ["(", "(", "(", "(", ")", ")", ")"].map(m);
 
-      var getVal = function (t) {return t.value;};
 
-      var o = true;
+      var t = lang.getList(t0);
+      equal(false, t, "trying to get a list from an empty token stream returns false ... ");
+
+      var a = true;
       try {
         lang.getList(t1);
-        o = false;
+        a = false;
       } catch(e) {}
-      ok(o, "list needs an open as well as a close");
+      ok(a, "... while a '(' without a matching ')' throws an error,");
 
-      var p = lang.getList(t2);
-      deepEqual([], p.result.value);
-      equal("list", p.result.type);
+      var b = true;
+      try {
+        lang.getList(t2);
+        b = false;
+      } catch(e) {}
+      ok(b, "and a leading ')' also throws an error");
 
-      var q = lang.getList(t3),
-          q1 = q.result.value[0];
-      deepEqual({'type': 'symbol', 'value': 'abc'}, {'type': q1.type, 'value': q1.value});
-      deepEqual(["def"], q.rest.map(getVal));
+      var p = lang.getList(t3);
+      deepEqual({
+        result: lang.SExpression('list', []),
+        rest: []
+      }, p, "() is parsed as an empty list");
 
-      var r = lang.getList(t4),
-          r1 = r.result.value;
-// [{'type': 'symbol', 'value': "1"}, ["+"], "2"]
-      deepEqual(['list', 'symbol', 'list', 'symbol'], [r.result.type, r1[0].type, r1[1].type, r1[1].value[0].type]);
-      deepEqual(["(", "rest!"].map(m), r.rest);
+      var s = lang.getList(t4);
+      equal(false, s, "you can't get a list from a symbol ...");
+      
+      equal(false, lang.getList(['"123"', '+'].map(m)), " ... or from a string");
 
-      var s = lang.getList(t5);
-      equal(false, s, "can't get list from symbol");
+      var q = lang.getList(t5);
+      deepEqual({
+        'result': lang.SExpression('list', [lang.SExpression('symbol', 'abc')]), 
+        'rest':  t5.slice(3)
+      }, q, "a list extends from the opening '(' to the next ')', unless ...");
 
-      var t = lang.getList(t6);
-      equal(false, t, "can't get list from empty token stream");
+      var r = lang.getList(t6);
+      deepEqual({
+        'result': lang.SExpression('list', [
+            lang.SExpression('symbol', '1'),
+            lang.SExpression('list', [lang.SExpression('symbol', '+')]),
+            lang.SExpression('symbol', '2')
+        ]),
+        'rest': t6.slice(7)
+      }, r, "... it has a nested list, in which case it extends to its 'balancing' ')'");
 
       var u = true;
       try {
         lang.getList(t7);
         u = false;
-      } catch(e) {
-      };
-      ok(u, "can't get list if missing close-paren");
+      } catch(e) {};
+      ok(u, "therefore: a missing 'balancing' ')' throws an error");
       
       var v = lang.getList(t8);
       deepEqual({
-          "type": "list",
-          "value": [{
-              "type": "list",
-              "value": [{
-                  "type": "list",
-                  "value": [{
-                      "type": "list",
-                      "value": []
-                    }
-                  ]
-                }
-              ]
-            }
-          ]
-        }, asJson(v.result));
-      deepEqual([{'type': 'symbol', 'value': "12345"}], v.rest, "rest of deeply nested list");
+        'result': lang.SExpression('list',
+          [lang.SExpression('list',
+            [lang.SExpression('list',
+              [lang.SExpression('list', [])])])]),
+        'rest': t8.slice(8)
+      }, v, "lists may be arbitrarily deeply nested ...");
       
       var w = true;
       try {
         lang.getList(t9);
         w = false;
       } catch(e) {};
-      ok(w, "missing CLOSE in deeply nested list");
+      ok(w, "... as long as the parentheses match");
     });
+    
+    
 
     test("check token separation", function() {
 
