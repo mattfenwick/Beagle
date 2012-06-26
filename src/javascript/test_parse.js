@@ -24,7 +24,7 @@ function asJson(obj) {
     module("tokenizer");
     
     test("nextToken", function() {
-    	expect(16);
+    	expect(10);
 
       var open = "((duh",
           close = ") what's going on",
@@ -33,40 +33,66 @@ function asJson(obj) {
           empty = "",
           str = '"abc" ',
           wsstr = '"ab cd" f',
-          semsym = 'wh;at';
-
-      var o = lang.nextToken(open);
-      equal('(', o.token.value);
-      equal('open', o.token.type);
-      equal('(duh', o.rest);
-
-      var c = lang.nextToken(close);
-      equal(')', c.token.value);
-      equal('close', c.token.type);
-      equal(" what's going on", c.rest);
-
-      var s = lang.nextToken(symbol);
-      equal('abc', s.token.value);
-      equal('symbol', s.token.type);
-      equal(')(()', s.rest);
-
-      var n = lang.nextToken(number);
-      equal('12345', n.token.value);
-      equal('symbol', n.token.type);
-      equal(' )', n.rest);
+          semsym = 'wh;at',
+          comm = '; this is\nhi',
+          ws = '\n\thello\n';
 
       var p = lang.nextToken(empty);
-      equal(false, p, "empty string");
+      ok(p === false, "empty string:  no token found, false returned");
+
+      var o = lang.nextToken(open);
+      deepEqual({
+        'rest': '(duh', 
+        'token': lang.Token('open', '(')
+      }, o, "single '(': open token");
+
+      var c = lang.nextToken(close);
+      deepEqual({
+        'rest': " what's going on",
+        'token': lang.Token('close', ')')
+      }, c, "single ')': close token");
+
+      var s = lang.nextToken(symbol);
+      deepEqual({
+        'rest': ')(()',
+        'token': lang.Token('symbol', 'abc')
+      }, s, "all letters:  symbol token");
+
+      var n = lang.nextToken(number);
+      deepEqual({
+        'rest': ' )',
+        'token': lang.Token('symbol', '12345')
+      }, n, "all numbers:  symbol token");
       
       var q = lang.nextToken(str);
-      deepEqual({'token': lang.Token('string', 'abc'), 'rest': ' '}, q);
+      deepEqual({
+        'token': lang.Token('string', 'abc'), 
+        'rest': ' '
+      }, q, 'enclosed in " marks:  string token');
       
       var r = lang.nextToken(wsstr);
-      deepEqual([r.token.type, r.token.value, r.rest], ['string', 'ab cd', " f"]);
+      deepEqual({
+        'token': lang.Token('string', 'ab cd'),
+        'rest': ' f'
+      }, r, 'string tokens can contain whitespace');
 
       var zz = lang.nextToken(semsym);
-      deepEqual(zz, {"rest": ";at", "token": lang.Token('symbol', 'wh')}, "symbols may not include ;'s");
+      deepEqual({
+        "rest": ";at", 
+        "token": lang.Token('symbol', 'wh')
+      }, zz, "symbols may not include ;'s");
+      
+      deepEqual({
+        'rest': '\nhi',
+        'token': lang.Token('comment', ' this is')
+      }, lang.nextToken(comm), "comments begin with a ; and end at the next newline (\\n)");
+      
+      deepEqual({
+        'rest': 'hello\n',
+        'token': lang.Token('whitespace', '\n\t')
+      }, lang.nextToken(ws), "whitespace (\\s in a regex) is also a token");
     });
+    
 
     test("tokenize", function() {
       var s1 = "  \t\n \t(abc)",
