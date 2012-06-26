@@ -38,6 +38,7 @@ var SYMBOL     = /^[^;\s\(\)"]+/, /* not ;, whitespace, (, ), " */
 
 // String -> Maybe (Token, String)
 //   where false is the "empty" value
+//   throws a ParseError if a string is started but not stopped
 function nextToken(string) {
   var match;
 

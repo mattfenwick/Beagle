@@ -24,7 +24,7 @@ function asJson(obj) {
     module("tokenizer");
     
     test("nextToken", function() {
-    	expect(10);
+    	expect(11);
 
       var open = "((duh",
           close = ") what's going on",
@@ -35,7 +35,8 @@ function asJson(obj) {
           wsstr = '"ab cd" f',
           semsym = 'wh;at',
           comm = '; this is\nhi',
-          ws = '\n\thello\n';
+          ws = '\n\thello\n',
+          badstring = '"abc';
 
       var p = lang.nextToken(empty);
       ok(p === false, "empty string:  no token found, false returned");
@@ -91,6 +92,13 @@ function asJson(obj) {
         'rest': 'hello\n',
         'token': lang.Token('whitespace', '\n\t')
       }, lang.nextToken(ws), "whitespace (\\s in a regex) is also a token");
+      
+      var bsb = true;
+      try {
+        lang.nextToken(badstring);
+        bsb = false;
+      } catch(e) {};
+      ok(bsb, 'a " (start string) without a matching " (close string) throws an exception');
     });
     
 
@@ -99,42 +107,58 @@ function asJson(obj) {
           s2 = "(((((((\n  ",
           s3 = "))) \t)\n(((",
           s4 = "abc123    abc(der)",
-          s5 = "(+ 1 2 (+ 3 4 (+ 5 (/ 6 7))))",
+          s5 = "(+ 1 1 (+ 1 1 (+ 1 (+ 1 1))))",
           s6 = "";
 
-      var getVal = function (t) {return t.value;};
+      deepEqual([
+        lang.Token('whitespace', "  \t\n \t"), 
+        lang.Token('open', "("), 
+        lang.Token('symbol', "abc"),
+        lang.Token('close', ")")
+      ], lang.tokenize(s1), "all consecutive whitespace is collapsed into a single token");
 
-      deepEqual(["  \t\n \t", "(", "abc", ")"], lang.tokenize(s1).map(getVal));
+      var open = lang.Token('open', "(");
+      deepEqual([
+        open, open, open, open, open, open, open, lang.Token('whitespace', "\n  ")
+      ], lang.tokenize(s2), "adjacent '('s are separate tokens");
 
-      deepEqual(["(", "(", "(", "(", "(", "(", "(", "\n  "], lang.tokenize(s2).map(getVal));
+      var close = lang.Token('close', ')');
+      deepEqual([
+        close, close, close, lang.Token('whitespace', " \t"), close, lang.Token('whitespace', "\n"), open, open, open
+      ], lang.tokenize(s3), "lots of ')'s, '('s, and whitespace");
 
-      deepEqual([")", ")", ")", " \t", ")", "\n", "(", "(", "("], lang.tokenize(s3).map(getVal));
+      deepEqual([
+        lang.Token('symbol', "abc123"), lang.Token('whitespace', "    "), 
+        lang.Token('symbol', "abc"), open, lang.Token('symbol', "der"), close
+      ], lang.tokenize(s4), "symbols are terminated by '(' and ')'");
 
-      deepEqual(["abc123", "    ", "abc", "(", "der", ")"], lang.tokenize(s4).map(getVal));
+      var o = lang.Token('symbol', '1'),
+          p = lang.Token('symbol', '+'),
+          s = lang.Token('whitespace', ' ');
+      deepEqual([
+        open, p, s, o, s, o, s, open, p, s, o, s, o, s, 
+        open, p, s, o, s, open, p, s, o, s, o, close,
+        close, close, close
+      ], lang.tokenize(s5), "lots of nested lists");
 
-      deepEqual(["(", "+", " ", "1", " ", "2", " ", "(", "+", " ", "3", " ", "4", " ", 
-                 "(", "+", " ", "5", " ", "(", "/", " ", "6", " ", "7", ")",
-                 ")", ")", ")"], 
-          lang.tokenize(s5).map(getVal)
-      );
-
-      deepEqual([], lang.tokenize(s6));
+      deepEqual([], lang.tokenize(s6), "an empty string yields an empty list");
 
     });
+    
 
     test("strip comments and whitespace", function() {
 
-      var t1 = [Parse.Token('comment', 'abc'), 
-                Parse.Token('string', 'derrrr'), 
-                Parse.Token('whitespace', '\t\n     \n'), 
-                Parse.Token('open', '(')
+      var t1 = [
+        lang.Token('comment', 'abc'), 
+        lang.Token('string', 'derrrr'), 
+        lang.Token('whitespace', '\t\n     \n'), 
+        lang.Token('open', '('),
+        lang.Token('whitespace', '   \t\t\t\n\t')
       ]; 
 
-      var t2 = Parse.stripTokens(t1);
+      var t2 = lang.stripTokens(t1);
 
-      deepEqual(t2[0], Parse.Token('string', 'derrrr'), 'first element after stripping');
-
-      equal(2, t2.length, 'tokens left after stripping');
+      deepEqual([t1[1], t1[3]], t2, 'all whitespace and comment tokens are discarded by stripping');
 
     });  
 	  
