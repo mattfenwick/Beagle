@@ -108,72 +108,6 @@ Did you make a guess?
 
 There are 16 tokens!  6 whitespace, 2 comments, 2 opens, 2 closes, and 4 symbols.
 
-Here's the main chunk of code that tokenizes a string:
-
-    function nextToken(string) {
-      var match;
-    
-      // 0. empty string
-      if( string === "" ) {
-        return false;
-      } 
-      
-      // 1. leading whitespace
-      if( match = string.match(WHITESPACE) ) {
-        return {
-          'token': new Token('whitespace', match[0]),
-          'rest': string.substring(match[0].length)
-        };
-      }
-      
-      // 2. first char is '('
-      if( string[0] === OPEN ) {
-        return {
-          'token': new Token('open', string[0]),
-          'rest' : string.substring(1)
-        };
-      } 
-    
-      // 3. first char is ')'
-      if( string[0] === CLOSE ) {
-        return {
-          'token': new Token('close', string[0]),
-          'rest' : string.substring(1)
-        };
-      } 
-    
-      // 4. comment
-      if( match = string.match(COMMENT) ) {
-        return {
-          'token': new Token('comment', match[1]),
-          'rest' : string.substring(match[0].length)
-        };
-      }
-    
-      // 5. string
-      if( string[0] === '"' ) {
-        match = string.match(STRING);
-        if( match ) {
-          return {
-            'token': new Token('string', match[1]),
-            'rest': string.substring(match[0].length)
-          };
-        } else {
-          throw new ParseError("tokenizer error: end-of-string (\") not found", string);
-        }
-      }
-      
-      // 6. symbol
-      match = string.match(SYMBOL);
-      if( match ) {
-        return {
-          'token': new Token('symbol', match[0]),
-          'rest' : string.substring(match[0].length)
-        };
-      }
-    
-      throw new ParseError("unexpected tokenizer error:  no tokens match string", string);
-    }
 
 That's called in a loop that basically says to "keep giving me tokens until you find
 the end of the string".  
@@ -210,12 +144,6 @@ down to 5 tokens for the first example, and 8 for the second:
 
 this is the code that does that:
 
-    function stripTokens(tokens) {
-      function isNotCommentNorWS(token) {
-        return (token.type !== 'comment' && token.type !== 'whitespace');
-      }
-      return tokens.filter(isNotCommentNorWS);
-    }
 
 
 
@@ -249,36 +177,6 @@ and for the second example:
     }
 
 We saw in the grammar that an SExpression is an atom or a list.
-So here's what that looks like in code:
-
-    function getSExpression(tokens) {
-      var sexpr;
-    
-      if( tokens.length === 0 ) {
-        return false;
-      }
-    
-      // an s-expression is either a symbol
-      sexpr = getAtom(tokens);
-      if( sexpr ) {
-        return sexpr;
-      }
-      
-      // or a list
-      sexpr = getList(tokens);
-      if( sexpr ) {
-        return sexpr;
-      }
-    
-      // no other possibilities
-      throw new ParseError("unexpected error:  couldn't find s-expression and token stream was not empty", tokens);
-    }
-
-First, if the token stream is empty we abort.
-Then we try to find an atom; if that succeeds we return it.
-If that fails, we try to find a list; if that succeeds we return it.
-If we can't find a list, then we assume that something unexpected happened
-and throw an error with a (hopefully) meaningful error message.
 
 
 
