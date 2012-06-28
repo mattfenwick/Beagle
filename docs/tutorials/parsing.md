@@ -1,186 +1,176 @@
 
-Parsing Beagle
+Parsing Beagle: part 1
 ==============
 --------------
 
-### Executing code ###
+### What is Beagle? ###
 
-There are two main steps, starting from the textual form of the code:
+Beagle is a simple dialect of Lisp.  It is hosted on Github
+[here](https://github.com/mattfenwick/Beagle).
 
- 1. creating an abstract representation of the code
+Lisps are very easy to parse, due to their use of parentheses.
+Parentheses are possibly both the most popular -- because of its uniformity --
+and most hated -- because of its ugliness -- feature of Lisp, and
+definitely the most visually distinctive!
 
- 2. executing or evaluating the representation to produce a result
+Parsing is often seen as a black art, involving heavy-duty parser generators,
+complicated BNF grammars, abstract syntax trees, symbol tables ....
 
-This article will focus on the first.
+Much of this is due to the fact that most programming languages have 
+very difficult syntax.
 
+My goal in writing this article is to give a clear, practical, and useful
+explanation for how to build a parser.  Using a Lisp as an example language
+helps keep the discussion simple without creating a need to resort to 
+hand-waving.
 
-
-### Parsing ###
-
-The goal of parsing is to take human- or computer-generated input text -- 
-and transform it into something the computer understands.
-
-There are 2 or 3 major steps to this:
-
- 1. lexing:  converting the input string into tokens
-
- 2. throwing away tokens such as whitespace and comments
-
- 3. parsing:  assembling the tokens to form phrases
-
-So if you're creating a parser, what do you need to do?  You need to define your tokens,
-decide which tokens are important to you, and define how your tokens are assembled to
-build complicated phrases and expressions in your language.
-
-We'll look at two examples throughout this article:
-
-    (define x 4)
-
-and
-
-    (cons 4      ; add an element
-      (list 5))  ; to this list
+Thus, in this article, we'll see the basic steps for how to transform a string
+of characters into an abstract, executable representation of code.
 
 
 
-### Grammar ###
+### Parsing overview ###
 
-Let's take a look at Beagle's grammar, loosely using BNF:
+The goal of parsing is to transform human- or computer-generated input text -- 
+into something the computer can understand and execute.
+
+This is often broken down into 3 main steps:
+
+ 1. lexing (AKA tokenization or scanning):  convert an input string into tokens.  
+
+ 2. throw away tokens such as whitespace and comments that do not
+    contribute to the executable code
+
+ 3. syntactic analysis:  assemble the tokens to form phrases and sentences
+
+For the rest of this article, we'll use this simple example to demonstrate
+import concepts:
+
+    (define x "hi")
+
+
+
+### Stage 1: Lexing ###
+
+Here are Beagle's token definitions:
+
+    STRING:         "[^\"]*"
+
+    SYMBOL:         [^;\"\(\)\s]+
+
+    OPEN:           (
+
+    CLOSE:          )
+
+    WHITESPACE:     /^\s+/
+
+    COMMENT:        /^;+(.*)/
+
+*(We'll write token names in all caps to distinguish them).*
+
+Now, just a quick reminder:  the input for lexing is a string, and the output is a list
+of tokens.  So, using the above token definitions, we'll go through the string
+`(define x 4)` and match the text to individual tokens.
+
+As it happens, there are 7 tokens:
+
+    ['(', 'define', ' ', 'x', ' ', '"hi"', ')']
+
+But how do we get that answer?
+
+1. the first character is `(` -- this matches the `OPEN` token
+
+2. the next characters -- `define` -- aren't semicolons, open or close parentheses,
+   or whitespace, and so they match the `SYMBOL` token
+
+3. a single space matches `WHITESPACE`
+
+4. `x` is a `SYMBOL` token (see 2. for explanation)
+
+5. `WHITESPACE` (see 3.)
+
+6. if it starts with a `"` mark, it must be a `STRING` token
+
+7. a `)` is a CLOSE
+
+Note that our answer is unique -- when I created the token definitions, I tried
+to make sure that there was never any possibility for ambiguity when tokenizing
+a string.
+
+
+
+### Stage 2: get rid of unwanted tokens ###
+
+We don't need the comments or the whitespace for syntac analysis (although they would be
+useful to a tool that generates web-based documentation from a source code file, for
+instance), so let's get rid of them, leaving us with these tokens:
+
+    ["(", "define", "x", "4", ")"]
+
+
+
+### Stage 3: Syntactic analysis ### 
+
+In this step, we assemble the tokens according to our grammar, which is:
 
     BeagleCode:     SExpression(+)
 
     SExpression:    Atom  |  List
 
-    Atom:           String  |  Symbol
-
-    String:         "[^\"]*"
-
-    Symbol:         [^;\"\(\)\s]+
-
     List:           OPEN  SExpression(*)  CLOSE
 
-    OPEN:           '('
+    Atom:           STRING  |  SYMBOL
 
-    CLOSE:          ')'
+*(Remember that tokens are in all caps -- these productions have only leading caps).*
 
-*(+ means one or more; * means 0 or more; | means 'or'; whitespace means 'and')*
+Basically, the grammar says that Beagle code is a bunch of s-expressions,
+and that s-expressions can be atoms or lists.  An atom is either a string or a 
+symbol, and a list is an open-paren and a close-paren surrounding any number
+of s-expressions (so the grammar is recursive).
 
-So we see tokens:  String, Symbol, OPEN, and CLOSE (there are also two more tokens
-missing, comment and whitespace).
-Then we see more complicated productions such as Atom, List, and SExpression.  Finally,
-we see `BeagleCode`, which is composed of one or more SExpressions.
+We can match this grammar to our tokens using a strategy called "recursive descent".
+Let's try it ourselves:
 
+    1. try BeagleCode
+     2. try SExpression
+      3. try Atom
+       4. try STRING ... failed
+       5. try SYMBOL ... failed
+      6. try List
+       7. try OPEN ... succeeded (matched `(`)
+       8. try SExpression
+        9. try Atom
+         10. try STRING ... failed
+         11. try SYMBOL ... succeeded (matched `define`)
+       12. try SExpression
+        13. try ATOM
+         14. try STRING ... failed
+         15. try SYMBOL ... succeeded (matched `x`)
+       16. try SExpression
+        17. try ATOM
+         18. try STRING ... succeeded (matched `hi`)
+       19. try SExpression
+        20. try ATOM
+         21. try STRING ... failed
+         22. try SYMBOL ... failed
+        21. try LIST
+         23. try OPEN ... failed
+       24. try CLOSE ... succeeded (matched `)`)
+      <matched List>
+     <matched SExpression>
+    <matched BeagleCode> 
 
+Cool, it worked!  Our parse tree now looks like: 
 
-## Examples and the code ##
-
-### Stage 1: Lexing ###
-
-Just a quick reminder:  the input for lexing is a string, and the output is a list
-of tokens.  So we'll expect these tokens from the first example:
-
-    ["(", "define", " ", "x", " ", "4", ")"]
-
-that's 7 tokens -- notice that we're keeping whitespace as a token (for now).  We
-can always throw it away later.  And for the second example, try and figure out for
-yourself how many tokens there are.
-
-Did you make a guess?
-
-[
- {type:"whitespace", value:"    "}, 
- {type:"open", value:"("}, 
- {type:"symbol", value:"cons"}, 
- {type:"whitespace", value:" "}, 
- {type:"symbol", value:"4"}, 
- {type:"whitespace", value:"      "}, 
- {type:"comment", value:" add an element"}, 
- {type:"whitespace", value:"\n      "}, 
- {type:"open", value:"("}, 
- {type:"symbol", value:"list"}, 
- {type:"whitespace", value:" "}, 
- {type:"symbol", value:"5"}, 
- {type:"close", value:")"}, 
- {type:"close", value:")"}, 
- {type:"whitespace", value:"  "}, 
- {type:"comment", value:" to this list"}
-]
-
-There are 16 tokens!  6 whitespace, 2 comments, 2 opens, 2 closes, and 4 symbols.
-
-
-That's called in a loop that basically says to "keep giving me tokens until you find
-the end of the string".  
-
-`nextToken` works by successively trying to match the string to each type of token; 
-when one succeeds, it splits a chunk of the string off into the token, and returns
-the Token along with the rest of the string that wasn't consumed.  Just in case none
-of the token types match (which won't happen in theory but will in practice!), `nextToken`
-throws up its hands in despair and makes a helpful error message.
-
-
-### Stage 2: get rid of unwanted tokens ###
-
-We don't need the comments or the whitespace for parsing -- although they would be
-useful to a tool that generates web-based documentation from a source code file, for
-instance.  But since we just want to run the code, we can throw them away.
-
-So now our tokens are:
-
-    ["(", "define", "x", "4", ")"]
-
-down to 5 tokens for the first example, and 8 for the second: 
-
-[
- {type:"open", value:"("}, 
- {type:"symbol", value:"cons"}, 
- {type:"symbol", value:"4"}, 
- {type:"open", value:"("}, 
- {type:"symbol", value:"list"}, 
- {type:"symbol", value:"5"}, 
- {type:"close", value:")"}, 
- {type:"close", value:")"}, 
-]
-
-this is the code that does that:
-
-
-
-
-### Stage 3: Parsing ###
-
-In this step, we assemble the tokens into s-expressions (lists and atoms).
-
-    {
-      type:"list", 
-      value:[
-        {type:"symbol", value:"define"}, 
-        {type:"symbol", value:"x"}, 
-        {type:"symbol", value:"4"}
-      ]
-    }
-
-and for the second example:
-
-    {
-      type:"list", 
-      value:[
-        {type:"symbol", value:"cons"},
-        {type:"symbol", value:"4"},
-        {type:"list",
-         value:[
-            {type:"symbol", value:"list"}, 
-            {type:"symbol", value:"5"}
-         ]
-        }
-      ]
-    }
-
-We saw in the grammar that an SExpression is an atom or a list.
-
+    list: 
+      symbol: define 
+      symbol: x 
+      string: hi
 
 
 ### Dealing with faulty input ###
+
+Real-world (read: useful) parsers will have to deal with problems such as:
 
  - error-detection
 
@@ -188,31 +178,21 @@ We saw in the grammar that an SExpression is an atom or a list.
 
  - error-tolerance
 
+I've heard it said that dealing with errors accounts for ~80% of the code in
+typical projects, and indeed, this is no exception, so let's skip it. :)
+
 
 
 ### Summary ###
 
-What did we do?
+What did we do?  We saw that parsing can be split into:
 
- - we saw how to tokenize a string, using regular expressions
+ - tokenizing a string, using regular expressions
 
- - we saw how to discard uninteresting tokens
+ - discarding uninteresting tokens
 
- - we saw how to assemble tokens into complicated data structures -- s-expressions
+ - assembling tokens into a parse tree, using a grammar
 
-These are the basics of creating parsers.
-The code is relatively small and simple for Beagle, because Lisp is extremely easy to
-parse.  Languages such as Javascript, Python, and C have much more complicated syntax
-but the basics are the same.
+These are the basics of parsing.  Extending the examples to parse Javascript will
+be left as an exercise for the reader!
 
-Classification questions:  
-
- - is this top-down or bottom-up?  (I believe it's recursive descent, so top-down)
-
- - Is this context-free or context-sensitive?  (context-free ??)
-
- - Is this LL or LR? (I think it's LL(1))
-
- - backtracking? (no?)
-
- - deterministic?  ambiguous?  (yes & no?)
