@@ -116,9 +116,11 @@ function displayEnv(envi) {
   });
   
   evaler.bind("success", function(obj) {
+        
+//    $("#env").text(JSON.stringify(env));
     displayEnv(env);
     $("#lastsexpr").text(JSON.stringify(obj.parsed));
-    $("#lastprims").text(JSON.stringify(obj.primitives) + "<br />" + JSON.stringify(obj.result[0]));
+    $("#lastprims").text(JSON.stringify(obj.primitives));
     $("#expr").val("");
   });
 
