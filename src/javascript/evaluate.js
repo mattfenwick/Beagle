@@ -60,7 +60,7 @@ function myif(env, condition, ifTrue, ifFalse) {
   var cond = evaluate(condition, env);
 
   if( cond.type !== 'boolean' ) {
-    throw new Error("if needs a boolean as first argument");
+    throw new Error("if needs a boolean as first argument (got " + cond.type + ")");
   }
 
   if( cond.value ) {
@@ -73,7 +73,7 @@ function myif(env, condition, ifTrue, ifFalse) {
 
 function lambda(env, args, body) {
   if( args.type !== 'list' ) {
-    throw new Error("lambda requires a list as first argument");
+    throw new Error("lambda requires a list as first argument (got " + args.type + ")");
   }
   
   var names = [],
@@ -82,7 +82,7 @@ function lambda(env, args, body) {
   for(i = 0; i < args.value.length; i++) {
     sym = args.value[i];
     if( sym.type !== 'symbol' ) {
-      throw new Error("all parameter names in lambda must be symbols");
+      throw new Error("all parameter names in lambda must be symbols (got " + JSON.stringify(args.value) + ")");
     }
     names.push(sym);
   }
@@ -90,10 +90,12 @@ function lambda(env, args, body) {
   function closure() {
       var ln = names.length,
           la = arguments.length,
-          newEnv = new Env(env, {});
+          newEnv = new Env(env, {}),
+          q = arguments;
 
       if( ln !== la ) {
-          throw new Error("length of parameter list of lambda does not match arguments list: " + ln + " vs " + la);
+          throw new Error("length of parameter list of lambda does not match arguments list: " + 
+        		  ln + " vs " + la + ", and " + JSON.stringify(names) + " vs " + JSON.stringify([q[0], q[1], q[2], '...']));
       }
 
       for(var j = 0; j < names.length; j++) {
@@ -106,6 +108,57 @@ function lambda(env, args, body) {
   
   // could create a new data type (closure) later if desired
   return Data.Function(closure);
+}
+
+
+function quote(env, sexpr) {
+  return sexpr;
+}
+
+
+function special(env, args, body) {
+  if( args.type !== 'list' ) {
+    throw new Error("special requires a list as first argument");
+  }
+  
+  var names = [],
+      i, sym;
+      
+  for(i = 0; i < args.value.length; i++) {
+    sym = args.value[i];
+    if( sym.type !== 'symbol' ) {
+      throw new Error("all parameter names in special must be symbols");
+    }
+    names.push(sym);
+  }
+
+  function form() {
+	  // remember that special forms also get passed the environment
+      var ln = names.length,
+          la = arguments.length - 1,
+          newEnv = new Env(env, {}),
+          q = arguments;
+
+      if( ln !== la ) {
+          throw new Error("length of parameter list of special does not match arguments list: " + 
+        		  ln + " vs " + la + ", and " + JSON.stringify(names) + " vs " + JSON.stringify([q[0], q[1], q[2], '...']));
+      }
+
+      for(var j = 0; j < names.length; j++) {
+          // arguments NOT already evaluated
+          newEnv.addBinding(names[j].value, arguments[j + 1]);
+      }
+
+      return evaluate(body, newEnv);
+  }
+
+  return Data.SpecialForm(form);
+}
+
+
+function beagleEval(env, sexpr) {
+	var arg = evaluate(sexpr, env);
+	return evaluate(arg, env);
 }
 
 
@@ -164,6 +217,9 @@ function getDefaultEnv() {
   bindings['define'] = Data.SpecialForm(define);
   bindings['if']     = Data.SpecialForm(myif);
   bindings['lambda'] = Data.SpecialForm(lambda);
+  bindings['quote']  = Data.SpecialForm(quote);
+  bindings['special'] = Data.SpecialForm(special);
+  bindings['eval']   = Data.SpecialForm(beagleEval);
 
   bindings['true']   = Data.Boolean(true);
   bindings['false']  = Data.Boolean(false);
