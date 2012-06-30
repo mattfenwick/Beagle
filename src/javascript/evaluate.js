@@ -1,49 +1,6 @@
 var Evaluate = (function (Data, Functions, Environment) {
     "use strict";
 
-    var INTEGER = /^\d+$/;
-
-    var FLOAT = /^(?:\d*\.\d+|\d+\.\d*)$/;
-
-    function makePrimitives(sexpr) {
-        var i, value, elems;
-
-        if (sexpr.type === 'list') {
-            elems = [];
-
-            for (i = 0; i < sexpr.value.length; i++) {
-                elems.push(makePrimitives(sexpr.value[i]));
-            }
-
-            return Data.List(elems);
-        }
-
-        if (sexpr.type === "string") {
-            return Data.String(sexpr.value);
-        }
-
-        if (sexpr.type === 'symbol') {
-            if (value = sexpr.value.match(INTEGER)) {
-                return Data.Number(Number(value[0]));
-            }
-
-            if (value = sexpr.value.match(FLOAT)) {
-                return Data.Number(Number(value[0]));
-            }
-
-            if (sexpr.value.length > 0) {
-                return Data.Symbol(sexpr.value);
-            }
-
-            // empty string is an error
-            throw new Error("can't extract primitive:  empty value");
-        }
-
-        throw new Error("unrecognized s-expression type: " + sexpr.type);
-    }
-
-
-
     //////// Special forms
 
     function define(env, name, sexpr) {
@@ -208,7 +165,6 @@ var Evaluate = (function (Data, Functions, Environment) {
 
 
     return {
-        'makePrimitives': makePrimitives,
         'eval': evaluate,
         'getDefaultEnv': getDefaultEnv,
         'Environment': function (parent, bindings) {

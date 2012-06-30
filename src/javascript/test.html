@@ -9,12 +9,14 @@
   <script type="text/javascript" src="parse.js"></script>
   <script type="text/javascript" src="environment.js"></script>
   <script type="text/javascript" src="data.js"></script>
+  <script type="text/javascript" src="reify.js"></script>
   <script type="text/javascript" src="functions.js"></script>
   <script type="text/javascript" src="evaluate.js"></script>
   <script type="text/javascript" src="beagle.js"></script>
   
   <script type="text/javascript" src="test_parse.js"></script>
   <script type="text/javascript" src="test_environment.js"></script>
+  <script type="text/javascript" src="test_reify.js"></script>
   <script type="text/javascript" src="test_functions.js"></script>
   <script type="text/javascript" src="test_evaluate.js"></script>
   <script type="text/javascript" src="test_beagle.js"></script>
@@ -27,6 +29,8 @@
     testParse(Parse);
 
     testEnvironment(Environment);
+
+    testReify(Reify, Data);
 	
     testFunctions(Functions, Data);
 	

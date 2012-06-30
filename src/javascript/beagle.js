@@ -1,11 +1,11 @@
-var Beagle = (function (parse, evaluate) {
+var Beagle = (function (parse, evaluate, reify) {
     "use strict";
 
     var env = evaluate.getDefaultEnv();
 
 
     function primMaker(sexpr) {
-        return evaluate.makePrimitives(sexpr);
+        return reify.makePrimitives(sexpr);
     }
 
 
@@ -56,4 +56,4 @@ var Beagle = (function (parse, evaluate) {
         'parseString': parseString
     };
 
-})(Parse, Evaluate);
+})(Parse, Evaluate, Reify);
