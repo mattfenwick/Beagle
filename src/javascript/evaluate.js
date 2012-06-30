@@ -79,6 +79,7 @@ function lambda(env, args, body) {
   var names = [],
       i, sym;
       
+  // get the list of arguments
   for(i = 0; i < args.value.length; i++) {
     sym = args.value[i];
     if( sym.type !== 'symbol' ) {
@@ -87,6 +88,11 @@ function lambda(env, args, body) {
     names.push(sym);
   }
 
+  // create the closure,
+  //   which stores a reference to the environment,
+  //   and when evaluated, creates a new environment
+  //   and puts its arguments in the environment
+  //   then it evaluates its body in the new environment
   function closure() {
       var ln = names.length,
           la = arguments.length,
@@ -184,26 +190,17 @@ function specialapply(f, env, args) {
 }
 
 
-function evaluate(sexpr, env) {
-  var first, 
-      args,
-      func,
-      evaledArgs;
-      
-  if( !env || !sexpr ) {
-    throw new Error("evaluate missing sexpr or environment");
-  }
-      
-  if( sexpr.type === 'list' ) {
+function evaluateList(sexpr, env) {
     // what if it's empty?
     if( !sexpr.value[0] ) {
       throw new Error("cannot evaluate empty list");
     }
-    
-    first = evaluate(sexpr.value[0], env);
-    func = first.value;
-    args = sexpr.value.slice(1);
-    
+
+    var first = evaluate(sexpr.value[0], env), 
+        args = sexpr.value.slice(1),
+        func = first.value,
+        evaledArgs;
+        
     if( first.type === 'function' ) {  
 
       evaledArgs = args.map(function(a) {
@@ -217,9 +214,11 @@ function evaluate(sexpr, env) {
       return specialapply(func, env, args);
     }
 
-    throw new Error("first element in list must be function or special form (was " + first.type + ")");    
-  }
-  
+    throw new Error("first element in list must be function or special form (was " + first.type + ")");
+}
+
+
+function evaluateAtom(sexpr, env) {
   if ( sexpr.type === 'symbol' ) {
     if( env.hasBinding(sexpr.value) ) { // uh ... has own property?
       return env.getBinding(sexpr.value);
@@ -233,6 +232,19 @@ function evaluate(sexpr, env) {
   } 
 
   throw new Error("unrecognized type: " + sexpr.type + " in " + JSON.stringify(sexpr));
+}
+
+
+function evaluate(sexpr, env) {      
+  if( !env || !sexpr ) {
+    throw new Error("evaluate missing sexpr or environment");
+  }
+      
+  if( sexpr.type === 'list' ) {
+    return evaluateList(sexpr, env);
+  }
+  
+  return evaluateAtom(sexpr, env);
 }
 
 
