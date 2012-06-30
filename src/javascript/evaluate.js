@@ -1,4 +1,4 @@
-var Evaluate = (function (Data, Functions) {
+var Evaluate = (function (Data, Functions, Environment) {
     "use strict";
 
     var INTEGER = /^\d+$/;
@@ -96,7 +96,7 @@ var Evaluate = (function (Data, Functions) {
         function closure() {
             var ln = names.length,
                 la = arguments.length,
-                newEnv = new Env(env, {});
+                newEnv = Environment.Environment(env, {});
 
             if (ln !== la) {
                 throw new Error("length of parameter list of lambda does not match arguments list: " + ln + " vs " + la);
@@ -117,48 +117,6 @@ var Evaluate = (function (Data, Functions) {
 
     ///////////
 
-
-    function Env(parent, bindings) {
-        this._parent = parent;
-        this._bindings = bindings;
-    }
-
-
-    Env.prototype.hasOwnBinding = function (name) {
-        return this._bindings.hasOwnProperty(name);
-    }
-
-
-    Env.prototype.hasBinding = function (name) {
-        if (this.hasOwnBinding(name)) {
-            return true;
-        }
-        if (this._parent) {
-            return this._parent.hasBinding(name);
-        }
-        return false;
-    }
-
-
-    Env.prototype.addBinding = function (name, value) {
-        if (this.hasOwnBinding(name)) {
-            throw new Error("environment already has binding for " + name);
-        }
-        this._bindings[name] = value;
-    }
-
-
-    Env.prototype.getBinding = function (name) {
-        if (this.hasOwnBinding(name)) {
-            return this._bindings[name];
-        }
-        if (this._parent) {
-            return this._parent.getBinding(name);
-        }
-        throw new Error("could not find value for " + name);
-    }
-
-
     function getDefaultEnv() {
         var bindings = {},
             funcNames = ['cons', 'car', 'cdr', 'list', '=', '+', 'neg'];
@@ -168,16 +126,16 @@ var Evaluate = (function (Data, Functions) {
         });
 
         bindings['define'] = Data.SpecialForm(define);
-        bindings['if'] = Data.SpecialForm(myif);
+        bindings['if']     = Data.SpecialForm(myif);
         bindings['lambda'] = Data.SpecialForm(lambda);
 
-        bindings['true'] = Data.Boolean(true);
+        bindings['true']  = Data.Boolean(true);
         bindings['false'] = Data.Boolean(false);
 
-        return new Env(null, bindings);
+        return Environment.Environment(null, bindings);
     }
 
-
+    ////////////
 
 
     function myapply(f, args) {
@@ -259,4 +217,4 @@ var Evaluate = (function (Data, Functions) {
         'define': define
     };
 
-})(Data, Functions);
+})(Data, Functions, Environment);
