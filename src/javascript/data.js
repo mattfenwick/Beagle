@@ -1,63 +1,79 @@
-var Data = (function() {
-"use strict";
+var Data = (function () {
+    "use strict";
 
-function MyNumber(value) {
-  this.value = value;
-  this.type = 'number';
-}
-
-
-function MyString(value) {
-  this.value = value;
-  this.type = 'string';
-}
+    function MyNumber(value) {
+        this.value = value;
+        this.type = 'number';
+    }
 
 
-function Symbol(value) {
-  this.value = value;
-  this.type = 'symbol';
-}
+    function MyString(value) {
+        this.value = value;
+        this.type = 'string';
+    }
 
 
-function List(value) {
-  this.value = value;
-  this.type = 'list';
-}
+    function Symbol(value) {
+        this.value = value;
+        this.type = 'symbol';
+    }
 
 
-function MyFunction(value) {
-  this.value = value;
-  this.type = 'function';
-}
+    function List(value) {
+        this.value = value;
+        this.type = 'list';
+    }
 
 
-function Nil() {
-  this.value = false;
-  this.type = 'nil';
-}
+    function MyFunction(value) {
+        this.value = value;
+        this.type = 'function';
+    }
 
 
-function SpecialForm(value) {
-  this.value = value;
-  this.type = 'specialform';
-}
+    function Nil() {
+        this.value = false;
+        this.type = 'nil';
+    }
 
 
-function MyBoolean(value) {
-  this.value = value;
-  this.type = 'boolean';
-}
+    function SpecialForm(value) {
+        this.value = value;
+        this.type = 'specialform';
+    }
 
 
-return {
-  'Number'         : function(x) {return new MyNumber(x)},
-  'String'         : function(x) {return new MyString(x)},
-  'Function'       : function(x) {return new MyFunction(x)},
-  'List'           : function(x) {return new List(x)},
-  'Symbol'         : function(x) {return new Symbol(x)},
-  'Nil'            : function()  {return new Nil()},
-  'SpecialForm'    : function(x) {return new SpecialForm(x);},
-  'Boolean'        : function(x) {return new MyBoolean(x);}
-};
+    function MyBoolean(value) {
+        this.value = value;
+        this.type = 'boolean';
+    }
+
+
+    return {
+        'Number': function (x) {
+            return new MyNumber(x)
+        },
+        'String': function (x) {
+            return new MyString(x)
+        },
+        'Function': function (x) {
+            return new MyFunction(x)
+        },
+        'List': function (x) {
+            return new List(x)
+        },
+        'Symbol': function (x) {
+            return new Symbol(x)
+        },
+        'Nil': function () {
+            return new Nil()
+        },
+        'SpecialForm': function (x) {
+            return new SpecialForm(x);
+        },
+        'Boolean': function (x) {
+            return new MyBoolean(x);
+        }
+    };
 
 })();
