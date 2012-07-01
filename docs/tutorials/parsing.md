@@ -36,7 +36,7 @@ into something the computer can understand and execute.
 
 This is often broken down into 3 main steps:
 
- 1. lexing (AKA tokenization or scanning):  convert an input string into tokens.  
+ 1. lexing (AKA tokenization or scanning):  convert an input string into tokens
 
  2. throw away tokens such as whitespace and comments that do not
     contribute to the executable code

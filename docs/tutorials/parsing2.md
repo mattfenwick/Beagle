@@ -5,22 +5,45 @@ Parsing Beagle:  the code
 
 ### Review:  Parsing ###
 
-There are two main steps, starting from the textual form of the code:
+In the first part of this article, we covered the basic strategy of parsing:
 
- 1. creating an abstract representation of the code
+  1. tokenizing a string
 
- 2. executing or evaluating the representation to produce a result
+  2. inspecting the Tokens, and removing some such as whitespace and comments
 
-This article will focus on the code that implements the first.
-
-
-### Stage 1: Lexing ###
-
-Just a quick reminder:  the input for lexing is a string, and the output is a list
-of tokens.  So we'll expect these tokens from the first example:
+  3. assembling the tokens into a parse tree
 
 
-Here's the main chunk of code that tokenizes a string:
+Also, at each stage, appropriate error checking and handling actions must be taken.
+
+
+### Stage 1: Tokenization ###
+
+Tokenization, also known as lexing, is the process of breaking a string into 
+tokens, which are the syntactic atoms of a programming language. *(As mentioned in Part 1, 
+Beagle defines 6 tokens: whitespace, comment, open, close, string, and symbol)*.
+
+So we need a function of type `String -> [Token]`:
+
+    function tokenize(string) {
+        var tokens = [],
+            next;
+        while (next = nextToken(string)) {
+            tokens.push(next.token);
+            string = next.rest;
+        }
+        return tokens;
+    }
+
+This function loops through the input, extracting tokens, until the input is empty.  Note that 
+whenever a token is found, not only is the token itself returned (`next.token`), but also the
+rest of the string after the token (`next.rest`).
+
+Of course, `tokenize` depends on `nextToken :: String -> Maybe TokenRest`.  `nextToken`, given 
+a string, needs to extract the next token and also return the rest of the string that the token
+didn't consume.  It also has to do something sane if the string is empty (`return false;`).  It
+doesn't expect to not be able to find a token -- if this happens and the string isn't empty, it
+freaks out and throws an exception (this is assumed to be a bug if this happens).
 
     function nextToken(string) {
       var match;
@@ -87,23 +110,15 @@ Here's the main chunk of code that tokenizes a string:
       throw new ParseError("unexpected tokenizer error:  no tokens match string", string);
     }
 
-That's called in a loop that basically says to "keep giving me tokens until you find
-the end of the string".  
-
-`nextToken` works by successively trying to match the string to each type of token; 
-when one succeeds, it splits a chunk of the string off into the token, and returns
-the Token along with the rest of the string that wasn't consumed.  Just in case none
-of the token types match (which won't happen in theory but will in practice!), `nextToken`
-throws up its hands in despair and makes a helpful error message.
+Basically, `nextToken` just tries to match the beginning of the string to each of the
+different token definitions in succession, and returns the match and the rest of the
+string when it finds one that works.
 
 
 ### Stage 2: get rid of unwanted tokens ###
 
-We don't need the comments or the whitespace for parsing -- although they would be
-useful to a tool that generates web-based documentation from a source code file, for
-instance.  But since we just want to run the code, we can throw them away.
-
-this is the code that does that:
+Getting rid of whitespace and comment tokens is easy, especially since Javascript
+arrays have a `filter :: [a] -> (a -> Boolean) -> [a]` method:
 
     function stripTokens(tokens) {
       function isNotCommentNorWS(token) {
@@ -114,102 +129,141 @@ this is the code that does that:
 
 
 
-### Stage 3: Parsing ###
+### Stage 3: Syntactic analysis ###
 
-In this step, we assemble the tokens into s-expressions (lists and atoms).
+In this stage, we have to assemble our tokens into a parse tree.  We'll call the result an
+s-expression.
 
-    {
-      type:"list", 
-      value:[
-        {type:"symbol", value:"define"}, 
-        {type:"symbol", value:"x"}, 
-        {type:"symbol", value:"4"}
-      ]
-    }
+One of the great things about Lisp is its simple syntax:  s-expressions are either atoms,
+which are strings and symbols, or lists, which are composed of s-expressions surrounded
+by `(` and `)`.
 
-and for the second example:
-
-    {
-      type:"list", 
-      value:[
-        {type:"symbol", value:"cons"},
-        {type:"symbol", value:"4"},
-        {type:"list",
-         value:[
-            {type:"symbol", value:"list"}, 
-            {type:"symbol", value:"5"}
-         ]
-        }
-      ]
-    }
-
-We saw in the grammar that an SExpression is an atom or a list.
-So here's what that looks like in code:
+So given a token stream, we can extract either an atom or a list; given appropriate 
+definitions of `getAtom` and `getList`, this is what `getSExpression :: Maybe [Token] -> SExpression`
+looks like:
 
     function getSExpression(tokens) {
-      var sexpr;
-    
-      if( tokens.length === 0 ) {
-        return false;
-      }
-    
-      // an s-expression is either a symbol
-      sexpr = getAtom(tokens);
-      if( sexpr ) {
-        return sexpr;
-      }
-      
-      // or a list
-      sexpr = getList(tokens);
-      if( sexpr ) {
-        return sexpr;
-      }
-    
-      // no other possibilities
-      throw new ParseError("unexpected error:  couldn't find s-expression and token stream was not empty", tokens);
+        var sexpr;
+
+        if (tokens.length === 0) {
+            return false;
+        }
+
+        // an s-expression is either an atom
+        sexpr = getAtom(tokens);
+        if (sexpr) {
+            return sexpr;
+        }
+
+        // or a list
+        sexpr = getList(tokens);
+        if (sexpr) {
+            return sexpr;
+        }
+
+        // no other possibilities
+        throw new ParseError("unexpected error: couldn't find s-expression and token stream was not empty", tokens);
     }
 
-First, if the token stream is empty we abort.
-Then we try to find an atom; if that succeeds we return it.
-If that fails, we try to find a list; if that succeeds we return it.
-If we can't find a list, then we assume that something unexpected happened
-and throw an error with a (hopefully) meaningful error message.
+Note the boundary condition:  if the token stream is empty, clearly we can't find an
+s-expression.  Then we try to extract an atom; if that doesn't work, we try to extract
+a list.  Then there's a sanity check:  if we made a mistake in the implementation,
+and somehow don't find *anything*, we'll get a nice exception instead of a silent
+failure.
 
+So how is `getAtom` implemented?
 
+    // [Token] -> Maybe SExpression
+    // returns false if token stream is empty or first token is NOT a symbol or string
+    function getAtom(tokens) {
+        if (tokens.length === 0) {
+            return false;
+        }
 
-### Dealing with faulty input ###
+        var first = tokens[0];
 
- - error-detection
+        if (first.type === 'symbol' || first.type === 'string') {
+            return {
+                result: new SExpression(first.type, first.value),
+                rest: tokens.slice(1)
+            };
+        }
 
- - error messages
+        return false;
+    }
 
- - error-tolerance
+`getAtom` succeeds if it finds a symbol or a string as the next token, 
+otherwise it returns false.
 
+And here's `getList`:
+
+    // [Token] -> Maybe SExpression
+    // returns false if tokens is empty or doesn't start with open
+    // throws an error if first token is a ')'
+    // throws an error if a properly 'balanced' list can't be found
+    function getList(tokens) {
+        var sexpr, elems = [],
+            inputTokens = tokens;
+
+        if (tokens.length === 0) {
+            return false;
+        }
+
+        if (tokens[0].type === 'close') {
+            throw new ParseError("')' token found without matching '('", inputTokens);
+        }
+
+        // a list *has* to start with a '('
+        if (tokens[0].type !== 'open') {
+            return false;
+        }
+
+        tokens = tokens.slice(1);
+
+        // keep going until a ')'
+        while (tokens[0] && (tokens[0].type !== 'close')) {
+            // a list could have as many nested lists or atoms as it pleased
+            sexpr = getSExpression(tokens);
+            if (!sexpr) {
+                return false;
+            }
+            elems.push(sexpr.result);
+            tokens = sexpr.rest;
+        }
+
+        // a list needs a close-paren
+        if (tokens[0] && tokens[0].type === 'close') {
+            return {
+                result: new SExpression('list', elems),
+                rest: tokens.slice(1)
+            };
+        }
+
+        // uh-oh! we didn't find a close-paren ...
+        throw new ParseError("'(' token found without matching ')'", inputTokens);
+    }
+
+That's more complicated because it has to check lots of error conditions and generate
+helpful error message if it does detect any problems:
+
+ - a leading `)` would mean unbalanced parentheses
+
+ - empty input, or input that doesn't start with `(`, isn't a list
+
+ - we have to find a `)` somewhere ... if not, this would also be unbalanced!
+
+Besides all the error-handling, the main body of `getList` churns through the tokens,
+finding more s-expressions until it hits a close-paren.
+ 
 
 
 ### Summary ###
 
-What did we do?
+Vanilla recursive-descent parsers of simple languages are relatively straightforward
+to code.  You just have to be clear and unambiguous in your token and parse tree
+definitions, and write a lot of code for dealing with errors.
 
- - we saw how to tokenize a string, using regular expressions
-
- - we saw how to discard uninteresting tokens
-
- - we saw how to assemble tokens into complicated data structures -- s-expressions
-
-These are the basics of creating parsers.
-The code is relatively small and simple for Beagle, because Lisp is extremely easy to
-parse.  Languages such as Javascript, Python, and C have much more complicated syntax
-but the basics are the same.
-
-Classification questions:  
-
- - is this top-down or bottom-up?  (I believe it's recursive descent, so top-down)
-
- - Is this context-free or context-sensitive?  (context-free ??)
-
- - Is this LL or LR? (I think it's LL(1))
-
- - backtracking? (no?)
-
- - deterministic?  ambiguous?  (yes & no?)
+Once you've written a parser or two, you may come to realize that most of the code 
+deals with error checking.  Check out a parser generator or a parser combinator 
+library, which allows you to specify your grammar and generates most of the plumbing
+for you!
