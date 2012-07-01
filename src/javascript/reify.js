@@ -6,6 +6,8 @@ var Reify = (function(Data) {
 
 
     function reifySymbol(sexpr) {
+        var value;
+
         if (value = sexpr.value.match(INTEGER)) {
             return Data.Number(Number(value[0]));
         }
@@ -23,15 +25,15 @@ var Reify = (function(Data) {
     }
 
 
+    // SExpression -> BeagleObject
+    //   where the BeagleObject is either a List, String, Symbol, or Number
     function makePrimitives(sexpr) {
         var i, value, elems;
 
         if (sexpr.type === 'list') {
-            elems = [];
-
-            for (i = 0; i < sexpr.value.length; i++) {
-                elems.push(makePrimitives(sexpr.value[i]));
-            }
+            elems = sexpr.value.map(function(s) {
+                return makePrimitives(s);
+            });
 
             return Data.List(elems);
         }
