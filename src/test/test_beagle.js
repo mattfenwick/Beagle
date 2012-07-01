@@ -9,7 +9,7 @@ function testBeagle(beagle, data) {
       var e1 = " ( list ) ",
           e2 = "(cons 3 (list))",
           e3 = '(car (cdr (cons 1 (cons "blargh" (cons 3 (cons 4 (list)))))))',
-          e4 = ' 3 ; this is a comment'
+          e4 = ' 3 ; this is a comment',
           e5 = '"abc"123';
 
       deepEqual([data.List([])], beagle.exec(e1).result);

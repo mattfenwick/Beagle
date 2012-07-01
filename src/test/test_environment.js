@@ -1,6 +1,8 @@
 
 function testEnvironment(Environment) {    
     
+    module("environment");
+
     test("environment lookup", function() {
       var par = Environment.Environment(false, {'a': 3}),
           env = Environment.Environment(par, {'b': 4}),
