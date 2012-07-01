@@ -117,8 +117,7 @@ var Parse = (function () {
 
 
     // [Token] -> Maybe SExpression
-    //   returns false if token stream is empty or first token is not a symbol or string
-    //   returns false if first token is a comment
+    //   returns false if token stream is empty or first token is NOT a symbol or string
     function getAtom(tokens) {
         if (tokens.length === 0) {
             return false;
@@ -191,7 +190,7 @@ var Parse = (function () {
             return false;
         }
 
-        // an s-expression is either a symbol
+        // an s-expression is either an atom
         sexpr = getAtom(tokens);
         if (sexpr) {
             return sexpr;
