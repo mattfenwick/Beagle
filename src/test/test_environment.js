@@ -48,20 +48,21 @@ function testEnvironment(Environment) {
         try {
             env.addBinding('a', 'this should fail');
         } catch (e) {
-            raised = true;
+            t = true;
         };
-        ok(raised, "an important point: if the environment owns a binding, then you can't add a binding for that symbol");
+        ok(t, "an important point: if the environment owns a binding, then you can't add a binding for that symbol");
         equal('omg', env.getBinding('a'), "an exception will be thrown and the binding will be unchanged");
 
         // can't find if in none env
         ok(!env.hasBinding('c'), "if an environemnt doesn't have a binding for a symbol,");
         ok(!env.hasOwnBinding('c'), "then it also doesn't 'own' a binding ...");
+        var u = false;
         try {
             equal(false, env.getBinding('c'));
         } catch (e) {
-            raised = true;
+            u = true;
         };
-        ok(raised, "and trying to look up the value of that symbol causes an exception");
+        ok(u, "and trying to look up the value of that symbol causes an exception");
     });
 
 };
