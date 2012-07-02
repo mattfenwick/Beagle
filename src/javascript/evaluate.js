@@ -41,6 +41,24 @@ var Evaluate = (function (Data, Functions, Environment) {
 
         return evaluate(ifFalse, env);
     }
+    
+    
+    function extractArgNames(args) {
+        if (args.type !== 'list') {
+            throw new Error("lambda requires a list as first argument");
+        }
+
+        var names = [];
+
+        args.value.map(function(sym) {
+            if (sym.type !== 'symbol') {
+                throw new Error("all parameter names in lambda must be symbols");
+            }
+            names.push(sym);
+        });
+    	
+        return names;
+    }
 
 
     function lambda(env, lam_args) {
@@ -49,23 +67,8 @@ var Evaluate = (function (Data, Functions, Environment) {
     	}
     	
     	var args = lam_args[0],
-    	    body = lam_args[1];
-    	
-        if (args.type !== 'list') {
-            throw new Error("lambda requires a list as first argument");
-        }
-
-        var names = [],
-            i, sym;
-
-        // get the list of arguments
-        for (i = 0; i < args.value.length; i++) {
-            sym = args.value[i];
-            if (sym.type !== 'symbol') {
-                throw new Error("all parameter names in lambda must be symbols");
-            }
-            names.push(sym);
-        }
+    	    body = lam_args[1],
+            names = extractArgNames(args);
 
         // create the closure,
         //   which stores a reference to the environment,
