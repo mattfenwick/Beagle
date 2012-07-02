@@ -4,41 +4,41 @@
 
 a. Parsing
 
-  1. tokenization:  `String -> [Token]`
+ - tokenization:  `String -> [Token]`
 
-    - `Parse.tokenize`
+   - `Parse.tokenize`
 
-    - token types:  whitespace, comment, symbol, string, open, close
+   - token types:  whitespace, comment, symbol, string, open, close
 
-  2. whitespace check, no consecutive symbols/strings:  `[Token] -> void` (throws exception)
+ - whitespace check, no consecutive symbols/strings:  `[Token] -> void` (throws exception)
 
-    - `Parse.checkWhitespace`
+   - `Parse.checkWhitespace`
 
-  3. throw away unneeded tokens:  `[Token] -> [Token]`
+ - throw away unneeded tokens:  `[Token] -> [Token]`
 
-    - `Parse.stripTokens`
+   - `Parse.stripTokens`
 
-    - gets rid of whitespace and comment tokens
+   - gets rid of whitespace and comment tokens
 
-  4. build s-expressions:  `[Token] -> [SExpression]`
+ - build s-expressions:  `[Token] -> [SExpression]`
 
-    - `Parse.makeSExpressions`
+   - `Parse.makeSExpressions`
 
-    - s-expression types:  list, symbol, string
+   - s-expression types:  list, symbol, string
 
-  5. create Beagle objects:  `SExpression -> BeagleObject`
+ - create Beagle objects:  `SExpression -> BeagleObject`
 
-    - `Reify.makePrimitives`
+   - `Reify.makePrimitives`
 
-    - `BeagleObject` types:  `Data.List`, `Data.String`, `Data.Symbol`, `Data.Number`
+   - `BeagleObject` types:  `Data.List`, `Data.String`, `Data.Symbol`, `Data.Number`
 
 
 b. Evaluation
 
-  6. macro expansion:  `BeagleObject -> BeagleObject`
+ - macro expansion:  `BeagleObject -> BeagleObject`
 
-    - **not implemented**
+   - **not implemented**
 
-  7. evaluation:  `BeagleObject -> BeagleObject`
+ - evaluation:  `BeagleObject -> BeagleObject`
 
-    - `Evaluate.eval`
+   - `Evaluate.eval`
