@@ -19,14 +19,14 @@ function testEvaluate(evaluate, funcs, data, Environment) {
           raised = false;
       
       try {
-        def(env, Data.Symbol('b'), Data.Number(13));
+        def(env, [Data.Symbol('b'), Data.Number(13)]);
       } catch(e) {
         raised = true;
       };
       ok(raised, "can't change binding");
       equal(4, env.getBinding('b'));
       
-      def(env, Data.Symbol('c'), Data.String("derr"));
+      def(env, [Data.Symbol('c'), Data.String("derr")]);
       deepEqual(Data.String("derr"), env.getBinding('c'));
       ok(env.hasOwnBinding('c'));
       ok(!par.hasBinding('c'));

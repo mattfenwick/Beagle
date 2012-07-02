@@ -1,12 +1,17 @@
 var Functions = (function (Data) {
     "use strict";
 
-    function cons(elem, list) {
+    
+    function cons(args) {
+    	var elem = args[0],
+    	    list = args[1];
+    	
         if (list.type !== 'list') {
             throw new Error("second arguments to 'cons' must be list (got " + list.type + ")");
         }
-        if (arguments.length != 2) {
-            throw new Error("wrong number of arguments: needed 2, got " + arguments.length);
+        
+        if (args.length != 2) {
+            throw new Error("wrong number of arguments: needed 2, got " + args.length);
         }
 
         var newList = [elem];
@@ -18,12 +23,15 @@ var Functions = (function (Data) {
     };
 
 
-    function car(list) {
+    function car(args) {
+    	var list = args[0];
+    	
         if (list.type !== 'list') {
             throw new Error("argument to 'car' must be list (got " + list.type + ")");
         }
+        
         if (arguments.length != 1) {
-            throw new Error("wrong number of arguments: needed 1, got " + arguments.length);
+            throw new Error("wrong number of arguments: needed 1, got " + args.length);
         }
 
         if (list.value.length > 0) {
@@ -34,12 +42,15 @@ var Functions = (function (Data) {
     }
 
 
-    function cdr(list) {
+    function cdr(args) {    
+    	var list = args[0];
+    	
         if (list.type !== 'list') {
             throw new Error("argument to 'cdr' must be list (got " + list.type + ")");
         }
+        
         if (arguments.length != 1) {
-            throw new Error("wrong number of arguments: needed 1, got " + arguments.length);
+            throw new Error("wrong number of arguments: needed 1, got " + args.length);
         }
 
         if (list.value.length > 0) {
@@ -50,11 +61,7 @@ var Functions = (function (Data) {
     }
 
 
-    function list() {
-        var args = [];
-        for (var i = 0; i < arguments.length; i++) {
-            args.push(arguments[i]);
-        }
+    function list(args) {
         return Data.List(args);
     }
 
@@ -71,7 +78,7 @@ var Functions = (function (Data) {
                 return Data.Boolean(false);
             }
             // ... and continue to the values ...
-            compare = equals(lval[i], rval[i]);
+            compare = equals([lval[i], rval[i]]);
             if (compare.type === 'nil' || !compare.value) {
                 return Data.Boolean(false);
             };
@@ -81,9 +88,12 @@ var Functions = (function (Data) {
     }
 
 
-    function equals(left, right) {
-        if (arguments.length != 2) {
-            throw new Error("wrong number of arguments: needed 2, got " + arguments.length);
+    function equals(args) {
+    	var left = args[0],
+    	    right = args[1];
+    	
+        if (args.length != 2) {
+            throw new Error("wrong number of arguments: needed 2, got " + args.length);
         }
 
         var ltype = left.type,
@@ -113,9 +123,12 @@ var Functions = (function (Data) {
     }
 
 
-    function plus(left, right) {
-        if (arguments.length != 2) {
-            throw new Error("wrong number of arguments: needed 2, got " + arguments.length);
+    function plus(args) {
+    	var left = args[0],
+    	    right = args[1];
+    	
+        if (args.length != 2) {
+            throw new Error("wrong number of arguments: needed 2, got " + args.length);
         }
 
         if (left.type !== 'number' || right.type !== 'number') {
@@ -125,9 +138,11 @@ var Functions = (function (Data) {
     }
 
 
-    function neg(num) {
-        if (arguments.length != 1) {
-            throw new Error("wrong number of arguments: needed 1, got " + arguments.length);
+    function neg(args) {
+    	var num = args[0];
+    	
+        if (args.length != 1) {
+            throw new Error("wrong number of arguments: needed 1, got " + args.length);
         }
 
         if (num.type !== 'number') {

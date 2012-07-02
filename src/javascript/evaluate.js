@@ -3,18 +3,33 @@ var Evaluate = (function (Data, Functions, Environment) {
 
     //////// Special forms
 
-    function define(env, name, sexpr) {
+    function define(env, args) {
+        if (args.length !== 2) {
+        	throw new Error("define needs 2 arguments, got " + args.length);
+        }
+
+        var name = args[0], 
+    	    sexpr = args[1];
+
         if (name.type !== "symbol") {
             throw new Error("define needs a symbol as its first argument (got " + name.type + ")");
         }
+        
         var value = evaluate(sexpr, env);
         env.addBinding(name.value, value);
         return Data.Nil();
     }
 
 
-    function myif(env, condition, ifTrue, ifFalse) {
-        var cond = evaluate(condition, env);
+    function myif(env, args) {
+    	if(args.length !== 3) {
+    		throw new Error("if needs 3 arguments, got " + args.length);
+    	}
+    	
+    	var condition = args[0], 
+    	    ifTrue = args[1],
+    	    ifFalse = args[2],
+            cond = evaluate(condition, env);
 
         if (cond.type !== 'boolean') {
             throw new Error("if needs a boolean as first argument");
@@ -28,7 +43,14 @@ var Evaluate = (function (Data, Functions, Environment) {
     }
 
 
-    function lambda(env, args, body) {
+    function lambda(env, lam_args) {
+    	if(lam_args.length !== 2) {
+    		throw new Error("lambda constructor requires 2 arguments, got " + lam_args.length);
+    	}
+    	
+    	var args = lam_args[0],
+    	    body = lam_args[1];
+    	
         if (args.type !== 'list') {
             throw new Error("lambda requires a list as first argument");
         }
@@ -50,9 +72,9 @@ var Evaluate = (function (Data, Functions, Environment) {
         //   and when evaluated, creates a new environment
         //   and puts its arguments in the environment
         //   then it evaluates its body in the new environment
-        function closure() {
+        function closure(c_args) {
             var ln = names.length,
-                la = arguments.length,
+                la = c_args.length,
                 newEnv = Environment.Environment(env, {});
 
             if (ln !== la) {
@@ -61,7 +83,7 @@ var Evaluate = (function (Data, Functions, Environment) {
 
             for (var j = 0; j < names.length; j++) {
                 // arguments already evaluated
-                newEnv.addBinding(names[j].value, arguments[j]);
+                newEnv.addBinding(names[j].value, c_args[j]);
             }
 
             return evaluate(body, newEnv);
@@ -93,40 +115,37 @@ var Evaluate = (function (Data, Functions, Environment) {
     }
 
     ////////////
+    
+    
+    function applyFunction(func, env, args) {
+        var evaledArgs = args.map(function (arg) {
+            return evaluate(arg, env);
+        });
 
-
-    function myapply(f, args) {
-        return f.apply(null, args);
+        return func(evaledArgs);
     }
-
-
-    function specialapply(f, env, args) {
-        return f.apply(null, [env].concat(args));
+    
+    
+    function applySpecial(func, env, args) {
+    	return func(env, args);
     }
 
 
     function evaluateList(sexpr, env) {
-        // what if it's empty?
         if (!sexpr.value[0]) {
             throw new Error("cannot evaluate empty list");
         }
 
         var first = evaluate(sexpr.value[0], env),
             args = sexpr.value.slice(1),
-            func = first.value,
-            evaledArgs;
+            func = first.value;
 
         if (first.type === 'function') {
-
-            evaledArgs = args.map(function (a) {
-                return evaluate(a, env);
-            });
-
-            return myapply(func, evaledArgs);
+            return applyFunction(func, env, args);
         }
 
         if (first.type === 'specialform') {
-            return specialapply(func, env, args);
+            return applySpecial(func, env, args);
         }
 
         throw new Error("first element in list must be function or special form (was " + first.type + ")");
@@ -135,11 +154,7 @@ var Evaluate = (function (Data, Functions, Environment) {
 
     function evaluateAtom(sexpr, env) {
         if (sexpr.type === 'symbol') {
-            if (env.hasBinding(sexpr.value)) { // uh ... has own property?
-                return env.getBinding(sexpr.value);
-            } else {
-                throw new Error("could not find symbol " + sexpr.value);
-            }
+            return env.getBinding(sexpr.value);
         }
 
         if (sexpr.type === 'number' || sexpr.type === 'string' || sexpr.type === 'boolean') {
@@ -167,9 +182,6 @@ var Evaluate = (function (Data, Functions, Environment) {
     return {
         'eval': evaluate,
         'getDefaultEnv': getDefaultEnv,
-        'Environment': function (parent, bindings) {
-            return new Env(parent, bindings);
-        },
         'define': define
     };
 
