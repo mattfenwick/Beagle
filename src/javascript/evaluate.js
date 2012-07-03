@@ -61,9 +61,9 @@ var Evaluate = (function (Data, Functions, Environment) {
     }
 
 
-    function lambda(env, lam_args) {
+    function make_closure(env, lam_args) {
     	if(lam_args.length !== 2) {
-    		throw new Error("lambda constructor requires 2 arguments, got " + lam_args.length);
+    		throw new Error("lambda/special constructor requires 2 arguments, got " + lam_args.length);
     	}
     	
     	var args = lam_args[0],
@@ -81,19 +81,44 @@ var Evaluate = (function (Data, Functions, Environment) {
                 newEnv = Environment.Environment(env, {});
 
             if (ln !== la) {
-                throw new Error("length of parameter list of lambda does not match arguments list: " + ln + " vs " + la);
+                throw new Error("number of parameters to lambda/special doesn't match arguments: " + ln + " vs " + la);
             }
 
             for (var j = 0; j < names.length; j++) {
-                // arguments already evaluated
+                // arguments don't need to be evaluated here
                 newEnv.addBinding(names[j].value, c_args[j]);
             }
 
             return evaluate(body, newEnv);
         }
 
-        // could create a new data type (closure) later if desired
-        return Data.Function(closure);
+        return closure;
+    }
+    
+    
+    function lambda(env, args) {
+    	return Data.Function(make_closure(env, args));
+    }
+    
+    
+    function special(env, args) {
+    	var closure = make_closure(env, args);
+    	function newSpecial(env, args) {
+    		return closure(args);
+    	}
+    	return Data.SpecialForm(newSpecial);
+    }
+    
+    /////////// core functions
+    
+    function beagleEval(env, args) {
+    	if(args.length !== 1) {
+    		throw new Error("eval requires 1 argument, got " + args.length);
+    	}
+    	
+    	var sexpr = evaluate(args[0], env);
+    	
+        return evaluate(sexpr, env);
     }
 
 
@@ -110,6 +135,9 @@ var Evaluate = (function (Data, Functions, Environment) {
         bindings['define'] = Data.SpecialForm(define);
         bindings['if']     = Data.SpecialForm(myif);
         bindings['lambda'] = Data.SpecialForm(lambda);
+        bindings['special'] = Data.SpecialForm(special);
+        
+        bindings['eval'] = Data.SpecialForm(beagleEval);
 
         bindings['true']  = Data.Boolean(true);
         bindings['false'] = Data.Boolean(false);

@@ -1,7 +1,7 @@
 <!doctype html>
 <html>
  <head>
-  <title>My programming language, version 0.01</title>
+  <title>Beagle, version 0.01</title>
   <meta content="An interactive environment for learning about programming" name="description" />
   <meta content="Lisp, programming" name="keywords" />
   <meta content="Matt Fenwick" name="author" />
@@ -118,11 +118,9 @@ function displayEnv(envi) {
   });
   
   evaler.bind("success", function(obj) {
-        
-//    $("#env").text(JSON.stringify(env));
     displayEnv(env);
     $("#lastsexpr").text(JSON.stringify(obj.parsed));
-    $("#lastprims").text(JSON.stringify(obj.primitives));
+    $("#lastprims").text(JSON.stringify(obj.primitives) + "<br />" + JSON.stringify(obj.result[0]));
     $("#expr").val("");
   });
 

@@ -123,5 +123,30 @@
     (map (lambda (p)
            (f (car p) (car (cdr p))))
          (zip l1 l2))))
+         
+         
+(define quote
+  (special (x) x))
 
+
+(define or-lazy
+  (special (l r) 
+   (if (eval l)
+       true
+       (eval r))))
+       
+       
+(define and-lazy
+  (special (l r)
+   (if (eval l)
+       (eval r)
+       false)))
+       
+       
+(define count
+  (lambda (l)
+   (reduce 
+    (lambda (b n) (+ b 1))
+    0 
+    l)))
 
