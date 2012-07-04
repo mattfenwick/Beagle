@@ -38,6 +38,7 @@
                (not (and false false))))
     "and-tests")))
 
+
 (define or 
   (lambda (x y)
     (if x x y)))
@@ -89,8 +90,10 @@
             (cons (car xs) (filter f (cdr xs)))
             (filter f (cdr xs))))))
 
+
 (define id 
   (lambda (x) x))
+
 
 (define reduce
   (lambda (f b xs)
@@ -99,14 +102,17 @@
         (reduce f 
                 (f b (car xs)) 
                 (cdr xs)))))
+                
 
 (define any 
   (lambda (vals) 
 	(reduce or false vals)))
 
+
 (define all 
   (lambda (vals) 
 	(reduce and true vals)))
+
 
 (define zip
   (lambda (l1 l2)
@@ -117,6 +123,7 @@
                     (cons (car l2) (list)))
               (zip (cdr l1)
                    (cdr l2))))))
+
 
 (define zip-map
   (lambda (f l1 l2)

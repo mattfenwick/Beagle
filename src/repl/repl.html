@@ -112,7 +112,7 @@ function displayEnv(envi) {
 
   evaler.bind("success", function(obj) {
     var h = $("#history");
-    h.append("<ul>" + _.escape("> " + obj.string) + "</ul>");
+    h.append("<ul><pre>" + _.escape("> " + obj.string) + "</pre></ul>");
     // remember -- only allowing one form (for now) so just take the first
     h.append("<ul>" + _.escape(JSON.stringify(printer(obj.result[0]))) + "</ul>");
   });
@@ -125,7 +125,7 @@ function displayEnv(envi) {
   });
 
   evaler.bind("error", function(obj) {
-    $("#history").append("<ul>" + _.escape("> " + obj.string) + "</ul>");
+    $("#history").append("<ul><pre>" + _.escape("> " + obj.string) + "</pre></ul>");
     $("#history").append("<ul>" + "ERROR: " + _.escape(obj.error) + "</ul>");
   });
   
