@@ -184,11 +184,13 @@ var Evaluate = (function (Data, Functions, Environment) {
 
 
     function evaluateAtom(sexpr, env) {
-        if (sexpr.type === 'symbol') {
+    	var type = sexpr.type;
+    	
+        if (type === 'symbol') {
             return env.getBinding(sexpr.value);
         }
 
-        if (sexpr.type === 'number' || sexpr.type === 'string' || sexpr.type === 'boolean') {
+        if (type === 'number' || type === 'string' || type === 'boolean' || type === 'function') {
             return sexpr;
         }
 
