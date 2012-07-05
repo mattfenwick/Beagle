@@ -1,18 +1,42 @@
 var Functions = (function (Data) {
     "use strict";
 
+
+    function FunctionError(type, expected, actual, fname, message) {
+        this.type = type;
+        this.expected = expected;
+        this.actual = actual;
+        this.fname = fname;
+        this.message = message;
+    }
+
+    FunctionError.prototype.toString = function() {
+        return this.type + " in " + this.fname + ": " + this.message + 
+               ", expected " + this.expected + " but got " + this.actual;
+    };
+
+
+    function typeCheck(expected, actual, fname, message) {
+        if (expected !== actual) {
+            throw new FunctionError('TypeError', expected, actual, fname, message);
+        }
+    }
+
+
+    function argsCheck(expected, actual, fname, message) {
+        if (expected !== actual) {
+            throw new FunctionError('NumArgsError', expected, actual, fname, message);
+        }
+    }
+
     
-    function cons(args) {
-    	var elem = args[0],
-    	    list = args[1];
-    	
-        if (list.type !== 'list') {
-            throw new Error("second arguments to 'cons' must be list (got " + list.type + ")");
-        }
-        
-        if (args.length != 2) {
-            throw new Error("wrong number of arguments: needed 2, got " + args.length);
-        }
+    function cons(args) {        
+        argsCheck(2, args.length, 'cons');
+
+        var elem = args[0],
+            list = args[1];
+
+        typeCheck('list', list.type,  'cons', "second argument");
 
         var newList = [elem];
         for (var i = 0; i < list.value.length; i++) {
@@ -24,40 +48,34 @@ var Functions = (function (Data) {
 
 
     function car(args) {
-    	var list = args[0];
-    	
-        if (list.type !== 'list') {
-            throw new Error("argument to 'car' must be list (got " + list.type + ")");
+        argsCheck(1, args.length, 'car');
+
+        var list = args[0];
+        
+        typeCheck('list', list.type, "car", "only argument");
+        
+        if (list.value.length === 0) {
+            throw new FunctionError("ValueError", "non-empty list", "list", 
+                  'car', "cannot take car of empty list");
         }
         
-        if (arguments.length != 1) {
-            throw new Error("wrong number of arguments: needed 1, got " + args.length);
-        }
-
-        if (list.value.length > 0) {
-            return list.value[0];
-        }
-
-        return Data.Nil();
+        return list.value[0];
     }
 
 
-    function cdr(args) {    
-    	var list = args[0];
-    	
-        if (list.type !== 'list') {
-            throw new Error("argument to 'cdr' must be list (got " + list.type + ")");
+    function cdr(args) {         
+        argsCheck(1, args.length, 'cdr');
+        
+        var list = args[0];
+        
+        typeCheck('list', list.type, 'cdr', 'only argument');
+
+        if (list.value.length === 0) {
+            throw new FunctionError("ValueError", 'non-empty list', 'list', 
+                  'cdr', "cannot take cdr of empty list");
         }
         
-        if (arguments.length != 1) {
-            throw new Error("wrong number of arguments: needed 1, got " + args.length);
-        }
-
-        if (list.value.length > 0) {
-            return Data.List(list.value.slice(1));
-        }
-
-        return Data.Nil();
+        return Data.List(list.value.slice(1));
     }
 
 
@@ -89,10 +107,10 @@ var Functions = (function (Data) {
 
 
     function equals(args) {
-    	var left = args[0],
-    	    right = args[1];
-    	
-        if (args.length != 2) {
+        var left = args[0],
+            right = args[1];
+        
+        if (args.length !== 2) {
             throw new Error("wrong number of arguments: needed 2, got " + args.length);
         }
 
@@ -124,9 +142,9 @@ var Functions = (function (Data) {
 
 
     function plus(args) {
-    	var left = args[0],
-    	    right = args[1];
-    	
+        var left = args[0],
+            right = args[1];
+        
         if (args.length != 2) {
             throw new Error("wrong number of arguments: needed 2, got " + args.length);
         }
@@ -139,8 +157,8 @@ var Functions = (function (Data) {
 
 
     function neg(args) {
-    	var num = args[0];
-    	
+        var num = args[0];
+        
         if (args.length != 1) {
             throw new Error("wrong number of arguments: needed 1, got " + args.length);
         }

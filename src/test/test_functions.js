@@ -5,38 +5,116 @@ function testFunctions(funcs, data) {
       throw new Error("can't run tests without dependencies");
     }
     
+    
+    function expectException(f, type, message) {
+    	if(!type) {
+    		throw new Error("expectException needs a truthy type");
+    	}
+    	var threw = true,
+    	    exc;
+    	try {
+    		f();
+    		threw = false;
+    	} catch(e) {
+    		exc = e;
+    	}
+    	ok(threw, "exception expected: " + message);
+    	equal(exc.type, type, "exception type: " + message + "(" + typeof(exc) + ")");
+    }
+    
 
     module("functions");
+    
+    var list = data.List,
+        empty = list([]),
+        num = data.Number;
 
 
     test("cons", function() {
-      deepEqual(data.List([14]), funcs.cons([14, data.List([])]));
+        var cons = funcs.cons,
+            oneEl = cons([num(14), empty]),
+            twoEl = cons([num(32), oneEl]),
+            oneLi = cons([empty, empty]);
+        
+      deepEqual(list([num(14)]), oneEl, 'an element consed onto the empty list returns a one-element list');
       
-      deepEqual(data.List([1, 2, 3]), funcs.cons([1, data.List([2, 3])]));
+      deepEqual(list([num(32), num(14)]), twoEl, 'an element consed onto THAT returns a two-element list');
+      
+      deepEqual(list([]), empty, 'cons does not mutate:  it makes a new list');
+      
+      deepEqual(list([empty]), oneLi, 'the first argument may be of any type, including a list');
+      
+      expectException(function() {
+          cons([num(11), num(12)]);
+      }, 'TypeError', 'the second argument must be a Beagle list');
+      
+      expectException(function() {
+          cons([num(11)]);
+      }, 'NumArgsError', 'too few arguments throws an exception ...');
+      
+      expectException(function() {
+          cons([num(3), empty, empty]);
+      }, 'NumArgsError', 'too many arguments is also a problem');
     });
 
 
     test("car", function() {
     
-      var car = funcs.car;
-      deepEqual(3, car([data.List([3, 4])]));
-    
-      // uh-oh, empty list!
-      deepEqual(data.Nil(), car([data.List([])]));
+      var car = funcs.car,
+          twoEl = list([3, 4]),
+          listFirst = list([list([14])]);
       
+      deepEqual(3, car([twoEl]), 'car returns the first element of a list, ');
+      
+      deepEqual(list([14]), car([listFirst]), 'which may be a list');
+
+      expectException(function() {
+          car([empty]);
+      }, 'ValueError', 'trying to take the car of an empty list throws an exception');
+      
+      expectException(function() {
+    	  car([num(16)]);
+      }, 'TypeError', "car's argument must be a list");
+      
+      expectException(function() {
+          car([]);
+      }, 'NumArgsError', 'too few arguments throws an exception ...');
+      
+      expectException(function() {
+          car([twoEl, twoEl]);
+      }, 'NumArgsError', 'too many arguments is also a problem');
     });
       
 
     test("cdr", function() {
     
-      var cdr = funcs.cdr;
+      var cdr = funcs.cdr,
+          fourEl = list([3, 4, 10, 'hello']),
+          oneEl = list([64]);
+
       deepEqual(
-          data.List([4, 10, 'hello']), 
-          cdr([data.List([3, 4, 10, 'hello'])])
+          list([4, 10, 'hello']), 
+          cdr([fourEl]),
+          "cdr returns the 'rest' of a list after the first element"
       );
-    
-      // uh-oh !!
-      deepEqual(data.Nil(), cdr([data.List([])]));
+      
+      deepEqual(empty, cdr([oneEl]), 'the cdr of a one-element list is an empty list');
+
+      expectException(function() {
+          cdr([empty]);
+      }, 'ValueError', 'trying to take the cdr of an empty list throws an exception');
+      
+      expectException(function() {
+          cdr([num(16)]);
+    	}, 'TypeError', "cdr's argument must be a list");
+      
+      expectException(function() {
+          cdr([]);
+      }, 'NumArgsError', 'too few arguments throws an exception ...');
+      
+      expectException(function() {
+          cdr([oneEl, oneEl]);
+      }, 'NumArgsError', 'too many arguments is also a problem');
 
     });
 
