@@ -10,6 +10,7 @@ var Functions = (function (Data) {
         this.message = message;
     }
 
+
     FunctionError.prototype.toString = function() {
         return this.type + " in " + this.fname + ": " + this.message + 
                ", expected " + this.expected + " but got " + this.actual;
@@ -69,7 +70,7 @@ var Functions = (function (Data) {
         var list = args[0];
         
         typeCheck('list', list.type, 'cdr', 'only argument');
-
+	
         if (list.value.length === 0) {
             throw new FunctionError("ValueError", 'non-empty list', 'list', 
                   'cdr', "cannot take cdr of empty list");
@@ -106,13 +107,11 @@ var Functions = (function (Data) {
     }
 
 
-    function equals(args) {
+    function equals(args) {        
+        argsCheck(args.length, 2, '=');
+
         var left = args[0],
             right = args[1];
-        
-        if (args.length !== 2) {
-            throw new Error("wrong number of arguments: needed 2, got " + args.length);
-        }
 
         var ltype = left.type,
             rtype = right.type,
@@ -141,31 +140,26 @@ var Functions = (function (Data) {
     }
 
 
-    function plus(args) {
+    function plus(args) {        
+        argsCheck(2, args.length, '+');
+
         var left = args[0],
             right = args[1];
-        
-        if (args.length != 2) {
-            throw new Error("wrong number of arguments: needed 2, got " + args.length);
-        }
 
-        if (left.type !== 'number' || right.type !== 'number') {
-            throw new Error("primitive + requires two numbers (got " + left.type + ", " + right.type + ")");
-        }
+        typeCheck('number', left.type, '+', 'first argument');
+        typeCheck('number', right.type, '+', 'second argument');
+ 
         return Data.Number(left.value + right.value);
     }
 
 
     function neg(args) {
-        var num = args[0];
-        
-        if (args.length != 1) {
-            throw new Error("wrong number of arguments: needed 1, got " + args.length);
-        }
+        argsCheck(1, args.length, 'neg');
 
-        if (num.type !== 'number') {
-            throw new Error("primitive 'neg' requires a number (got " + num.type + ")");
-        }
+        var num = args[0];
+
+        typeCheck('number', num.type, 'neg', 'only argument');
+
         return Data.Number(-num.value);
     }
 

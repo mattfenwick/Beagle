@@ -8,15 +8,15 @@ function testFunctions(funcs, data) {
     
     function expectException(f, type, message) {
     	if(!type) {
-    		throw new Error("expectException needs a truthy type");
+    	    throw new Error("expectException needs a truthy type");
     	}
     	var threw = true,
     	    exc;
     	try {
-    		f();
-    		threw = false;
+    	    f();
+    	    threw = false;
     	} catch(e) {
-    		exc = e;
+    	    exc = e;
     	}
     	ok(threw, "exception expected: " + message);
     	equal(exc.type, type, "exception type: " + message + "(" + typeof(exc) + ")");
@@ -118,56 +118,110 @@ function testFunctions(funcs, data) {
 
     });
 
+
     test("list", function() {
       
-      var list = funcs.list;
-      deepEqual(data.List([3, 4, 5]), list([3, 4, 5]));
+      var listf = funcs.list;
+      deepEqual(data.List([3, 4, 5]), listf([3, 4, 5]), "'list' is a variadic function which returns its arguments in a list");
       
     });
+
 
     test("+", function() {
 
-      deepEqual(data.Number(14), funcs['+']([data.Number(18), data.Number(-4)]), "18 + (-4) = 14");
+      var plus = funcs['+'];
+
+      deepEqual(num(32), plus([num(27), num(5)]), "'+' is for adding two numbers");
+
+      deepEqual(num(14), plus([num(18), num(-4)]), "they can be positive or negative");
+
+      deepEqual(num(-17), plus([num(-9), num(-8)]), "or both negative");
+
+      expectException(function() {
+          plus([list([]), num(4)]);
+      }, 'TypeError', 'both the first argument ...');
+      
+      expectException(function() {
+          plus([num(8), list([])]);
+    	}, 'TypeError', "and the second argument must be numbers");
+      
+      expectException(function() {
+          plus([num(4)]);
+      }, 'NumArgsError', 'too few arguments throws an exception ...');
+      
+      expectException(function() {
+          plus([num(4), num(5), num(6)]);
+      }, 'NumArgsError', 'as does too many arguments');
 
     });
+
 
     test("neg", function() {
-      deepEqual(data.Number(3), funcs.neg([data.Number(-3)]), "simple negation");
-      deepEqual(data.Number(-14), funcs.neg([funcs.neg([data.Number(-14)])]), "a number is its own double negative");
+      var neg = funcs.neg,
+          p3 = num(3),
+          m3 = num(-3),
+          m14 = num(-14);
+
+      deepEqual(m3, neg([p3]), "'neg' negates a number, flipping the sign");
+
+      deepEqual(m14, neg([neg([m14])]), "a number is its own double negative");
+      
+      expectException(function() {
+          neg([list([])]);
+    	}, 'TypeError', "the first argument must be a number");
+      
+      expectException(function() {
+          neg([]);
+      }, 'NumArgsError', 'too few arguments throws an exception ...');
+      
+      expectException(function() {
+          neg([num(4), num(5)]);
+      }, 'NumArgsError', 'as does too many arguments');
     });
+
 
     test("equals", function() {
       
       var eq = funcs['='],
           db = Data.Boolean,
+          t = db(true),
+          f = db(false),
           dl = Data.List;
 
-      deepEqual(db(true), eq([db(true), db(true)]), 'booleans');
-      deepEqual(db(false), eq([db(false), db(true)]), 'booleans');
+      deepEqual(t, eq([t, t]), 'booleans');
+      deepEqual(f, eq([f, t]), 'booleans');
       
-      deepEqual(db(true), eq([Data.Number(31), Data.Number(31)]), 'number');
-      deepEqual(db(false), eq([Data.Number(3), Data.Number(31)]), 'number');
-      deepEqual(db(true), eq([Data.Number(2331), Data.Number(2331)]), 'number');
+      deepEqual(t, eq([Data.Number(31), Data.Number(31)]), 'number');
+      deepEqual(f, eq([Data.Number(3), Data.Number(31)]), 'number');
+      deepEqual(t, eq([Data.Number(2331), Data.Number(2331)]), 'number');
       
-      deepEqual(db(true), eq([Data.String("xyz"), Data.String("xyz")]), 'strings');
-      deepEqual(db(false), eq([Data.String("yz"), Data.String("xyz")]), 'strings');
+      deepEqual(t, eq([Data.String("xyz"), Data.String("xyz")]), 'strings');
+      deepEqual(f, eq([Data.String("yz"), Data.String("xyz")]), 'strings');
       
-      deepEqual(db(true), eq([Data.Symbol('abc'), Data.Symbol('abc')]), 'symbols');
-      deepEqual(db(false), eq([Data.Symbol('abc'), Data.Symbol('def')]), 'symbols');
+      deepEqual(t, eq([Data.Symbol('abc'), Data.Symbol('abc')]), 'symbols');
+      deepEqual(f, eq([Data.Symbol('abc'), Data.Symbol('def')]), 'symbols');
       
       deepEqual(Data.Nil(), eq([Data.Symbol('abc'), Data.String('abc')]), 'mixed types');
       deepEqual(Data.Nil(), eq([Data.Number(16), db(true)]), 'mixed types');
       
-      deepEqual(db(true), eq([dl([]), dl([])]), 'empty lists');
-      deepEqual(db(false), eq([dl([]), dl([Data.Number(3)])]), 'empty and non-empty lists');
-      deepEqual(db(true), eq([dl([Data.Number(3)]), dl([Data.Number(3)])]), '2 non-empty lists');
-      deepEqual(db(false), eq([dl([dl([db(true)])]), dl([dl([db(false)])])]), 'deeply nested lists');
-      deepEqual(db(false), eq([dl([Data.Number(3)]), dl([Data.String('3')])]), 'empty and non-empty lists');
+      deepEqual(t, eq([dl([]), dl([])]), 'empty lists');
+      deepEqual(f, eq([dl([]), dl([Data.Number(3)])]), 'empty and non-empty lists');
+      deepEqual(t, eq([dl([Data.Number(3)]), dl([Data.Number(3)])]), '2 non-empty lists');
+      deepEqual(f, eq([dl([dl([t])]), dl([dl([f])])]), 'deeply nested lists');
+      deepEqual(f, eq([dl([Data.Number(3)]), dl([Data.String('3')])]), 'empty and non-empty lists');
       deepEqual(
-          Data.Boolean(false), 
+          f, 
           eq([Data.List([Data.Number(3), Data.List([])]), Data.List([Data.String('3'), Data.List([])])]), 
           'nested lists'
       );
+      
+      expectException(function() {
+          eq([num(7)]);
+      }, 'NumArgsError', 'too few arguments throws an exception ...');
+      
+      expectException(function() {
+          eq([num(4), num(5), num(8)]);
+      }, 'NumArgsError', 'as does too many arguments');
       
     });
     
