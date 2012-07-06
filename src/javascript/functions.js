@@ -108,7 +108,7 @@ var Functions = (function (Data) {
 
 
     function equals(args) {        
-        argsCheck(args.length, 2, '=');
+        argsCheck(2, args.length, '=');
 
         var left = args[0],
             right = args[1];

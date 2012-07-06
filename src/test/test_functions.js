@@ -1,25 +1,8 @@
 
-function testFunctions(funcs, data) {
+function testFunctions(funcs, data, testHelper) {
 
     if( !funcs || !data ) {
       throw new Error("can't run tests without dependencies");
-    }
-    
-    
-    function expectException(f, type, message) {
-    	if(!type) {
-    	    throw new Error("expectException needs a truthy type");
-    	}
-    	var threw = true,
-    	    exc;
-    	try {
-    	    f();
-    	    threw = false;
-    	} catch(e) {
-    	    exc = e;
-    	}
-    	ok(threw, "exception expected: " + message);
-    	equal(exc.type, type, "exception type: " + message + "(" + typeof(exc) + ")");
     }
     
 
@@ -27,7 +10,8 @@ function testFunctions(funcs, data) {
     
     var list = data.List,
         empty = list([]),
-        num = data.Number;
+        num = data.Number,
+        expectException = testHelper.expectException;
 
 
     test("cons", function() {

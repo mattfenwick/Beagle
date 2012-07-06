@@ -1,39 +1,68 @@
 var Evaluate = (function (Data, Functions, Environment) {
     "use strict";
 
+
+    function SpecialFormError(type, expected, actual, sfname, message) {
+        this.type = type;
+        this.expected = expected;
+        this.actual = actual;
+        this.sfname = sfname;
+        this.message = message;
+    }
+
+
+    SpecialFormError.prototype.toString = function() {
+        return this.type + " in " + this.sfname + ": " + this.message + 
+               ", expected " + this.expected + " but got " + this.actual;
+    };
+
+
+    function typeCheck(expected, actual, fname, message) {
+        if (expected !== actual) {
+            throw new SpecialFormError('TypeError', expected, actual, fname, message);
+        }
+    }
+
+
+    function argsCheck(expected, actual, fname, message) {
+        if (expected !== actual) {
+            throw new SpecialFormError('NumArgsError', expected, actual, fname, message);
+        }
+    }
+    
+
     //////// Special forms
 
     function define(env, args) {
-        if (args.length !== 2) {
-        	throw new Error("define needs 2 arguments, got " + args.length);
-        }
+    	argsCheck(2, args.length, 'define');
 
         var name = args[0], 
-    	    sexpr = args[1];
-
-        if (name.type !== "symbol") {
-            throw new Error("define needs a symbol as its first argument (got " + name.type + ")");
+    	    sexpr = args[1],
+    	    value;
+        
+        typeCheck('symbol', name.type, 'define', 'first argument');
+        
+        value = evaluate(sexpr, env);
+        
+        if( env.hasOwnBinding(name.value) ) {
+        	throw new SpecialFormError('ValueError', 'unbound symbol', 
+        			'bound symbol ' + name.value, 'define', 'cannot redefine symbol')
         }
         
-        var value = evaluate(sexpr, env);
         env.addBinding(name.value, value);
         return Data.Nil();
     }
 
 
     function myif(env, args) {
-    	if(args.length !== 3) {
-    		throw new Error("if needs 3 arguments, got " + args.length);
-    	}
+    	argsCheck(3, args.length, 'if');
     	
     	var condition = args[0], 
     	    ifTrue = args[1],
     	    ifFalse = args[2],
             cond = evaluate(condition, env);
 
-        if (cond.type !== 'boolean') {
-            throw new Error("if needs a boolean as first argument");
-        }
+        typeCheck('boolean', cond.type, 'if', "first argument");
 
         if (cond.value) {
             return evaluate(ifTrue, env);
@@ -213,9 +242,13 @@ var Evaluate = (function (Data, Functions, Environment) {
 
 
     return {
-        'eval': evaluate,
-        'getDefaultEnv': getDefaultEnv,
-        'define': define
+        'eval'         :  evaluate,
+        'getDefaultEnv':  getDefaultEnv,
+        'define'       :  define,
+        'if'           :  myif,
+        'lambda'       :  lambda,
+        'special'      :  special,
+        'beagleEval'   :  beagleEval
     };
 
 })(Data, Functions, Environment);

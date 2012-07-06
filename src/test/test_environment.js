@@ -53,7 +53,7 @@ function testEnvironment(Environment) {
         ok(t, "an important point: if the environment owns a binding, then you can't add a binding for that symbol");
         equal('omg', env.getBinding('a'), "an exception will be thrown and the binding will be unchanged");
 
-        // can't find if in none env
+        // can't find if not in an env
         ok(!env.hasBinding('c'), "if an environemnt doesn't have a binding for a symbol,");
         ok(!env.hasOwnBinding('c'), "then it also doesn't 'own' a binding ...");
         var u = false;
