@@ -188,7 +188,7 @@ var Evaluate = (function (Data, Functions, Environment) {
 
     function evaluateList(sexpr, env) {
         if (!sexpr.value[0]) {
-            throw new Error("cannot evaluate empty list");
+            throw new SpecialFormError('ValueError', '', '', 'evaluateList', "cannot evaluate empty list");
         }
 
         var first = evaluate(sexpr.value[0], env),
@@ -207,18 +207,31 @@ var Evaluate = (function (Data, Functions, Environment) {
     }
 
 
+    var SELF_EVALUATING_TYPES  = {
+        'number': 1,
+        'string': 1,
+        'boolean': 1,
+        'function': 1,
+        'specialform': 1,
+    };
+
+
     function evaluateAtom(sexpr, env) {
-    	var type = sexpr.type;
+        var type = sexpr.type;
     	
         if (type === 'symbol') {
-            return env.getBinding(sexpr.value);
+            if(env.hasBinding(sexpr.value)) {
+                return env.getBinding(sexpr.value);
+            } else {
+                throw new SpecialFormError('UndefinedVariableError', '', '', 'evaluateAtom', 'symbol ' + sexpr.value + ' is not defined');
+            }
         }
 
-        if (type === 'number' || type === 'string' || type === 'boolean' || type === 'function') {
+        if (type in SELF_EVALUATING_TYPES) {
             return sexpr;
         }
 
-        throw new Error("unrecognized type: " + sexpr.type + " in " + JSON.stringify(sexpr));
+        throw new Error("unrecognized type: " + type + " in " + JSON.stringify(sexpr));
     }
 
 
