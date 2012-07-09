@@ -73,16 +73,15 @@ var Evaluate = (function (Data, Functions, Environment) {
     
     
     function extractArgNames(args) {
-        if (args.type !== 'list') {
-            throw new Error("lambda requires a list as first argument");
-        }
+    	typeCheck('list', args.type, 'lambda/special', 'first argument');
 
-        var names = [];
+        var names = [],
+            i = 1;
 
         args.value.map(function(sym) {
-            if (sym.type !== 'symbol') {
-                throw new Error("all parameter names in lambda must be symbols");
-            }
+            typeCheck('symbol', sym.type, 'lambda/special', "argument " + i);
+            i++;
+
             names.push(sym);
         });
     	
@@ -91,9 +90,7 @@ var Evaluate = (function (Data, Functions, Environment) {
 
 
     function make_closure(env, lam_args) {
-    	if(lam_args.length !== 2) {
-    		throw new Error("lambda/special constructor requires 2 arguments, got " + lam_args.length);
-    	}
+    	argsCheck(2, lam_args.length, "lambda/special");
     	
     	var args = lam_args[0],
     	    body = lam_args[1],
@@ -109,9 +106,7 @@ var Evaluate = (function (Data, Functions, Environment) {
                 la = c_args.length,
                 newEnv = Environment.Environment(env, {});
 
-            if (ln !== la) {
-                throw new Error("number of parameters to lambda/special doesn't match arguments: " + ln + " vs " + la);
-            }
+            argsCheck(ln, la, 'closure');
 
             for (var j = 0; j < names.length; j++) {
                 // arguments don't need to be evaluated here
