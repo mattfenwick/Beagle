@@ -70,6 +70,10 @@ function printer(obj) {
     return '<nil>';
   }
   
+  if( obj.type === 'symbol' ) {
+    return "'" + obj.value;
+  }
+  
   if( obj.type !== 'list' ) {
     return obj.value;
   }
@@ -112,9 +116,9 @@ function displayEnv(envi) {
 
   evaler.bind("success", function(obj) {
     var h = $("#history");
-    h.append("<ul><pre>" + _.escape("> " + obj.string) + "</pre></ul>");
+    h.append("<li><pre>" + _.escape("> " + obj.string) + "</pre></li>");
     // remember -- only allowing one form (for now) so just take the first
-    h.append("<ul>" + _.escape(JSON.stringify(printer(obj.result[0]))) + "</ul>");
+    h.append("<li>" + _.escape(JSON.stringify(printer(obj.result[0]))) + "</li>");
   });
   
   evaler.bind("success", function(obj) {
@@ -125,8 +129,8 @@ function displayEnv(envi) {
   });
 
   evaler.bind("error", function(obj) {
-    $("#history").append("<ul><pre>" + _.escape("> " + obj.string) + "</pre></ul>");
-    $("#history").append("<ul>" + "ERROR: " + _.escape(obj.error) + "</ul>");
+    $("#history").append("<li><pre>" + _.escape("> " + obj.string) + "</pre></li>");
+    $("#history").append("<li>" + "ERROR: " + _.escape(obj.error) + "</li>");
   });
   
   evaler.bind('all', function() {
