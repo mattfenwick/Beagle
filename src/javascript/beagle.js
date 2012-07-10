@@ -23,9 +23,9 @@ var Beagle = (function (parse, evaluate, reify) {
             tokens, sexprs;
 
         // throws an exception if any problems found
+        //   otherwise keep going if tokens are fine
         parse.checkTokenSeparation(allTokens);
 
-        // otherwise keep going if tokens are fine
         // remove whitespace and comment tokens
         tokens = parse.stripTokens(allTokens);
 

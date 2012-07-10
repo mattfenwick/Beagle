@@ -1,173 +1,92 @@
 
-function testBeagle(beagle, data) {
+function testBeagle(beagle, data, parse) {
 
     module("beagle");
     
+    var list = data.List,
+        num = data.Number,
+        str = data.String;
+    
     test("single expressions", function() {
-    	expect(5);
+        expect(7);
 
-      var e1 = " ( list ) ",
-          e2 = "(cons 3 (list))",
-          e3 = '(car (cdr (cons 1 (cons "blargh" (cons 3 (cons 4 (list)))))))',
-          e4 = ' 3 ; this is a comment',
-          e5 = '"abc"123';
+        var e0 = "456",
+            e1 = " ( list 11 \t \n ) ",
+            e2 = "(cons 3 (list))",
+            e3 = '(car (cdr (cons 1 (cons "blargh" (cons 3 (cons 4 (list)))))))',
+            e4 = ' 3 ; this is a comment',
+            e5 = '"abc"123',
+            ex = beagle.exec;
 
-      deepEqual([data.List([])], beagle.exec(e1).result);
+        deepEqual([num(456)], ex(e0).result, 'can evaluate an atom');
 
-      deepEqual([data.List([data.Number(3)])], beagle.exec(e2).result);
+        deepEqual([list([num(1), num(2)])], ex("(list 1 2)").result, 'can evaluate a simple list');
 
-      deepEqual([data.String('blargh')], beagle.exec(e3).result);
+        deepEqual([list([num(11)])], ex(e1).result, 'can evaluate a simple list while ignoring whitespace');
 
-      deepEqual([data.Number(3)], beagle.exec(e4).result);
+        deepEqual([list([num(3)])], ex(e2).result, 'can evaluate a nested list');
 
-      var m = true;
-      try {
-        beagle.parseString(e5);
-        m = false;
-      } catch(e) {};
-      ok(m, 'strings and symbols must be separated by a space');
+        deepEqual([str('blargh')], ex(e3).result, 'can evaluate a deeply nested list');
+
+        deepEqual([num(3)], ex(e4).result, 'can ignore comments');
+
+        var m = true;
+        try {
+            ex(e5);
+            m = false;
+        } catch(e) {};
+        ok(m, 'strings and symbols must be separated by a space');
     });
     
+    
     test("multiple expressions", function() {
-    	expect(2);
+        expect(2);
 
-      var e1 = "(define x 3) (cons x (list))"
-          ;
+        var e1 = "(define x 3) (cons x (list))"
+            ;
 
-      var r = beagle.exec(e1);
-      deepEqual(data.Nil(), r.result[0]);
-      deepEqual(data.List([data.Number(3)]), r.result[1]);
+        var r = beagle.exec(e1);
+        deepEqual(list([num(3)]), r.result[1], 'multiple expressions can be evaluated at once');
+        deepEqual(data.Nil(), r.result[0], "and the return value of 'define' is nil");
     });
-
-
-
-function asJson(obj) {
-  var out;
-  if( typeof(obj) === 'object' && obj.length !== undefined ) {
-    out = [];
-    for(var i = 0; i < obj.length; i++) {
-      out.push(asJson(obj[i]));
-    }
-  } else if( typeof(obj) === 'object' ) {
-    out = {};
-    for(var key in obj) {
-      out[key] = asJson(obj[key]);
-    }
-  } else { // it's a number/string
-    out = obj;
-  }
-  return out;
-}
 
 
     test("parseString", function() {
-      expect(9);
-      var p1 = "(+ 3 2)",
-          p2 = "3 4",
-          p3 = "(+ (- (* 4 5 (abc (quote def)) 17)))",
-          p4 = "(+ (- (* 4 5 (abc (quote def)) 17))",
-          p5 = "()",
-          p6 = "abc",
-          p7 = "",
-          p8 = "(define x 4) \n (define y 5)",
-          p9 = "abc 1 2 3 (duh)";
+        expect(9);
+        var p1 = "(+ 3 2) ; a comment",
+            p2 = "3 4",
+            p3 = '(+ (- (* 4 "blargh" 17)))',
+            p4 = '(+ (- (* 4 "blargh" 17))',
+            p5 = "()",
+            p6 = "abc",
+            p7 = "",
+            p8 = "(define x 4) \n (define y 5)",
+            p9 = "abc 1 2 3 (duh)",
+            sexpr = parse.SExpression;
 
       var a = beagle.parseString(p1);
-      deepEqual([
-        {
-          "type": "list",
-          "value": [
-            {
-              "type": "symbol",
-              "value": "+"
-            },
-            {
-              "type": "symbol",
-              "value": "3"
-            },
-            {
-              "type": "symbol",
-              "value": "2"
-            }
-          ]
-        }
-      ], asJson(a));
+      deepEqual(
+          [sexpr('list', [sexpr('symbol', '+'), sexpr('symbol', '3'), sexpr('symbol', '2')])],
+          a, 'a simple list of three elements, all symbols; whitespace and comments are tossed'
+      );
 
       var b = beagle.parseString(p2);
-      deepEqual([{
-            "type": "symbol",
-            "value": "3"
-          },
-          {
-            "type": "symbol",
-            "value": "4"
-          }
-        ], asJson(b));
+      deepEqual([sexpr("symbol", '3'), sexpr('symbol', '4')], b, 'multiple atoms are fine');
 
       var c = beagle.parseString(p3);
       deepEqual([
-  {
-    "type": "list",
-    "value": [
-      {
-        "type": "symbol",
-        "value": "+"
-      },
-      {
-        "type": "list",
-        "value": [
-          {
-            "type": "symbol",
-            "value": "-"
-          },
-          {
-            "type": "list",
-            "value": [
-              {
-                "type": "symbol",
-                "value": "*"
-              },
-              {
-                "type": "symbol",
-                "value": "4"
-              },
-              {
-                "type": "symbol",
-                "value": "5"
-              },
-              {
-                "type": "list",
-                "value": [
-                  {
-                    "type": "symbol",
-                    "value": "abc"
-                  },
-                  {
-                    "type": "list",
-                    "value": [
-                      {
-                        "type": "symbol",
-                        "value": "quote"
-                      },
-                      {
-                        "type": "symbol",
-                        "value": "def"
-                      }
-                    ]
-                  }
-                ]
-              },
-              {
-                "type": "symbol",
-                "value": "17"
-              }
-            ]
-          }
-        ]
-      }
-    ]
-  }
-], asJson(c));
+          sexpr("list", [
+              sexpr('symbol', '+'), 
+              sexpr('list', [
+                  sexpr('symbol', '-'),
+                  sexpr('list', [
+                      sexpr('symbol', '*'),
+                      sexpr('symbol', '4'),
+                      sexpr('string', 'blargh'),
+                      sexpr('symbol', '17'),
+                  ])
+              ])
+          ])], c, 'deeply nested lists are no problem ...');
 
       var d = false;
       try {
@@ -175,89 +94,37 @@ function asJson(obj) {
       } catch(e) {
         d = true;
       };
-      ok(d, "unbalanced parentheses cause parse to fail");
+      ok(d, "... as long as they don't have unbalanced parentheses");
 
       var e = beagle.parseString(p5);
-      deepEqual([{
-        "type": "list",
-        "value": []
-      }], asJson(e));
+      deepEqual([sexpr('list', [])], e, 'the empty list is easy to parse');
 
       var f = beagle.parseString(p6);
-      deepEqual([{
-        "type": "symbol",
-        "value": "abc"
-      }], asJson(f));
+      deepEqual([sexpr('symbol', 'abc')], f, 'and so is a lone symbol');
   
       var g = beagle.parseString(p7);
-      deepEqual(g, [], "empty string results in empty list");
+      deepEqual(g, [], "the empty string can be parsed but doesn't return anything");
 
-      deepEqual(	
-
-[
-  {
-    "type": "list",
-    "value": [
-      {
-        "type": "symbol",
-        "value": "define"
-      },
-      {
-        "type": "symbol",
-        "value": "x"
-      },
-      {
-        "type": "symbol",
-        "value": "4"
-      }
-    ]
-  },
-  {
-    "type": "list",
-    "value": [
-      {
-        "type": "symbol",
-        "value": "define"
-      },
-      {
-        "type": "symbol",
-        "value": "y"
-      },
-      {
-        "type": "symbol",
-        "value": "5"
-      }
-    ]
-  }
-], asJson(beagle.parseString(p8)));
+      deepEqual([
+          sexpr('list', [
+              sexpr('symbol', 'define'),
+              sexpr('symbol', 'x'),
+              sexpr('symbol', '4')
+          ]),
+          sexpr('list', [
+              sexpr('symbol', 'define'),
+              sexpr('symbol', 'y'),
+              sexpr('symbol', '5')
+          ])
+      ], beagle.parseString(p8), 'multiple sexpressions are fine');
             
       deepEqual([
-  {
-    "type": "symbol",
-    "value": "abc"
-  },
-  {
-    "type": "symbol",
-    "value": "1"
-  },
-  {
-    "type": "symbol",
-    "value": "2"
-  },
-  {
-    "type": "symbol",
-    "value": "3"
-  },
-  {
-    "type": "list",
-    "value": [
-      {
-        "type": "symbol",
-        "value": "duh"
-      }
-    ]
-  }
-], asJson(beagle.parseString(p9)));
+          sexpr('symbol', 'abc'),
+          sexpr('symbol', '1'),
+          sexpr('symbol', '2'),
+          sexpr('symbol', '3'),
+          sexpr('list', [sexpr('symbol', 'duh')])       
+      ], beagle.parseString(p9), "even if there's lots of them!");
 
     });
 
