@@ -157,3 +157,34 @@
     0 
     l)))
 
+
+(define flip
+  (lambda (f)
+   (lambda (a b)
+    (f b a))))
+    
+    
+(define reverse
+  (lambda (ls)
+   (reduce (flip cons) (quote ()) ls)))
+
+
+(define ++
+  (lambda (l1 l2)
+   (reduce (flip cons) l2 (reverse l1))))
+
+
+(define join-lists
+  (lambda (x y)
+   (reduce ++ (quote ())
+           (map (lambda (e)
+                 (map (lambda (f) (cons e f)) y)) 
+                x))))
+                
+                
+(define join-many-lists
+  (lambda (ls)
+   (reduce (flip join-lists) (list (list)) ls)))
+   
+   (define me (list 1 2 3))
+(join-many-lists (list me me me))
