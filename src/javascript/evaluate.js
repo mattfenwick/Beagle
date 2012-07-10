@@ -136,12 +136,10 @@ var Evaluate = (function (Data, Functions, Environment) {
     /////////// core functions
     
     function beagleEval(env, args) {
-    	if(args.length !== 1) {
-    		throw new Error("eval requires 1 argument, got " + args.length);
-    	}
+        argsCheck(1, args.length, 'eval');
     	
-    	var sexpr = evaluate(args[0], env);
-    	
+        var sexpr = evaluate(args[0], env);
+
         return evaluate(sexpr, env);
     }
 
@@ -187,7 +185,7 @@ var Evaluate = (function (Data, Functions, Environment) {
 
 
     function evaluateList(sexpr, env) {
-        if (!sexpr.value[0]) {
+        if (sexpr.value.length === 0) {
             throw new SpecialFormError('ValueError', '', '', 'evaluateList', "cannot evaluate empty list");
         }
 

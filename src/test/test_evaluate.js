@@ -226,13 +226,24 @@ function testEvaluate(evaluate, funcs, data, envir, testHelper) {
         
 
     test("Beagle eval primitive", function() {
-        ok(false, "haven't figured out spec yet -- need to change this into a function (??)");
+        var bev = ev.beagleEval,
+            env = ev.getDefaultEnv();
+
+        ok(false, "this should be a function, not a special form");
+
+        expectExc(function() {
+            bev(env, []);
+        }, 'NumArgsError', 'eval expects exactly 1 argument: ');
+
+        expectExc(function() {
+            bev(env, [num(3), num(2)]);
+        }, 'NumArgsError', 'no more, no less');
     });
     
     
     test("js evaluate", function() {
-      var env = ev.getDefaultEnv();
-      var int_ = num(31),
+      var env = ev.getDefaultEnv(),
+          int_ = num(31),
           str1 = str("abcde"),
           sym1 = sym('cons'),
           l1 = lis([
