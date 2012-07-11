@@ -11,11 +11,12 @@ function testEvaluate(evaluate, funcs, data, envir, testHelper) {
     
     module("Evaluate");
     
+    
     test("default environment", function() {
         var env = ev.getDefaultEnv();
         var names = [
             'define', 'lambda', 'if', 'special', 'eval', 'true', 'false',
-            'cons', 'car', 'cdr', 'list', '=', '+', 'neg'
+            'cons', 'car', 'cdr', 'list', '=', '+', 'neg', 'set!'
         ];
 
         names.map(function(n) {
@@ -27,8 +28,8 @@ function testEvaluate(evaluate, funcs, data, envir, testHelper) {
             bindings++;
         }
 
-        equal(14, bindings, 'there are currently 14 built-in special forms and functions');
-        equal(14, names.length, 'and we need to test for all of them');
+        equal(15, bindings, 'there are currently 15 built-in special forms and functions');
+        equal(15, names.length, 'and we need to test for all of them');
     });
     
     
@@ -64,6 +65,42 @@ function testEvaluate(evaluate, funcs, data, envir, testHelper) {
         expectExc(function() {
             def(env, [num(11), num(12)]);
         }, 'TypeError', 'the first argument must be a Beagle symbol');
+    });
+    
+    
+    test("set!", function() {
+    	var set = ev['set!'],
+    	    par = envir.Environment(false, {'a': 3}),
+    	    env = envir.Environment(par, {'b': 4});
+    	
+    	set(env, [sym('b'), num(12)]);
+    	deepEqual(num(12), env.getBinding('b'), "set! takes two arguments, a symbol and a value");
+    	
+    	set(par, [sym('a'), num(32)]);
+    	deepEqual(num(32), par.getBinding('a'), "and sets binding for the symbol to the value");
+    	
+    	set(env, [sym('a'), num(64)]);
+    	deepEqual(
+    	    [num(64), num(64)], 
+    	    [par.getBinding('a'), env.getBinding('a')], 
+    	    "the first binding found for that symbol will be changed"
+    	);
+    	
+    	expectExc(function() {
+    		set(env, [sym('e'), num(88)]);
+    	}, 'ValueError', "set! may not be used on undefined symbols");
+
+        expectExc(function() {
+            set(env, [sym('abc')]);
+        }, 'NumArgsError', 'remember that it takes two arguments');
+
+        expectExc(function() {
+            set(env, [sym('def'), empty, empty]);
+        }, 'NumArgsError', '... no more, no less');
+
+        expectExc(function() {
+            set(env, [num(11), num(12)]);
+        }, 'TypeError', 'and that the first argument must be a Beagle symbol');
     });
     
     

@@ -46,11 +46,32 @@ var Evaluate = (function (Data, Functions, Environment) {
         
         if( env.hasOwnBinding(name.value) ) {
         	throw new SpecialFormError('ValueError', 'unbound symbol', 
-        			'bound symbol ' + name.value, 'define', 'cannot redefine symbol')
+        			'bound symbol ' + name.value, 'define', 'cannot redefine symbol');
         }
         
         env.addBinding(name.value, value);
         return Data.Nil();
+    }
+    
+    
+    function setBang(env, args) {
+    	argsCheck(2, args.length, 'set!');
+    	
+    	var name = args[0],
+    	    sexpr = args[1],
+    	    value;
+    	
+    	typeCheck('symbol', name.type, 'set!', 'first argument');
+    	
+    	value = evaluate(sexpr, env);
+    	
+    	if( !env.hasBinding(name.value) ) {
+    		throw new SpecialFormError('ValueError', 'bound symbol', 
+    				'unbound symbol ' + name.value, 'set!', 'cannot set! undefined symbol');
+    	}
+    	
+    	env.setBinding(name.value, value);
+    	return Data.Nil();
     }
 
 
@@ -155,6 +176,7 @@ var Evaluate = (function (Data, Functions, Environment) {
         });
 
         bindings['define'] = Data.SpecialForm(define);
+        bindings['set!']   = Data.SpecialForm(setBang);
         bindings['if']     = Data.SpecialForm(myif);
         bindings['lambda'] = Data.SpecialForm(lambda);
         bindings['special'] = Data.SpecialForm(special);
@@ -251,6 +273,7 @@ var Evaluate = (function (Data, Functions, Environment) {
         'eval'         :  evaluate,
         'getDefaultEnv':  getDefaultEnv,
         'define'       :  define,
+        'set!'         :  setBang,
         'if'           :  myif,
         'lambda'       :  lambda,
         'special'      :  special,

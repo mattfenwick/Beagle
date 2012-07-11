@@ -64,5 +64,38 @@ function testEnvironment(Environment) {
         };
         ok(u, "and trying to look up the value of that symbol causes an exception");
     });
+    
+    
+    test("redefining symbols", function() {
+        var par = Environment.Environment(false, {
+                'a': 3,
+                'b': 'shadowed'
+            }),
+            env = Environment.Environment(par, {
+                'b': 'this is shadowing'
+            });
+        
+        env.setBinding('b', 'changed!');
+        deepEqual(
+            ['shadowed', 'changed!'],
+            [par.getBinding('b'), env.getBinding('b')], 
+            "bindings can be changed using the 'setBinding' method"
+        );
+        
+        env.setBinding('a', 'also changed');
+        deepEqual(
+            ['also changed', 'also changed', false],
+            [par.getBinding('a'), env.getBinding('a'), env.hasOwnBinding('a')], 
+            "which changes the first binding it finds of the same name, starting from the innermost scope"
+        );
+        
+        var a = true;
+        try {
+            env.setBinding('c', 'error!');
+            a = false;
+        } catch(e) {};
+        ok(a, "but trying to change the value of a key that hasn't been defined anywhere throws an error");
+        
+    });
 
 };

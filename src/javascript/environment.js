@@ -39,6 +39,17 @@ var Environment = (function() {
         }
         throw new Error("could not find value for " + name);
     };
+    
+    
+    Env.prototype.setBinding = function(name, value) {
+        if (this.hasOwnBinding(name)) {
+            this._bindings[name] = value;
+        } else if (this._parent) {
+            this._parent.setBinding(name, value);
+        } else {
+            throw new Error("could not find definition for " + name);
+        }
+    }
 
 
     return {
