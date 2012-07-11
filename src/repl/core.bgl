@@ -134,20 +134,6 @@
          
 (define quote
   (special (x) x))
-
-
-(define or-lazy
-  (special (l r) 
-   (if (eval l)
-       true
-       (eval r))))
-       
-       
-(define and-lazy
-  (special (l r)
-   (if (eval l)
-       (eval r)
-       false)))
        
        
 (define count
@@ -186,5 +172,3 @@
   (lambda (ls)
    (reduce (flip join-lists) (list (list)) ls)))
    
-   (define me (list 1 2 3))
-(join-many-lists (list me me me))
