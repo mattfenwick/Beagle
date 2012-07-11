@@ -169,7 +169,7 @@ var Evaluate = (function (Data, Functions, Environment) {
 
     function getDefaultEnv() {
         var bindings = {},
-            funcNames = ['cons', 'car', 'cdr', 'list', '=', '+', 'neg'];
+            funcNames = ['cons', 'car', 'cdr', 'list', '=', '+', 'neg', 'type'];
 
         funcNames.map(function (name) {
             bindings[name] = Data.Function(Functions[name]);

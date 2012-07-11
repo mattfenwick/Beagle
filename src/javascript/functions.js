@@ -162,6 +162,15 @@ var Functions = (function (Data) {
 
         return Data.Number(-num.value);
     }
+    
+    
+    function type(args) {
+    	argsCheck(1, args.length, 'type');
+    	
+    	var arg = args[0];
+    	
+    	return Data.String(arg.type);
+    }
 
 
     return {
@@ -171,7 +180,8 @@ var Functions = (function (Data) {
         'list': list,
         '=': equals,
         '+': plus,
-        'neg': neg
+        'neg': neg,
+        'type': type
     };
 
 })(Data);

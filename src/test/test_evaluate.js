@@ -16,7 +16,7 @@ function testEvaluate(evaluate, funcs, data, envir, testHelper) {
         var env = ev.getDefaultEnv();
         var names = [
             'define', 'lambda', 'if', 'special', 'eval', 'true', 'false',
-            'cons', 'car', 'cdr', 'list', '=', '+', 'neg', 'set!'
+            'cons', 'car', 'cdr', 'list', '=', '+', 'neg', 'set!', 'type'
         ];
 
         names.map(function(n) {
@@ -28,8 +28,8 @@ function testEvaluate(evaluate, funcs, data, envir, testHelper) {
             bindings++;
         }
 
-        equal(15, bindings, 'there are currently 15 built-in special forms and functions');
-        equal(15, names.length, 'and we need to test for all of them');
+        equal(16, bindings, 'there are currently 16 built-in special forms and functions');
+        equal(16, names.length, 'and we need to test for all of them');
     });
     
     
