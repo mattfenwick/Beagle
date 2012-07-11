@@ -85,30 +85,8 @@ var Functions = (function (Data) {
     }
 
 
-    function equalsList(lval, rval) {
-        var i, compare;
-        if (lval.length !== rval.length) {
-            return Data.Boolean(false);
-        }
-
-        for (i = 0; i < lval.length; i++) {
-            // first we check the types ...
-            if (lval[i].type !== rval[i].type) {
-                return Data.Boolean(false);
-            }
-            // ... and continue to the values ...
-            compare = equals([lval[i], rval[i]]);
-            if (compare.type === 'nil' || !compare.value) {
-                return Data.Boolean(false);
-            };
-        }
-        // ... base case, no differences found:  equal
-        return Data.Boolean(true);
-    }
-
-
     function equals(args) {        
-        argsCheck(2, args.length, '=');
+        argsCheck(2, args.length, 'equals?');
 
         var left = args[0],
             right = args[1];
@@ -119,17 +97,11 @@ var Functions = (function (Data) {
             rval = right.value;
 
         if (ltype !== rtype) {
-            return Data.Nil();
+            throw new Error("arguments to 'equals?' must have identical types")
         }
 
-        if (ltype === 'function' || ltype === 'specialform' || ltype === 'nil') {
-            return Data.Nil();
-        }
-
-        // should a 'nil' in a list cause the comparison to return a 'nil'?
-        // for now, we'll say ... no
-        if (ltype === 'list') {
-            return equalsList(lval, rval);
+        if (ltype === 'function' || ltype === 'specialform' || ltype === 'nil' || ltype === 'list') {
+            throw new Error("'equals?' can't compare " + ltype + "s");
         }
 
         if (ltype === 'number' || ltype === 'string' || ltype === 'symbol' || ltype === 'boolean') {
@@ -171,6 +143,17 @@ var Functions = (function (Data) {
     	
     	return Data.String(arg.type);
     }
+    
+    
+    function nullQ(args) {
+    	argsCheck(1, args.length, 'null?');
+    	
+    	var list = args[0];
+    	
+    	typeCheck('list', list.type, 'null?', 'only argument');
+    	
+    	return Data.Boolean(list.value.length === 0);
+    }
 
 
     return {
@@ -178,10 +161,11 @@ var Functions = (function (Data) {
         'car': car,
         'cdr': cdr,
         'list': list,
-        '=': equals,
+        'equals?': equals,
         '+': plus,
         'neg': neg,
-        'type': type
+        'type': type,
+        'null?': nullQ
     };
 
 })(Data);

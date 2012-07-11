@@ -16,17 +16,18 @@
   
 (define table-get-entries
   (lambda (table)
-   (if (not (= (car table) "table"))
+   (if (not (equals? (car table) "table"))
        (error "expected table")
        (second table))))
   
   
 (define table-has?
   (lambda (table key)
-   (= 1 (count
-         (filter (lambda (pair)
-                   (= (car pair) key))
-                 (table-get-entries table))))))
+   (equals? 1
+     (count
+      (filter (lambda (pair)
+                (equals? (car pair) key))
+              (table-get-entries table))))))
                 
                 
 (define table-add
@@ -40,7 +41,7 @@
   (lambda (table key)
    (if (table-has? table key)
        (second (first (filter (lambda (pair)
-                               (= (car pair) key))
+                               (equals? (car pair) key))
                               (table-get-entries table))))
        (error "table does not have key"))))
        
@@ -51,6 +52,30 @@
             (table-add t (car p) (car (cdr p))))
            table-empty 
            pairs)))
+           
+;;;;;;;;
+(define eq-list?
+  (lambda (f)
+   (lambda (l r)
+    (cond ((null? l) (null? r))
+          ((null? r) false)
+          ((not (equals? (type (car l))
+                         (type (car r)))) 
+                false)
+          ((f (car l) (car r))
+           ((eq-list? f) (cdr l) (cdr r)))
+          (true false)))))
+          
+(define prim-equal?
+  (lambda (l r)
+   (cond ((not (equals? (type l) (type r))) false)
+         ((equals? (type l) "list")
+          ((eq-list? equals?) l r))
+         (true (equals? l r)))))
+
+(define eq-list-prim?
+  (eq-list? equals?))
+;;;;;;;;;;;;;;
 
 
 (define multi-method-table table-empty)
@@ -68,19 +93,25 @@
   (lambda (type)
    (table-has? multi-method-table type)))
    
-(add-method "string" =)
+(add-method "string" equals?)
 
-(add-method "number" =)
+(add-method "number" equals?)
+
+(add-method "boolean" equals?)
+
+(add-method "symbol" equals?)
 
 ;; 'type' needs to also be a generic function,
 ;;   so that this can work on user-defined types
 ;;   as well as the built-in ones
 ;; suggestion:  change name to 'prim-type' for built-in types
-(define ==
+(define =
   (lambda (l r)
-   (if (not (= (type l) (type r)))
+   (if (not (equals? (type l) (type r)))
        false
        (if (has-method? (type l))
            ((get-method (type l)) l r)
            (error "no method found for this type")))))
+
+(add-method "list" (eq-list? =))
 
