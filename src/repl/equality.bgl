@@ -160,3 +160,41 @@
 ;; wrong -- needs to use '=', not 'equal?' inside of 'eqlist?'
 (add-method "=" "list" eqlist?)
 
+(add-method "<" "number" number-<)
+
+(add-method "<" "boolean" 
+  (lambda (l r)
+   (if r
+       (not l)
+       false)))
+       
+
+(define <
+  (lambda (l r)
+   (if (not (equal? (type l) (type r)))
+       (<-error "really need to figure this out")
+       (if (has-method? "<" (type l))
+           ((get-method "<" (type l)) l r)
+           (<-error "no method found")))))
+       
+       
+(define <=
+  (lambda (l r)
+   (or (< l r)
+       (= l r))))
+
+
+(define >
+  (lambda (l r)
+   (not (<= l r))))
+   
+   
+(define >=
+  (lambda (l r)
+   (not (< l r))))
+   
+   
+(define !=
+  (lambda (l r)
+   (not (= l r))))
+   

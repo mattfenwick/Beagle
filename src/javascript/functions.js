@@ -151,6 +151,19 @@ var Functions = (function (Data) {
     	
     	return Data.Boolean(list.value.length === 0);
     }
+    
+    
+    function numberLessThan(args) {
+    	argsCheck(2, args.length, 'number-<');
+    	
+    	var l = args[0],
+    	    r = args[1];
+    	
+    	typeCheck('number', l.type, 'number-<', 'first argument');
+    	typeCheck('number', r.type, 'number-<', 'second argument');
+    	
+    	return Data.Boolean(l.value < r.value);
+    }
 
 
     return {
@@ -162,7 +175,8 @@ var Functions = (function (Data) {
         '+'         :  plus,
         'neg'       :  neg,
         'prim-type' :  primType,
-        'null?'     :  nullQ
+        'null?'     :  nullQ,
+        'number-<'  :  numberLessThan
     };
 
 })(Data);

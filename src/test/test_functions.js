@@ -245,4 +245,27 @@ function testFunctions(funcs, data, testHelper) {
         
     });
     
+    
+    test("number-<", function() {
+    	var lt = funcs['number-<'];
+
+        deepEqual(data.Boolean(false), lt([num(2), num(1)]), "'number-<' takes two numbers and compares them");
+        
+        deepEqual(data.Boolean(true), lt([num(11), num(39)]), "it returns true if the first is < the second");
+        
+        deepEqual(data.Boolean(false), lt([num(4), num(4)]), "and false otherwise -- including if they're the same");
+
+        expectException(function() {
+            lt([list([]), num(4)]);
+        }, 'TypeError', 'remember to give it numbers');
+        
+        expectException(function() {
+            lt([num(1)]);
+        }, 'NumArgsError', 'too few arguments throws an exception ...');
+        
+        expectException(function() {
+            lt([num(1), num(2), num(3)]);
+        }, 'NumArgsError', 'as does too many arguments');
+    });
+    
 }
