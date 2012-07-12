@@ -74,9 +74,9 @@
   (lambda ()
    (test-ok
     (all 
-     (list (equals? (map id (list)) (list))
-           (equals? (map id (list 1 2 3)) (list 1 2 3))
-           (equals? (map (lambda (x) (cons 4 x))
+     (list (eq? (map id (list)) (list))
+           (eq? (map id (list 1 2 3)) (list 1 2 3))
+           (eq? (map (lambda (x) (cons 4 x))
                    (list (list 1) (list) (list 3 4)))
               (list (list 4 1) (list 4) (list 4 3 4)))))
     "map-tests")))

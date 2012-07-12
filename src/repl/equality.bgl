@@ -16,17 +16,17 @@
   
 (define table-get-entries
   (lambda (table)
-   (if (not (equals? (car table) "table"))
+   (if (not (eqan? (car table) "table"))
        (error "expected table")
        (second table))))
   
   
 (define table-has?
   (lambda (table key)
-   (equals? 1
+   (eqan? 1
      (count
       (filter (lambda (pair)
-                (equals? (car pair) key))
+                (eqan? (car pair) key))
               (table-get-entries table))))))
                 
                 
@@ -41,7 +41,7 @@
   (lambda (table key)
    (if (table-has? table key)
        (second (first (filter (lambda (pair)
-                               (equals? (car pair) key))
+                               (eqan? (car pair) key))
                               (table-get-entries table))))
        (error "table does not have key"))))
        
@@ -54,27 +54,32 @@
            pairs)))
            
 ;;;;;;;;
-(define eq-list?
-  (lambda (f)
-   (lambda (l r)
-    (cond ((null? l) (null? r))
-          ((null? r) false)
-          ((not (equals? (type (car l))
-                         (type (car r)))) 
-                false)
-          ((f (car l) (car r))
-           ((eq-list? f) (cdr l) (cdr r)))
-          (true false)))))
-          
-(define prim-equal?
-  (lambda (l r)
-   (cond ((not (equals? (type l) (type r))) false)
-         ((equals? (type l) "list")
-          ((eq-list? equals?) l r))
-         (true (equals? l r)))))
 
-(define eq-list-prim?
-  (eq-list? equals?))
+(define eqan?
+  (lambda (l r)
+   (cond ((eq? (type l) (type r))
+          (eq? l r))
+         (true false))))
+
+(define list?
+  (lambda (s)
+   (eqan? "list" (type s))))
+
+(define eqlist?
+  (lambda (l r)
+   (cond ((null? l) (null? r))         ;; this is like ((and (null? l) (null? r))  true)
+         ((null? r) false)             ;; and          ((or  (null? l) (null? r)) false)
+         (true (and (equal? (car l) (car r))
+                    (equal? (cdr l) (cdr r)))))))
+
+(define equal?
+  (lambda (l r)
+   (cond ((and (list? l) (list? r))
+          (eqlist? l r))
+         ((or (list? l) (list? r)) 
+          false)
+         (true (eqan? l r)))))
+
 ;;;;;;;;;;;;;;
 
 

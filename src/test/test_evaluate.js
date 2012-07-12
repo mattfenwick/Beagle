@@ -16,7 +16,8 @@ function testEvaluate(evaluate, funcs, data, envir, testHelper) {
         var env = ev.getDefaultEnv();
         var names = [
             'define', 'lambda', 'if', 'special', 'eval', 'true', 'false',
-            'cons', 'car', 'cdr', 'list', '=', '+', 'neg', 'set!', 'type'
+            'cons', 'car', 'cdr', 'list', 'eq?', '+', 'neg', 'set!', 'type',
+            'cond', 'null?'
         ];
 
         names.map(function(n) {
@@ -28,8 +29,8 @@ function testEvaluate(evaluate, funcs, data, envir, testHelper) {
             bindings++;
         }
 
-        equal(16, bindings, 'there are currently 16 built-in special forms and functions');
-        equal(16, names.length, 'and we need to test for all of them');
+        equal(18, bindings, 'there are currently 18 built-in special forms and functions');
+        equal(18, names.length, 'and we need to test for all of them');
     });
     
     
@@ -138,6 +139,41 @@ function testEvaluate(evaluate, funcs, data, envir, testHelper) {
 
       deepEqual(num(64), if_(env, [t, num(64), sym('was_not_defined')]), 
               "watch out: 'if' is not strict in its evaluation");
+    });
+    
+    
+    test("cond", function() {
+      var cond = ev['cond'],
+          env = ev.getDefaultEnv(),
+          t = Data.Boolean(true),
+          f = Data.Boolean(false);
+      
+      env.addBinding('fsym', f);
+      
+      deepEqual(
+          num(4),
+          cond(env, [lis([t, num(4)]), lis([t, str("huh?")])]), 
+          "'cond' looks through its arguments for a list whose first element evaluates to true"
+      );
+      
+      deepEqual(
+          str("huh?"), 
+          cond(env, [lis([sym('fsym'), sym('fsym')]), lis([t, str("huh?")])]), 
+          'and evaluates and returns the second element of that list'
+      );
+
+      expectExc(function() {
+          cond(env, [lis([t])]);
+      }, 'NumArgsError', 'lists with fewer than 2 elements are a no-no');
+
+      expectExc(function() {
+          cond(env, [lis([t, t, t])]);
+      }, 'NumArgsError', 'as are lists with more than 2 elements');
+
+      expectExc(function() {
+          cond(env, [lis([f, num(11)])]);
+      }, 'ValueError', "watch out: 'cond' is unhappy if nothing's true");
+
     });
     
     

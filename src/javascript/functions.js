@@ -85,8 +85,8 @@ var Functions = (function (Data) {
     }
 
 
-    function equals(args) {        
-        argsCheck(2, args.length, 'equals?');
+    function eqQ(args) {        
+        argsCheck(2, args.length, 'eq?');
 
         var left = args[0],
             right = args[1];
@@ -97,18 +97,15 @@ var Functions = (function (Data) {
             rval = right.value;
 
         if (ltype !== rtype) {
-            throw new Error("arguments to 'equals?' must have identical types")
-        }
-
-        if (ltype === 'function' || ltype === 'specialform' || ltype === 'nil' || ltype === 'list') {
-            throw new Error("'equals?' can't compare " + ltype + "s");
+            throw new FunctionError('TypeError', ltype, rtype, "eq?", "arguments must have identical types")
         }
 
         if (ltype === 'number' || ltype === 'string' || ltype === 'symbol' || ltype === 'boolean') {
             return Data.Boolean(lval === rval);
         }
 
-        throw new Error("unrecognized type: " + ltype);
+        throw new FunctionError('TypeError', 'number/string/symbol/boolean', 
+                  ltype, "eq?", "can't compare type");
     }
 
 
@@ -161,7 +158,7 @@ var Functions = (function (Data) {
         'car': car,
         'cdr': cdr,
         'list': list,
-        'equals?': equals,
+        'eq?': eqQ,
         '+': plus,
         'neg': neg,
         'type': type,

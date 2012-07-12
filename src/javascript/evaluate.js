@@ -94,22 +94,23 @@ var Evaluate = (function (Data, Functions, Environment) {
     
     
     function cond(env, args) {
-    	var i,
-    	    test;
+        var i,
+            test;
     	
-    	for(i = 0; i < args.length; i++) {
-    		typeCheck('list', args[i].type, 'cond', "argument " + (i + 1));
-    		argsCheck(2, args[i].value.length, 'arguments to cond must be lists of length 2');
+        for(i = 0; i < args.length; i++) {
+            typeCheck('list', args[i].type, 'cond', "argument " + (i + 1));
+            argsCheck(2, args[i].value.length, 'arguments to cond must be lists of length 2');
     		
-    		test = evaluate(args[i].value[0], env);
-    		typeCheck('boolean', test.type, 'cond', "condition of argument " + (i + 1));
+            test = evaluate(args[i].value[0], env);
+            typeCheck('boolean', test.type, 'cond', "condition of argument " + (i + 1));
     		
-    		if(test.value) {
-    			return evaluate(args[i].value[1], env);
-    		}
-    	}
+            if(test.value) {
+                return evaluate(args[i].value[1], env);
+            }
+        }
     	
-    	throw new Error("cond didn't find true condition");
+        throw new SpecialFormError('ValueError', 'a true condition',
+                  'no true condition', 'cond', "a true condition is required");
     }
     
     
@@ -189,7 +190,7 @@ var Evaluate = (function (Data, Functions, Environment) {
 
     function getDefaultEnv() {
         var bindings = {},
-            funcNames = ['cons', 'car', 'cdr', 'list', 'equals?', 'null?', '+', 'neg', 'type'];
+            funcNames = ['cons', 'car', 'cdr', 'list', 'eq?', 'null?', '+', 'neg', 'type'];
 
         funcNames.map(function (name) {
             bindings[name] = Data.Function(Functions[name]);
@@ -298,7 +299,8 @@ var Evaluate = (function (Data, Functions, Environment) {
         'if'           :  myif,
         'lambda'       :  lambda,
         'special'      :  special,
-        'beagleEval'   :  beagleEval
+        'beagleEval'   :  beagleEval,
+        'cond'         :  cond
     };
 
 })(Data, Functions, Environment);

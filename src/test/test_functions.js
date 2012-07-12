@@ -166,9 +166,9 @@ function testFunctions(funcs, data, testHelper) {
     });
 
 
-    test("equals", function() {
+    test("eq?", function() {
       
-      var eq = funcs['='],
+      var eq = funcs['eq?'],
           db = Data.Boolean,
           t = db(true),
           f = db(false);
@@ -176,7 +176,7 @@ function testFunctions(funcs, data, testHelper) {
       deepEqual(t, eq([t, t]), 'booleans');
       deepEqual(f, eq([f, t]), 'booleans');
       
-      deepEqual(t, eq([num(31), num(31)]), 'number');
+
       deepEqual(f, eq([num(3), num(31)]), 'number');
       deepEqual(t, eq([num(2331), num(2331)]), 'number');
       
@@ -186,20 +186,14 @@ function testFunctions(funcs, data, testHelper) {
       deepEqual(t, eq([sym('abc'), sym('abc')]), 'symbols');
       deepEqual(f, eq([sym('abc'), sym('def')]), 'symbols');
       
-      deepEqual(Data.Nil(), eq([sym('abc'), str('abc')]), 'mixed types');
-      deepEqual(Data.Nil(), eq([num(16), db(true)]), 'mixed types');
-      
-      deepEqual(t, eq([list([]), list([])]), 'empty lists');
-      deepEqual(f, eq([list([]), list([num(3)])]), 'empty and non-empty lists');
-      deepEqual(t, eq([list([num(3)]), list([num(3)])]), '2 non-empty lists');
-      deepEqual(f, eq([list([list([t])]), list([list([f])])]), 'deeply nested lists');
-      deepEqual(f, eq([list([num(3)]), list([str('3')])]), 'empty and non-empty lists');
-      deepEqual(
-          f, 
-          eq([list([num(3), list([])]), list([str('3'), list([])])]), 
-          'nested lists'
-      );
-      
+      expectException(function() {
+          eq([num(16), db(true)]);
+      }, 'TypeError', "'eq?' arguments must be of the same type");
+            
+      expectException(function() {
+          eq([list(7), list(7)]);
+      }, 'TypeError', "'eq?' does not work on lists");
+            
       expectException(function() {
           eq([num(7)]);
       }, 'NumArgsError', 'too few arguments throws an exception ...');
@@ -224,6 +218,29 @@ function testFunctions(funcs, data, testHelper) {
         
         expectException(function() {
             type([num(5), num(8)]);
+        }, 'NumArgsError', 'as does too many arguments');
+        
+    });
+    
+    
+    test("null?", function() {
+        var n = funcs['null?'],
+            empty = list([]);
+
+        deepEqual(data.Boolean(true), n([empty]), "'null?' takes one argument:  a list");
+        
+        deepEqual(data.Boolean(false), n([list([str("list")])]), "it returns true if the list is empty, and false otherwise");
+
+        expectException(function() {
+            n([num(4)]);
+        }, 'TypeError', 'remember to give it lists');
+        
+        expectException(function() {
+            n([]);
+        }, 'NumArgsError', 'too few arguments throws an exception ...');
+        
+        expectException(function() {
+            n([empty, empty]);
         }, 'NumArgsError', 'as does too many arguments');
         
     });
