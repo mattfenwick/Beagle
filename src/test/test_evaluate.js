@@ -16,7 +16,7 @@ function testEvaluate(evaluate, funcs, data, envir, testHelper) {
         var env = ev.getDefaultEnv();
         var names = [
             'define', 'lambda', 'if', 'special', 'eval', 'true', 'false',
-            'cons', 'car', 'cdr', 'list', 'eq?', '+', 'neg', 'set!', 'type',
+            'cons', 'car', 'cdr', 'list', 'eq?', '+', 'neg', 'set!', 'prim-type',
             'cond', 'null?'
         ];
 

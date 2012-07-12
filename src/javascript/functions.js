@@ -133,8 +133,8 @@ var Functions = (function (Data) {
     }
     
     
-    function type(args) {
-    	argsCheck(1, args.length, 'type');
+    function primType(args) {
+    	argsCheck(1, args.length, 'prim-type');
     	
     	var arg = args[0];
     	
@@ -154,15 +154,15 @@ var Functions = (function (Data) {
 
 
     return {
-        'cons': cons,
-        'car': car,
-        'cdr': cdr,
-        'list': list,
-        'eq?': eqQ,
-        '+': plus,
-        'neg': neg,
-        'type': type,
-        'null?': nullQ
+        'cons'      :  cons,
+        'car'       :  car,
+        'cdr'       :  cdr,
+        'list'      :  list,
+        'eq?'       :  eqQ,
+        '+'         :  plus,
+        'neg'       :  neg,
+        'prim-type' :  primType,
+        'null?'     :  nullQ
     };
 
 })(Data);

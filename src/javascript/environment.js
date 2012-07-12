@@ -3,6 +3,7 @@ var Environment = (function() {
     function Env(parent, bindings) {
         this._parent = parent;
         this._bindings = bindings;
+        this._history = [];
     }
 
 
@@ -49,7 +50,20 @@ var Environment = (function() {
         } else {
             throw new Error("could not find definition for " + name);
         }
-    }
+    };
+    
+    
+    Env.prototype.logEvaluation = function(sexpr) {
+        this._history.push(sexpr);
+        if (this._parent) {
+            this._parent.logEvaluation(sexpr);
+        }
+    };
+    
+    
+    Env.prototype.getLog = function() {
+        return this._history;
+    };
 
 
     return {

@@ -205,10 +205,10 @@ function testFunctions(funcs, data, testHelper) {
     });
     
     
-    test("type", function() {
-        var type = funcs.type;
+    test("prim-type", function() {
+        var type = funcs['prim-type'];
 
-        deepEqual(str("number"), type([num(14)]), "'type' is a function of one argument");
+        deepEqual(str("number"), type([num(14)]), "'prim-type' is a function of one argument");
         
         deepEqual(str("list"), type([list([])]), "it returns the type of its argument as a string");
         

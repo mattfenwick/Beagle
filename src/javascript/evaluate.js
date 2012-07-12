@@ -34,19 +34,19 @@ var Evaluate = (function (Data, Functions, Environment) {
     //////// Special forms
 
     function define(env, args) {
-    	argsCheck(2, args.length, 'define');
+        argsCheck(2, args.length, 'define');
 
         var name = args[0], 
-    	    sexpr = args[1],
-    	    value;
+            sexpr = args[1],
+            value;
         
         typeCheck('symbol', name.type, 'define', 'first argument');
         
         value = evaluate(sexpr, env);
         
         if( env.hasOwnBinding(name.value) ) {
-        	throw new SpecialFormError('ValueError', 'unbound symbol', 
-        			'bound symbol ' + name.value, 'define', 'cannot redefine symbol');
+            throw new SpecialFormError('ValueError', 'unbound symbol', 
+                    'bound symbol ' + name.value, 'define', 'cannot redefine symbol');
         }
         
         env.addBinding(name.value, value);
@@ -55,32 +55,32 @@ var Evaluate = (function (Data, Functions, Environment) {
     
     
     function setBang(env, args) {
-    	argsCheck(2, args.length, 'set!');
-    	
-    	var name = args[0],
-    	    sexpr = args[1],
-    	    value;
-    	
-    	typeCheck('symbol', name.type, 'set!', 'first argument');
-    	
-    	value = evaluate(sexpr, env);
-    	
-    	if( !env.hasBinding(name.value) ) {
-    		throw new SpecialFormError('ValueError', 'bound symbol', 
-    				'unbound symbol ' + name.value, 'set!', 'cannot set! undefined symbol');
-    	}
-    	
-    	env.setBinding(name.value, value);
-    	return Data.Nil();
+        argsCheck(2, args.length, 'set!');
+        
+        var name = args[0],
+            sexpr = args[1],
+            value;
+        
+        typeCheck('symbol', name.type, 'set!', 'first argument');
+        
+        value = evaluate(sexpr, env);
+        
+        if( !env.hasBinding(name.value) ) {
+            throw new SpecialFormError('ValueError', 'bound symbol', 
+                    'unbound symbol ' + name.value, 'set!', 'cannot set! undefined symbol');
+        }
+        
+        env.setBinding(name.value, value);
+        return Data.Nil();
     }
 
 
     function myif(env, args) {
-    	argsCheck(3, args.length, 'if');
-    	
-    	var condition = args[0], 
-    	    ifTrue = args[1],
-    	    ifFalse = args[2],
+        argsCheck(3, args.length, 'if');
+        
+        var condition = args[0], 
+            ifTrue = args[1],
+            ifFalse = args[2],
             cond = evaluate(condition, env);
 
         typeCheck('boolean', cond.type, 'if', "first argument");
@@ -96,26 +96,26 @@ var Evaluate = (function (Data, Functions, Environment) {
     function cond(env, args) {
         var i,
             test;
-    	
+        
         for(i = 0; i < args.length; i++) {
             typeCheck('list', args[i].type, 'cond', "argument " + (i + 1));
             argsCheck(2, args[i].value.length, 'arguments to cond must be lists of length 2');
-    		
+            
             test = evaluate(args[i].value[0], env);
             typeCheck('boolean', test.type, 'cond', "condition of argument " + (i + 1));
-    		
+            
             if(test.value) {
                 return evaluate(args[i].value[1], env);
             }
         }
-    	
+        
         throw new SpecialFormError('ValueError', 'a true condition',
                   'no true condition', 'cond', "a true condition is required");
     }
     
     
     function extractArgNames(args) {
-    	typeCheck('list', args.type, 'lambda/special', 'first argument');
+        typeCheck('list', args.type, 'lambda/special', 'first argument');
 
         var names = [],
             i = 1;
@@ -126,16 +126,16 @@ var Evaluate = (function (Data, Functions, Environment) {
 
             names.push(sym);
         });
-    	
+        
         return names;
     }
 
 
     function make_closure(env, lam_args) {
-    	argsCheck(2, lam_args.length, "lambda/special");
-    	
-    	var args = lam_args[0],
-    	    body = lam_args[1],
+        argsCheck(2, lam_args.length, "lambda/special");
+        
+        var args = lam_args[0],
+            body = lam_args[1],
             names = extractArgNames(args);
 
         // create the closure,
@@ -163,23 +163,23 @@ var Evaluate = (function (Data, Functions, Environment) {
     
     
     function lambda(env, args) {
-    	return Data.Function(make_closure(env, args));
+        return Data.Function(make_closure(env, args));
     }
     
     
     function special(env, args) {
-    	var closure = make_closure(env, args);
-    	function newSpecial(env, args) {
-    		return closure(args);
-    	}
-    	return Data.SpecialForm(newSpecial);
+        var closure = make_closure(env, args);
+        function newSpecial(env, args) {
+            return closure(args);
+        }
+        return Data.SpecialForm(newSpecial);
     }
     
     /////////// core functions
     
     function beagleEval(env, args) {
         argsCheck(1, args.length, 'eval');
-    	
+        
         var sexpr = evaluate(args[0], env);
 
         return evaluate(sexpr, env);
@@ -190,11 +190,11 @@ var Evaluate = (function (Data, Functions, Environment) {
 
     function getDefaultEnv() {
         var bindings = {},
-            funcNames = ['cons', 'car', 'cdr', 'list', 'eq?', 'null?', '+', 'neg', 'type'];
-
-        funcNames.map(function (name) {
-            bindings[name] = Data.Function(Functions[name]);
-        });
+            name;
+        
+        for(name in Functions) {
+            bindings[name] = Data.Function(Functions[name]);            
+        };
 
         bindings['define'] = Data.SpecialForm(define);
         bindings['set!']   = Data.SpecialForm(setBang);
@@ -224,7 +224,7 @@ var Evaluate = (function (Data, Functions, Environment) {
     
     
     function applySpecial(func, env, args) {
-    	return func(env, args);
+        return func(env, args);
     }
 
 
@@ -260,7 +260,7 @@ var Evaluate = (function (Data, Functions, Environment) {
 
     function evaluateAtom(sexpr, env) {
         var type = sexpr.type;
-    	
+        
         if (type === 'symbol') {
             if(env.hasBinding(sexpr.value)) {
                 return env.getBinding(sexpr.value);
@@ -278,6 +278,8 @@ var Evaluate = (function (Data, Functions, Environment) {
 
 
     function evaluate(sexpr, env) {
+    	env.logEvaluation(sexpr);
+    	
         if (!env || !sexpr) {
             throw new Error("evaluate missing sexpr or environment");
         }
