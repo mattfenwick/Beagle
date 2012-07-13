@@ -155,6 +155,24 @@ function displayEnv(envi) {
     },
     timeout:   2000 // is this long enough?
   });
+  
+  // note that if this code happens to load before core.bgl ... it may not work
+  $.ajax({
+    url:       'equality.bgl', 
+    type:      'GET',
+    dataType:  'text',
+    data:      {
+      // don't need no stinkin' data
+    },
+    success:   function(resp, message) {
+      Beagle.exec(resp);
+      displayEnv(env);
+    },
+    error:     function(resp, message) {
+       alert('failed it ' + JSON.stringify(resp) + ' ' + message); // argg ...
+    },
+    timeout:   2000 // is this long enough?
+  });
 
 
   // get the page set-up:  show the environment
