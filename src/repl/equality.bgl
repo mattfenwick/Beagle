@@ -3,47 +3,51 @@
 
 (define type
   (lambda (obj)
-   (if (eq? (prim-type obj) "userdefined")
-       (car obj)
-       (prim-type obj))))
+   (cond ((eq? (prim-type obj) "userdefined")
+          (udt-type obj))
+         (true (prim-type obj)))))
        
        
-;;;;;; equality
-;; eq-funcs is kind of like a javascript 'module'
-(define eq-funcs
+;;;;;; primitive equality
+;; i.e. numbers, symbols, strings, booleans, and lists
+;; this is kind of like a javascript 'module'
+(define equal?
   ((lambda ()
    
+    (define eqan?
+      (lambda (l r)
+       (cond ((eq? (prim-type l) (prim-type r))
+              (eq? l r))
+             (true false))))
    
-   (define eqan?
-     (lambda (l r)
-      (cond ((eq? (prim-type l) (prim-type r))
-             (eq? l r))
-            (true false))))
+    (define list?
+      (lambda (s)
+       (eqan? "list" (prim-type s))))
    
-   (define list?
-     (lambda (s)
-      (eqan? "list" (prim-type s))))
+    (define eqlist?
+      (lambda (l r)
+       (cond ((null? l) (null? r))         ;; this is like ((and (null? l) (null? r))  true)
+             ((null? r) false)             ;; and          ((or  (null? l) (null? r)) false)
+             (true (and (prim-equal? (car l) (car r))
+                        (prim-equal? (cdr l) (cdr r)))))))
    
-   (define eqlist?
-     (lambda (l r)
-      (cond ((null? l) (null? r))         ;; this is like ((and (null? l) (null? r))  true)
-            ((null? r) false)             ;; and          ((or  (null? l) (null? r)) false)
-            (true (and (equal? (car l) (car r))
-                       (equal? (cdr l) (cdr r)))))))
-   
-   (define equal?
-     (lambda (l r)
-      (cond ((and (list? l) (list? r))
-             (eqlist? l r))
-            ((or (list? l) (list? r)) 
-             false)
-            (true (eqan? l r)))))
-   
-   
-   
-   ;;;;;;;;;;;;;; a minimal table
+    (define prim-equal?
+      (lambda (l r)
+       (cond ((and (list? l) (list? r))
+              (eqlist? l r))
+             ((or (list? l) (list? r)) 
+              false)
+             (true (eqan? l r)))))
+            
+    prim-equal?)))
+;; end of 'equal?' module
    
    
+   
+
+;;;;;;;;;;;;;; a minimal table
+(define eq-funcs
+  ((lambda ()
    ;; a private function
    (define table-new
      (lambda (pairs)
@@ -162,6 +166,8 @@
               (error "no method found for this function and type")))))
    
    ;; wrong -- needs to use '=', not 'equal?' inside of 'eqlist?'
+   ;;   anyway, 'eqlist?' is in a different module now, 
+   ;;   so this code FAILS
    (add-method "=" "list" eqlist?)
    
    (add-method "<" "number" number-<)

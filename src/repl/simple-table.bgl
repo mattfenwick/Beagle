@@ -1,0 +1,79 @@
+
+;; the public interface ... yes, global variables are bad
+(define st-new false)
+
+(define st-add false)
+
+(define st-has? false)
+
+(define st-get false)
+
+(define st-elems false)
+
+
+;; the implementation
+;; IMPORTANT:  still missing 'error' function
+((lambda ()
+  
+   (define constructor (data "simple-table"))
+   
+   ;; empty :: Simple-Table
+   (define empty (constructor (list)))
+   
+   (define get-pair
+     (lambda (table key)
+      (define helper
+        (lambda (elems)
+         (cond ((null? elems) 
+                (list))
+               ((= (car (car elems)) key)
+                (car elems))
+               (true 
+                (helper (cdr elems))))))
+      (helper (udt-value table))))
+      
+   
+   ;; has? :: Simple-Table -> key -> Boolean
+   (define has?
+     (lambda (table key)
+      (not (null? (get-pair table key)))))
+   
+   ;; add :: Simple-Table -> key -> value -> Error Simple-Table
+   (define add
+     (lambda (table key value)
+      (cond ((has? table key)
+             (error ...))
+            (true (constructor (cons (list key value)
+                                     (udt-value table)))))))
+
+   ;; get :: Simple-Table -> key -> Error Simple-Table                            
+   (define get
+     (lambda (table key)
+      (define pair (get-pair table key))
+      (cond ((null? pair) 
+             (error "don't have key"))
+            (true (car (cdr pair))))))
+            
+   ;; new :: List -> Simple-Table
+   (define new
+     (lambda (pairs)
+      (reduce (lambda (b p)
+                (add b (car p) (car (cdr p))))
+              empty 
+              pairs)))
+              
+   ;; elems :: Simple-Table -> List
+   (define elems
+     (lambda (table)
+      (udt-value table)))
+   
+   (set! st-new new)
+   
+   (set! st-add add)
+   
+   (set! st-has? has?)
+   
+   (set! st-get get)
+   
+   (set! st-elems elems)))
+   

@@ -164,6 +164,45 @@ var Functions = (function (Data) {
     	
     	return Data.Boolean(l.value < r.value);
     }
+    
+    
+    function data(args) {
+    	argsCheck(1, args.length, 'data');
+    	
+    	var usertype = args[0];
+    	
+    	typeCheck('string', usertype.type, 'data', 'only arg');
+
+        function constructor(c_args) {
+        	argsCheck(1, c_args.length, usertype.value + ' constructor');
+        	
+        	return Data.UserDefined(usertype.value, c_args[0]);
+        }
+        
+    	return Data.Function(constructor);
+    }
+    
+    
+    function udtType(args) {
+    	argsCheck(1, args.length, 'udt-type');
+    	
+    	var obj = args[0];
+    	
+    	typeCheck('userdefined', obj.type, 'udt-type', 'only arg');
+    	
+    	return Data.String(obj.usertype);
+    }
+    
+    
+    function udtValue(args) {
+    	argsCheck(1, args.length, 'udt-value');
+    	
+    	var obj = args[0];
+    	
+    	typeCheck('userdefined', obj.type, 'udt-value', 'only arg');
+    	
+    	return obj.value;
+    }
 
 
     return {
@@ -176,7 +215,10 @@ var Functions = (function (Data) {
         'neg'       :  neg,
         'prim-type' :  primType,
         'null?'     :  nullQ,
-        'number-<'  :  numberLessThan
+        'number-<'  :  numberLessThan,
+        'data'      :  data,
+        'udt-type'  :  udtType,
+        'udt-value' :  udtValue
     };
 
 })(Data);

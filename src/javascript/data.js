@@ -47,6 +47,13 @@ var Data = (function () {
         this.value = value;
         this.type = 'boolean';
     }
+    
+    
+    function UserDefined(usertype, value) {
+        this.usertype = usertype;
+        this.value = value;
+        this.type = 'userdefined';
+    }
 
 
     return {
@@ -73,6 +80,9 @@ var Data = (function () {
         },
         'Boolean': function (x) {
             return new MyBoolean(x);
+        },
+        'UserDefined': function(x, y) {
+            return new UserDefined(x, y);
         }
     };
 

@@ -74,6 +74,10 @@ function printer(obj) {
     return "'" + obj.value;
   }
   
+  if( obj.type === 'userdefined' ) {
+    return "user-defined type: " + obj.usertype.value;
+  }
+  
   if( obj.type !== 'list' ) {
     return obj.value;
   }
