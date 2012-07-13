@@ -18,7 +18,11 @@ var TestHelper = (function() {
     	    exc = e;
     	}
     	ok(threw, "exception expected: " + message);
-    	equal(exc.type, type, "exception type: " + message + "(" + typeof(exc) + ")");
+      if(exc) {
+          equal(exc.type, type, "exception type: " + message + "(" + typeof(exc) + ")");
+      } else {
+          ok(false, "failed to throw exception -- can't check type");
+      }
     }
     
 	
