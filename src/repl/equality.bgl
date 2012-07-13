@@ -12,180 +12,180 @@
 ;; eq-funcs is kind of like a javascript 'module'
 (define eq-funcs
   ((lambda ()
-
-
-(define eqan?
-  (lambda (l r)
-   (cond ((eq? (prim-type l) (prim-type r))
-          (eq? l r))
-         (true false))))
-
-(define list?
-  (lambda (s)
-   (eqan? "list" (prim-type s))))
-
-(define eqlist?
-  (lambda (l r)
-   (cond ((null? l) (null? r))         ;; this is like ((and (null? l) (null? r))  true)
-         ((null? r) false)             ;; and          ((or  (null? l) (null? r)) false)
-         (true (and (equal? (car l) (car r))
-                    (equal? (cdr l) (cdr r)))))))
-
-(define equal?
-  (lambda (l r)
-   (cond ((and (list? l) (list? r))
-          (eqlist? l r))
-         ((or (list? l) (list? r)) 
-          false)
-         (true (eqan? l r)))))
-
-
-
-;;;;;;;;;;;;;; a minimal table
-
-
-;; a private function
-(define table-new
-  (lambda (pairs)
-   (list "table" pairs)))
    
    
-(define table-empty
-  (table-new (list)))
-  
-  
-(define first car)
-
-(define second (compose car cdr))
-  
-  
-(define table-get-entries
-  (lambda (table)
-   (if (not (equal? (car table) "table"))  ;; can maybe replace this with 'type' later
-       (table-get-entries-error "expected table")
-       (second table))))
-  
-  
-(define table-has?
-  (lambda (table key)
-   (equal? 1
-     (count
-      (filter (lambda (pair)
-                (equal? (car pair) key))
-              (table-get-entries table))))))
-                
-                
-(define table-add
-  (lambda (table key value)
-   (if (table-has? table key)
-       (table-add-error "no!") ;; should be error if it already has it??
-       (table-new (cons (list key value) (table-get-entries table))))))
-       
-       
-(define table-get
-  (lambda (table key)
-   (if (table-has? table key)
-       (second (first (filter (lambda (pair)
-                               (equal? (car pair) key))
-                              (table-get-entries table))))
-       (table-get-error "table does not have key"))))
-       
-       
-(define table-make
-  (lambda (pairs)
-   (reduce (lambda (t p)
-            (table-add t (car p) (car (cdr p))))
-           table-empty 
-           pairs)))
-           
-           
-(define table-set
-  (lambda (table key value)
-   (if (table-has? table key)
-       (table-new (cons (list key value)
-                        (filter (lambda (pair)
-                                 (not (equal? (car pair) key)))
-                                (table-get-entries table))))
-       (table-set-error "'table-set': table does not have key"))))
-       
-       
-(define table-put
-  (lambda (table key value)
-   (if (table-has? table key)
-       (table-set table key value)
-       (table-add table key value))))
-       
-           
-;;;;;;;;
-
-
-
-(define multi-method-table table-empty)
-
-(define add-method
-  (lambda (fname types f)
-   (set! multi-method-table 
-         (if (not (table-has? multi-method-table fname))
-             (table-add multi-method-table 
-                        fname
-                        (table-add table-empty types f))
-             (table-set multi-method-table fname
-               (table-put (table-get multi-method-table fname) types f))))))
+   (define eqan?
+     (lambda (l r)
+      (cond ((eq? (prim-type l) (prim-type r))
+             (eq? l r))
+            (true false))))
    
-(define get-method
-  (lambda (fname types)
-   (table-get (table-get multi-method-table fname) types)))
+   (define list?
+     (lambda (s)
+      (eqan? "list" (prim-type s))))
    
-(define has-method?
-  (lambda (fname types)
-   (table-has? (table-get multi-method-table fname) types)))
+   (define eqlist?
+     (lambda (l r)
+      (cond ((null? l) (null? r))         ;; this is like ((and (null? l) (null? r))  true)
+            ((null? r) false)             ;; and          ((or  (null? l) (null? r)) false)
+            (true (and (equal? (car l) (car r))
+                       (equal? (cdr l) (cdr r)))))))
    
-(add-method "=" "string" equal?)
+   (define equal?
+     (lambda (l r)
+      (cond ((and (list? l) (list? r))
+             (eqlist? l r))
+            ((or (list? l) (list? r)) 
+             false)
+            (true (eqan? l r)))))
+   
+   
+   
+   ;;;;;;;;;;;;;; a minimal table
+   
+   
+   ;; a private function
+   (define table-new
+     (lambda (pairs)
+      (list "table" pairs)))
+      
+      
+   (define table-empty
+     (table-new (list)))
+     
+     
+   (define first car)
+   
+   (define second (compose car cdr))
+     
+     
+   (define table-get-entries
+     (lambda (table)
+      (if (not (equal? (car table) "table"))  ;; can maybe replace this with 'type' later
+          (table-get-entries-error "expected table")
+          (second table))))
+     
+     
+   (define table-has?
+     (lambda (table key)
+      (equal? 1
+        (count
+         (filter (lambda (pair)
+                   (equal? (car pair) key))
+                 (table-get-entries table))))))
+                   
+                   
+   (define table-add
+     (lambda (table key value)
+      (if (table-has? table key)
+          (table-add-error "no!") ;; should be error if it already has it??
+          (table-new (cons (list key value) (table-get-entries table))))))
+          
+          
+   (define table-get
+     (lambda (table key)
+      (if (table-has? table key)
+          (second (first (filter (lambda (pair)
+                                  (equal? (car pair) key))
+                                 (table-get-entries table))))
+          (table-get-error "table does not have key"))))
+          
+          
+   (define table-make
+     (lambda (pairs)
+      (reduce (lambda (t p)
+               (table-add t (car p) (car (cdr p))))
+              table-empty 
+              pairs)))
+              
+              
+   (define table-set
+     (lambda (table key value)
+      (if (table-has? table key)
+          (table-new (cons (list key value)
+                           (filter (lambda (pair)
+                                    (not (equal? (car pair) key)))
+                                   (table-get-entries table))))
+          (table-set-error "'table-set': table does not have key"))))
+          
+          
+   (define table-put
+     (lambda (table key value)
+      (if (table-has? table key)
+          (table-set table key value)
+          (table-add table key value))))
+          
+              
+   ;;;;;;;;
+   
+   
+   
+   (define multi-method-table table-empty)
+   
+   (define add-method
+     (lambda (fname types f)
+      (set! multi-method-table 
+            (if (not (table-has? multi-method-table fname))
+                (table-add multi-method-table 
+                           fname
+                           (table-add table-empty types f))
+                (table-set multi-method-table fname
+                  (table-put (table-get multi-method-table fname) types f))))))
+      
+   (define get-method
+     (lambda (fname types)
+      (table-get (table-get multi-method-table fname) types)))
+      
+   (define has-method?
+     (lambda (fname types)
+      (table-has? (table-get multi-method-table fname) types)))
+      
+   (add-method "=" "string" equal?)
+   
+   (add-method "=" "number" equal?)
+   
+   (add-method "=" "boolean" equal?)
+   
+   (add-method "=" "symbol" equal?)
+   
+   
+   ;; 'type' needs to also be a generic function,
+   ;;   so that this can work on user-defined types
+   ;;   as well as the built-in ones
+   ;; suggestion:  change name to 'prim-type' for built-in types
+   (define =
+     (lambda (l r)
+      (if (not (equal? (type l) (type r)))
+          false
+          (if (has-method? "=" (type l))
+              ((get-method "=" (type l)) l r)
+              (error "no method found for this function and type")))))
+   
+   ;; wrong -- needs to use '=', not 'equal?' inside of 'eqlist?'
+   (add-method "=" "list" eqlist?)
+   
+   (add-method "<" "number" number-<)
+   
+   (add-method "<" "boolean" 
+     (lambda (l r)
+      (if r
+          (not l)
+          false)))
+          
+   
+   (define <
+     (lambda (l r)
+      (if (not (equal? (type l) (type r)))
+          (<-error "really need to figure this out")
+          (if (has-method? "<" (type l))
+              ((get-method "<" (type l)) l r)
+              (<-error "no method found")))))
 
-(add-method "=" "number" equal?)
-
-(add-method "=" "boolean" equal?)
-
-(add-method "=" "symbol" equal?)
-
-
-;; 'type' needs to also be a generic function,
-;;   so that this can work on user-defined types
-;;   as well as the built-in ones
-;; suggestion:  change name to 'prim-type' for built-in types
-(define =
-  (lambda (l r)
-   (if (not (equal? (type l) (type r)))
-       false
-       (if (has-method? "=" (type l))
-           ((get-method "=" (type l)) l r)
-           (error "no method found for this function and type")))))
-
-;; wrong -- needs to use '=', not 'equal?' inside of 'eqlist?'
-(add-method "=" "list" eqlist?)
-
-(add-method "<" "number" number-<)
-
-(add-method "<" "boolean" 
-  (lambda (l r)
-   (if r
-       (not l)
-       false)))
-       
-
-(define <
-  (lambda (l r)
-   (if (not (equal? (type l) (type r)))
-       (<-error "really need to figure this out")
-       (if (has-method? "<" (type l))
-           ((get-method "<" (type l)) l r)
-           (<-error "no method found")))))
-
-(list = <))))
-;; this is the end of the 'module':
-;;    1 ) to end the lambda,
-;;    2 ) to execute it,
-;;    3 ) for the 'define'
+    (list = <))))
+   ;; this is the end of the 'module':
+   ;;    1 ) to end the lambda,
+   ;;    2 ) to execute it,
+   ;;    3 ) for the 'define'
 
 
 
