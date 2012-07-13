@@ -9,6 +9,10 @@
        
        
 ;;;;;; equality
+;; eq-funcs is kind of like a javascript 'module'
+(define eq-funcs
+  ((lambda ()
+
 
 (define eqan?
   (lambda (l r)
@@ -176,6 +180,18 @@
        (if (has-method? "<" (type l))
            ((get-method "<" (type l)) l r)
            (<-error "no method found")))))
+
+(list = <))))
+;; this is the end of the 'module':
+;;    1 ) to end the lambda,
+;;    2 ) to execute it,
+;;    3 ) for the 'define'
+
+
+
+(define = (car eq-funcs))
+
+(define < (car (cdr eq-funcs)))
        
        
 (define <=
