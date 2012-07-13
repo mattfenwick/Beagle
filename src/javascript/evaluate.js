@@ -176,13 +176,12 @@ var Evaluate = (function (Data, Functions, Environment) {
     }
     
     
-    function special(env, args) {
-        var closure = make_closure(env, args);
-        function newSpecial(env, args) {
-            return closure(args);
-        }
-        return Data.SpecialForm(newSpecial);
+    function quote(env, args) {
+        argsCheck(1, args.length, 'quote');
+
+        return args[0];
     }
+
     
     /////////// core functions
     
@@ -210,7 +209,7 @@ var Evaluate = (function (Data, Functions, Environment) {
         bindings['if']     = Data.SpecialForm(myif);
         bindings['cond']   = Data.SpecialForm(cond);
         bindings['lambda'] = Data.SpecialForm(lambda);
-        bindings['special'] = Data.SpecialForm(special);
+        bindings['quote']  = Data.SpecialForm(quote);
         
         bindings['eval'] = Data.SpecialForm(beagleEval);
 
@@ -309,7 +308,7 @@ var Evaluate = (function (Data, Functions, Environment) {
         'set!'         :  setBang,
         'if'           :  myif,
         'lambda'       :  lambda,
-        'special'      :  special,
+        'quote'        :  quote,
         'beagleEval'   :  beagleEval,
         'cond'         :  cond
     };

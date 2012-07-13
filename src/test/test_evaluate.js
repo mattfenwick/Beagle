@@ -15,7 +15,7 @@ function testEvaluate(evaluate, funcs, data, envir, testHelper) {
     test("default environment", function() {
         var env = ev.getDefaultEnv();
         var names = [
-            'define', 'lambda', 'if', 'special', 'eval', 'true', 'false',
+            'define', 'lambda', 'if', 'quote', 'eval', 'true', 'false',
             'cons', 'car', 'cdr', 'list', 'eq?', '+', 'neg', 'set!', 'prim-type',
             'cond', 'null?', 'number-<'
         ];
@@ -31,6 +31,23 @@ function testEvaluate(evaluate, funcs, data, envir, testHelper) {
 
         equal(19, bindings, 'there are currently 19 built-in special forms and functions');
         equal(19, names.length, 'and we need to test for all of them');
+    });
+
+
+    test("quote", function() {
+        var q = ev.quote,
+            env = ev.getDefaultEnv();
+
+        deepEqual(sym('ghi'), q(env, [sym('ghi')]), "'quote' takes one argument and returns it unevaluated");
+
+        expectExc(function() {
+            q(env, []);
+        }, 'NumArgsError', 'too few args: error');
+
+        expectExc(function() {
+            q(env, [sym('def'), num(32)]);
+        }, 'NumArgsError', 'too many: error');
+
     });
     
     
@@ -230,61 +247,6 @@ function testEvaluate(evaluate, funcs, data, envir, testHelper) {
         	lam(env, [args1, body1]).value([num(1)]);
         }, 'NumArgsError', 'the number of arguments to the closure must also be correct');
     
-    });
-    
-    
-    test("special", function() {
-        var spec = ev.special,
-            env = ev.getDefaultEnv(),
-            args1 = lis([]),
-            args2 = lis([sym('abc')]),
-            args3 = lis([sym('q'), sym('r')]),
-            body1 = num(4),
-            body2 = sym('abc'),
-            body3 = lis([sym('+'), sym('q'), num(4)]);
-        
-        var a = spec(env, [args1, body1]);
-        deepEqual(
-            'specialform',
-            a.type,
-            'special takes a list of symbols and a body, and returns a closure'
-        );
-        deepEqual(
-        	num(4),
-        	a.value(env, []),
-        	'the closure can be evaluated -- it expects a list of arguments'
-        );
-        
-        deepEqual(
-        	str('me!!'),
-        	spec(env, [args2, body2]).value(env, [str('me!!')]),
-        	'the closure is evaluated in an environment with the parameters bound to its arguments'
-        );
-        
-        deepEqual(
-        	num(89),
-        	spec(env, [args3, body3]).value(env, [num(85), str('unused')]),
-        	'the body can be an atom or a list'
-        );
-
-        expectExc(function() {
-            spec(env, [args1]);
-        }, 'NumArgsError', 'too few args: exception');
-
-        ok(spec(env, [args1, body1, body1]), 
-           'NumArgsError', 'but it may have multiple body forms (but at least 1)');
-
-        expectExc(function() {
-            spec(env, [num(11), body1]);
-        }, 'TypeError', 'the first argument must be evaluate to a Beagle list');
-
-        expectExc(function() {
-            spec(env, [lis([num(13)]), body1])
-        }, 'TypeError', '... and every element in that list must be a symbol');
-        
-        expectExc(function() {
-        	spec(env, [args1, body1]).value(env, [num(143341)]);
-        }, 'NumArgsError', 'the number of arguments to the closure must also be correct');
     });
     
     

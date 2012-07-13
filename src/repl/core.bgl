@@ -130,10 +130,6 @@
     (map (lambda (p)
            (f (car p) (car (cdr p))))
          (zip l1 l2))))
-         
-         
-(define quote
-  (special (x) x))
        
        
 (define count
