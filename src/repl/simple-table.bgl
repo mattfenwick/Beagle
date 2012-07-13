@@ -10,6 +10,10 @@
 
 (define st-elems false)
 
+(define st-set false)
+
+(define st-remove false)
+
 
 ;; the implementation
 ;; IMPORTANT:  still missing 'error' function
@@ -26,7 +30,7 @@
         (lambda (elems)
          (cond ((null? elems) 
                 (list))
-               ((= (car (car elems)) key)
+               ((equal? (car (car elems)) key)
                 (car elems))
                (true 
                 (helper (cdr elems))))))
@@ -37,23 +41,49 @@
    (define has?
      (lambda (table key)
       (not (null? (get-pair table key)))))
+
    
    ;; add :: Simple-Table -> key -> value -> Error Simple-Table
    (define add
      (lambda (table key value)
       (cond ((has? table key)
-             (error ...))
+             (add-error ...))
             (true (constructor (cons (list key value)
                                      (udt-value table)))))))
+
+
+   ;; remove :: Simple-Table -> key -> Error Simple-Table
+   (define remove
+     (lambda (table key)
+      (define helper
+        (lambda (pairs)
+         (cond ((null? pairs) (remove-error "can't remove key"))
+               ((equal? key (car (car pairs)))
+                (cdr pairs))
+               (true (cons (car pairs)
+                           (helper (cdr pairs))))))) 
+      (constructor (helper (udt-value table)))))
+
+
+   ;; set :: Simple-Table -> key -> value -> Simple-Table
+   (define set
+     (lambda (table key value)
+      (define new-pairs
+        (udt-value (cond ((has? table key)
+                          (remove table key))
+                         (true table))))
+      (constructor (cons (list key value) new-pairs))))
+      
 
    ;; get :: Simple-Table -> key -> Error Simple-Table                            
    (define get
      (lambda (table key)
       (define pair (get-pair table key))
       (cond ((null? pair) 
-             (error "don't have key"))
+             (get-error "don't have key"))
             (true (car (cdr pair))))))
             
+
    ;; new :: List -> Simple-Table
    (define new
      (lambda (pairs)
@@ -62,11 +92,13 @@
               empty 
               pairs)))
               
+
    ;; elems :: Simple-Table -> List
    (define elems
      (lambda (table)
       (udt-value table)))
    
+
    (set! st-new new)
    
    (set! st-add add)
@@ -74,6 +106,10 @@
    (set! st-has? has?)
    
    (set! st-get get)
+
+   (set! st-set set)
+
+   (set! st-remove remove)
    
    (set! st-elems elems)))
    
