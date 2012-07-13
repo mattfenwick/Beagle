@@ -132,10 +132,13 @@ var Evaluate = (function (Data, Functions, Environment) {
 
 
     function make_closure(env, lam_args) {
-        argsCheck(2, lam_args.length, "lambda/special");
+        if( lam_args.length < 2 ) {
+            throw new SpecialFormError("NumArgsError", "list of arguments and at least 1 body form",
+                      "missing one or both", "lambda/special", "body may not be empty");
+        }
         
         var args = lam_args[0],
-            body = lam_args[1],
+            bodies = lam_args.slice(1),
             names = extractArgNames(args);
 
         // create the closure,
@@ -155,7 +158,13 @@ var Evaluate = (function (Data, Functions, Environment) {
                 newEnv.addBinding(names[j].value, c_args[j]);
             }
 
-            return evaluate(body, newEnv);
+            // evaluate all the body forms except for the last ...
+            for(var k = 0; k < bodies.length - 1; k++) {
+                evaluate(bodies[k], newEnv);
+            }
+
+            // ... because we want to return its result
+            return evaluate(bodies[k], newEnv);
         }
 
         return closure;

@@ -213,11 +213,10 @@ function testEvaluate(evaluate, funcs, data, envir, testHelper) {
 
         expectExc(function() {
             lam(env, [args1]);
-        }, 'NumArgsError', 'too few arguments throws an exception ...');
+        }, 'NumArgsError', 'too few args: exception');
 
-        expectExc(function() {
-            lam(env, [args1, body1, body1]);
-        }, 'NumArgsError', 'too many arguments is also a problem');
+        ok(lam(env, [args1, body1, body1]), 
+            'but it may have multiple body forms (but at least 1)');
 
         expectExc(function() {
             lam(env, [num(11), body1]);
@@ -270,11 +269,10 @@ function testEvaluate(evaluate, funcs, data, envir, testHelper) {
 
         expectExc(function() {
             spec(env, [args1]);
-        }, 'NumArgsError', 'too few arguments throws an exception ...');
+        }, 'NumArgsError', 'too few args: exception');
 
-        expectExc(function() {
-            spec(env, [args1, body1, body1]);
-        }, 'NumArgsError', 'too many arguments is also a problem');
+        ok(spec(env, [args1, body1, body1]), 
+           'NumArgsError', 'but it may have multiple body forms (but at least 1)');
 
         expectExc(function() {
             spec(env, [num(11), body1]);
