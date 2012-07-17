@@ -1,20 +1,19 @@
 
 (define test-ok
   (lambda (form message)
-   (if form
-       "ok"
-       message)))
+   (cond (form "ok")
+         (true message))))
 
 (define test-not-ok
   (lambda (form message)
-   (if form
-       message
-       "ok")))
+   (cond (form message)
+         (true "ok"))))
 
 
 (define not
   (lambda (x)
-   (if x false true)))
+   (cond (x false)
+         (true true))))
 
 (define not-test
   (lambda ()
@@ -27,7 +26,8 @@
 
 (define and
   (lambda (x y)
-    (if x y x)))
+    (cond (x y)
+          (true false))))
 
 (define and-test
   (lambda ()
@@ -41,7 +41,8 @@
 
 (define or 
   (lambda (x y)
-    (if x x y)))
+    (cond (x true)
+          (true y))))
        
 (define or-test
   (lambda ()
@@ -63,12 +64,13 @@
    (reduce compose id fs)))
 
 
+;; not written using `reduce` (for now)
+;; because that would reverse it
 (define map
   (lambda (f xs)
-    (if (null? xs)
-        (list)
-        (cons (f (car xs))
-              (map f (cdr xs))))))
+    (cond ((null? xs) (list))
+          (true (cons (f (car xs))
+                  (map f (cdr xs)))))))
 
 (define map-test
   (lambda ()
@@ -84,11 +86,10 @@
 
 (define filter
   (lambda (f xs)
-    (if (null? xs)
-        (list)
-        (if (f (car xs))
-            (cons (car xs) (filter f (cdr xs)))
-            (filter f (cdr xs))))))
+    (cond ((null? xs) (list))
+          ((f (car xs))
+            (cons (car xs) (filter f (cdr xs))))
+          (true (filter f (cdr xs))))))
 
 
 (define id 
@@ -97,11 +98,10 @@
 
 (define reduce
   (lambda (f b xs)
-    (if (null? xs)
-        b
-        (reduce f 
-                (f b (car xs)) 
-                (cdr xs)))))
+    (cond ((null? xs) b)
+          (true (reduce f 
+                  (f b (car xs)) 
+                  (cdr xs))))))
                 
 
 (define any 
@@ -116,13 +116,11 @@
 
 (define zip
   (lambda (l1 l2)
-    (if (or (null? l1) 
-            (null? l2)) 
-        (list) 
-        (cons (cons (car l1)
-                    (cons (car l2) (list)))
-              (zip (cdr l1)
-                   (cdr l2))))))
+    (cond ((null? l1) (list))
+          ((null? l2) (list)) 
+          (true (cons (list (car l1) (car l2))
+                  (zip (cdr l1)
+                       (cdr l2)))))))
 
 
 (define zip-map
