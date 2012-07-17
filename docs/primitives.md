@@ -3,42 +3,21 @@
 
 ### Special Forms ###
 
+For more information about the evaluation rules for these forms, see [here](evaluation.md).
+
  - `define`
-   
-   1. symbol (not something that evaluates to a symbol -- an actual symbol!)
-   
-   2. BeagleValue
  
  - `set!`
  
-   1. symbol (see 1. for `define`) that has already been `define`d
-   
-   2. BeagleValue
- 
  - `cond` 
- 
-   - variadic
-   
-   - each argument must be a list of length 2; the first element is evaluated
-     to a `Boolean`, and if true, the second element is evaluated and returned.
-     This process continues through the arguments until a true condition is 
-     found.  If no true condition is found, an error is (?) signaled (?).
  
  - `if` (*slated for removal; use `cond` instead)
  
- - `eval` (implemented as special form but acts like a function)
+ - `eval`
  
  - `lambda`
-
-   - variadic
- 
-   1. a list of symbols (see 1. for `define`)
-   
-   2. one or more bodies
  
  - `quote`
- 
-   1. any BeagleValue
   
   
 ### Functions ###
