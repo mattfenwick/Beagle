@@ -199,22 +199,23 @@ var Evaluate = (function (Data, Functions, Environment) {
     function getDefaultEnv() {
         var bindings = {},
             name;
-        
-        for(name in Functions) {
-            bindings[name] = Data.Function(Functions[name]);            
-        };
 
+        // the special forms
         bindings['define'] = Data.SpecialForm(define);
         bindings['set!']   = Data.SpecialForm(setBang);
         bindings['if']     = Data.SpecialForm(myif);
         bindings['cond']   = Data.SpecialForm(cond);
         bindings['lambda'] = Data.SpecialForm(lambda);
         bindings['quote']  = Data.SpecialForm(quote);
-        
+        // the special form that should be a function
         bindings['eval'] = Data.SpecialForm(beagleEval);
-
+        // the boolean constants
         bindings['true']  = Data.Boolean(true);
         bindings['false'] = Data.Boolean(false);
+        // the functions
+        for(name in Functions) {
+            bindings[name] = Data.Function(Functions[name]);            
+        };
 
         return Environment.Environment(null, bindings);
     }
