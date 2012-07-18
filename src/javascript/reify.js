@@ -3,32 +3,50 @@ var Reify = (function(Data) {
     var INTEGER = /^\d+$/;
 
     var FLOAT = /^(?:\d*\.\d+|\d+\.\d*)$/;
+    
+    var SYMBOL = /^[a-zA-Z\!\@\#\$\%\^\&\*\-\_\=\+\-\?\*\/\!\<\>][a-zA-Z0-9\!\@\#\$\%\^\&\*\-\_\=\+\-\?\*\/\!\<\>]*$/;
+    
+    
+    function ReifyError(type, message) {
+        this.type = type;
+        this.message = message;
+    }
+    
+    
+    ReifyError.prototype = new Error();
+    ReifyError.prototype.constructor = ReifyError;
 
 
-    function reifySymbol(sexpr) {
+    ReifyError.prototype.toString = function() {
+        return this.type + " in reification: " + this.message;
+    };
+
+    
+
+    function reifySymbol(str) {
         var value;
-
-        if (value = sexpr.value.match(INTEGER)) {
+        
+        if (value = str.match(INTEGER)) {
             return Data.Number(Number(value[0]));
         }
 
-        if (value = sexpr.value.match(FLOAT)) {
+        if (value = str.match(FLOAT)) {
             return Data.Number(Number(value[0]));
         }
 
-        if (sexpr.value.length > 0) {
-            return Data.Symbol(sexpr.value);
+        if (value = str.match(SYMBOL)) {
+            return Data.Symbol(str);
         }
 
-        // empty string is an error
-        throw new Error("can't extract primitive:  symbol has empty value");
+        throw new ReifyError("ValueError", "can't reify symbol from string <" + str + ">");
     }
 
 
     // SExpression -> BeagleObject
-    //   where the BeagleObject is either a List, String, Symbol, or Number
+    //   where the sexpression is either a list, string, or symbol
+    //   and the BeagleObject is either a List, Symbol, or Number
     function makePrimitives(sexpr) {
-        var i, value, elems;
+        var i, value, elems, c, chars;
 
         if (sexpr.type === 'list') {
             elems = sexpr.value.map(function(s) {
@@ -39,14 +57,14 @@ var Reify = (function(Data) {
         }
 
         if (sexpr.type === "string") {
-            return Data.String(sexpr.value);
+        	return Data.String(sexpr.value);
         }
 
         if (sexpr.type === 'symbol') {
-            return reifySymbol(sexpr);
+            return reifySymbol(sexpr.value);
         }
 
-        throw new Error("unrecognized s-expression type: " + sexpr.type);
+        throw new ReifyError("TypeError", "unrecognized s-expression type: " + sexpr.type);
     }
 
 

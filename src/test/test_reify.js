@@ -1,86 +1,107 @@
-function testReify(reify, data, parse) {
+function testReify(reify, data, parse, testHelper) {
 
     module("reification");
 
-    var SExpr = parse.SExpression;
+    var SExpr = parse.SExpression,
+        list = data.List,
+        ch = data.Char,
+        sym = data.Symbol,
+        num = data.Number,
+        expExc = testHelper.expectException;
 
+    
+    test("strings", function() {
+    	var str = SExpr('string', "yes"),
+            emptyString = SExpr('string', "");
+    
+    	deepEqual(
+            list([ch('y'), ch('e'), ch('s')]),
+            reify.makePrimitives(str), 
+            'strings are reified into lists of chars'
+        );
+        
+        deepEqual(list([]), reify.makePrimitives(emptyString), "an empty string becomes an empty list");
+    	
+    });
+    
+    
+    test("symbols", function() {
+    	var empty = SExpr('symbol', ""),
+            starts = ['!', '@', '#', '$', '%', '^', '&', '*', '_', '-', '+', '=', '<', '>', '?', '/', 'a', 'z', 'A', 'Z'],
+            // this is not an exhaustive list ... should it be?
+            nonos = [',', '(', ')', '"', "'", '[', '{', '|', '\\'];
+        
+        starts.map(function(c) {
+            deepEqual(
+                sym(c), 
+                reify.makePrimitives(SExpr('symbol', c)), 
+                "Beagle symbols may start with " + c
+            );
+        });
+        
+        nonos.map(function(c) {
+            expExc(function() {
+                reify.makePrimitives(SExpr('symbol', c));
+            }, 'ValueError', 'Beagle symbols may *not* start with ' + c);
+        });
+        
+        deepEqual(
+            sym('j3451kl!@#$%^&*_-+=<>?/'),
+            reify.makePrimitives(SExpr('symbol', 'j3451kl!@#$%^&*_-+=<>?/')),
+            "Beagle symbols may start with a letter or !@#$%^&*_-+=<>?/, followed by any number of letters, digits or !@#$%^&*()_-+=<>?/"
+        );
 
-    test("makePrimitives", function () {
-        expect(7);
+        expExc(function() {
+            reify.makePrimitives(empty);
+        }, 'ValueError', "empty symbols can't be reified");
+    });
+    
 
-        var str = SExpr('string', "yes this is a string"),
-            empty = SExpr('symbol', ""),
-            notstr = SExpr('symbol', '"open'),
-            sym1 = SExpr('symbol', '*?#""/'),
-            list1 = SExpr('list', [
+    test("lists", function () {
+        expect(4);
+
+        var list1 = SExpr('list', [
                 SExpr('symbol', "+"),
                 SExpr('string', 'str1'),
                 SExpr('symbol', "345")
             ]),
             list2 = SExpr('list', [
                 SExpr('symbol', "+"),
-                SExpr('list', [SExpr('symbol', "-"), SExpr('symbol', "34.32")]),
-                SExpr('symbol', '"omg')
+                SExpr('list', [SExpr('symbol', "-"), SExpr('string', "")]),
+                SExpr('symbol', '>>>')
             ]),
             badtype = SExpr('boolean', 'false');
 
-        try {
-            var e = reify.makePrimitives(empty);
-            ok(0);
-        } catch (e) {
-            ok(1, "the symbol of the empty string can't be reified ... ");
-        };
 
+        var l1 = list([sym('+'), list([ch('s'), ch('t'), ch('r'), ch('1')]), num(345)]);
         deepEqual(
-          data.String("yes this is a string"),
-          reify.makePrimitives(str), 
-          '... but strings can ...'
+            l1, 
+            reify.makePrimitives(list1), 
+            'lists containing symbols and strings are easy to reify ...'
         );
 
-        deepEqual(
-          data.Symbol('"open'), 
-          reify.makePrimitives(notstr), 
-          '... so can symbols -- even if they have weird characters ...'
-        );
-
-        deepEqual(
-          data.Symbol('*?#""/'), 
-          reify.makePrimitives(sym1), 
-          '... and so can symbols with even weirder characters ...'
-        );
-
-        var l1 = data.List([data.Symbol('+'), data.String('str1'), data.Number(345)]);
-        deepEqual(
-          l1, 
-          reify.makePrimitives(list1), 
-          '... lists containing symbols and strings are easy to reify ...'
-        );
-
-        var l2 = data.List([
-          data.Symbol('+'), 
-          data.List([
-            data.Symbol('-'), 
-            data.Number(34.32)
-          ]), 
-          data.Symbol('"omg')
+        var l2 = list([
+            sym('+'), 
+            list([
+                sym('-'), 
+                list([])
+            ]), 
+            sym('>>>')
         ]);
         deepEqual(
-          l2, 
-          reify.makePrimitives(list2),
-          '... as are nested lists (as long as they have strings and symbols!)'
+            l2, 
+            reify.makePrimitives(list2),
+            '... as are nested lists (as long as they have strings and symbols!)'
         );
 
-        var bad1 = true;
-        try {
+        expExc(function() {
             reify.makePrimitives(badtype);
-            bad1 = false;
-        } catch(e) {};
-        ok(bad1, "reification only recognizes SExpression types 'string', 'symbol', and 'list'");
+        }, 'TypeError', "reification only recognizes SExpression types 'string', 'symbol', and 'list'");
     });
 
 
     test("number reification", function () {
-        expect(8);
+        expect(14);
 
         var int_ = SExpr('symbol', "345"),
             float1 = SExpr('symbol', "03."),
@@ -89,7 +110,8 @@ function testReify(reify, data, parse) {
             float4 = SExpr('symbol', "0.00"),
             dec = SExpr('symbol', '.'),
             b1 = SExpr('symbol', "true"),
-            str = SExpr('string', '1234');
+            str = SExpr('string', '1234'),
+            notANum = SExpr('symbol', '4..0');
 
         deepEqual(
           data.Number(345), 
@@ -120,12 +142,10 @@ function testReify(reify, data, parse) {
           reify.makePrimitives(float4), 
           "... and it's also okay to have leading and trialing 0's"
         );
-
-        deepEqual(
-          data.Symbol("."),
-          reify.makePrimitives(dec),
-          "just remember that a lone decimal point doesn't count as a number, "
-        );
+        
+        expExc(function() {
+            reify.makePrimitives(notANum);
+        }, 'ValueError', "that if it starts with a digit, it *must* be reifiable as a number");
 
         deepEqual(
           data.Symbol('true'), 
@@ -134,10 +154,24 @@ function testReify(reify, data, parse) {
         );
 
         deepEqual(
-          data.String('1234'),
+          list([ch('1'), ch('2'), ch('3'), ch('4')]),
           reify.makePrimitives(str),
-          'and that only sexpression-symbols can be reified into numbers'
+          "that only sexpressions whose types are 'symbol' -- not 'string' -- can be reified into numbers,"
         );
+        
+        expExc(function() {
+            reify.makePrimitives(SExpr('symbol', '.'));
+        }, 'ValueError', "that the sexpression symbol '.' can not be reified,");
+
+        deepEqual(
+            num(0),
+            reify.makePrimitives(SExpr('symbol', '0')),
+            "that sexpression symbols with leading digits must be reified as numbers,"
+        );
+        
+        expExc(function() {
+            reify.makePrimitives(SExpr('symbol', '0a'));
+        }, 'ValueError', "and thus, if it starts with a digit, but can't be reified as a number, it's an error");
     });
 
 }

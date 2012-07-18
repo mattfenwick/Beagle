@@ -9,6 +9,7 @@ function testFunctions(funcs, data, testHelper) {
     module("functions");
     
     var list = data.List,
+        ch = data.Char,
         str = data.String,
         sym = data.Symbol,
         empty = list([]),
@@ -171,7 +172,9 @@ function testFunctions(funcs, data, testHelper) {
       var eq = funcs['eq?'],
           db = Data.Boolean,
           t = db(true),
-          f = db(false);
+          f = db(false),
+          ch1 = ch('x'),
+          ch2 = ch('y');
 
       deepEqual(t, eq([t, t]), 'booleans');
       deepEqual(f, eq([f, t]), 'booleans');
@@ -180,8 +183,8 @@ function testFunctions(funcs, data, testHelper) {
       deepEqual(f, eq([num(3), num(31)]), 'number');
       deepEqual(t, eq([num(2331), num(2331)]), 'number');
       
-      deepEqual(t, eq([str("xyz"), str("xyz")]), 'strings');
-      deepEqual(f, eq([str("yz"), str("xyz")]), 'strings');
+      deepEqual(t, eq([ch1, ch1]), 'chars');
+      deepEqual(f, eq([ch1, ch2]), 'chars');
       
       deepEqual(t, eq([sym('abc'), sym('abc')]), 'symbols');
       deepEqual(f, eq([sym('abc'), sym('def')]), 'symbols');
@@ -206,11 +209,13 @@ function testFunctions(funcs, data, testHelper) {
     
     
     test("prim-type", function() {
-        var type = funcs['prim-type'];
+        var type = funcs['prim-type'],
+            str1 = str('number'),
+            str2 = str('list');
 
-        deepEqual(str("number"), type([num(14)]), "'prim-type' is a function of one argument");
+        deepEqual(str1, type([num(14)]), "'prim-type' is a function of one argument");
         
-        deepEqual(str("list"), type([list([])]), "it returns the type of its argument as a string");
+        deepEqual(str2, type([list([])]), "it returns the type of its argument as a string");
         
         expectException(function() {
             type([]);
@@ -283,7 +288,7 @@ function testFunctions(funcs, data, testHelper) {
         );
         
         deepEqual(
-            data.UserDefined("obj", num(39)), 
+            data.UserDefined(str("obj"), num(39)), 
             obj1, 
             "constructors take one argument, and return an object with the appropriate type"
         );

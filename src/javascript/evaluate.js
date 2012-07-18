@@ -260,7 +260,7 @@ var Evaluate = (function (Data, Functions, Environment) {
 
     var SELF_EVALUATING_TYPES  = {
         'number': 1,
-        'string': 1,
+        'char': 1,
         'boolean': 1,
         'function': 1,
         'specialform': 1,

@@ -70,7 +70,7 @@ var Functions = (function (Data) {
         var list = args[0];
         
         typeCheck('list', list.type, 'cdr', 'only argument');
-	
+    
         if (list.value.length === 0) {
             throw new FunctionError("ValueError", 'non-empty list', 'list', 
                   'cdr', "cannot take cdr of empty list");
@@ -100,11 +100,11 @@ var Functions = (function (Data) {
             throw new FunctionError('TypeError', ltype, rtype, "eq?", "arguments must have identical types")
         }
 
-        if (ltype === 'number' || ltype === 'string' || ltype === 'symbol' || ltype === 'boolean') {
+        if (ltype === 'number' || ltype === 'char' || ltype === 'symbol' || ltype === 'boolean') {
             return Data.Boolean(lval === rval);
         }
 
-        throw new FunctionError('TypeError', 'number/string/symbol/boolean', 
+        throw new FunctionError('TypeError', 'number/char/symbol/boolean', 
                   ltype, "eq?", "can't compare type");
     }
 
@@ -134,74 +134,78 @@ var Functions = (function (Data) {
     
     
     function primType(args) {
-    	argsCheck(1, args.length, 'prim-type');
-    	
-    	var arg = args[0];
-    	
-    	return Data.String(arg.type);
+        argsCheck(1, args.length, 'prim-type');
+        
+        var arg = args[0];
+        
+        return Data.String(arg.type);
     }
     
     
     function nullQ(args) {
-    	argsCheck(1, args.length, 'null?');
-    	
-    	var list = args[0];
-    	
-    	typeCheck('list', list.type, 'null?', 'only argument');
-    	
-    	return Data.Boolean(list.value.length === 0);
+        argsCheck(1, args.length, 'null?');
+        
+        var list = args[0];
+        
+        typeCheck('list', list.type, 'null?', 'only argument');
+        
+        return Data.Boolean(list.value.length === 0);
     }
     
     
     function numberLessThan(args) {
-    	argsCheck(2, args.length, 'number-<');
-    	
-    	var l = args[0],
-    	    r = args[1];
-    	
-    	typeCheck('number', l.type, 'number-<', 'first argument');
-    	typeCheck('number', r.type, 'number-<', 'second argument');
-    	
-    	return Data.Boolean(l.value < r.value);
+        argsCheck(2, args.length, 'number-<');
+        
+        var l = args[0],
+            r = args[1];
+        
+        typeCheck('number', l.type, 'number-<', 'first argument');
+        typeCheck('number', r.type, 'number-<', 'second argument');
+        
+        return Data.Boolean(l.value < r.value);
     }
     
     
     function data(args) {
-    	argsCheck(1, args.length, 'data');
-    	
-    	var usertype = args[0];
-    	
-    	typeCheck('string', usertype.type, 'data', 'only arg');
+        argsCheck(1, args.length, 'data');
+        
+        var usertype = args[0];
+        
+        typeCheck('list', usertype.type, 'data', 'only arg');
+        
+        usertype.value.map(function (c) {
+            typeCheck('char', c.type, 'data', 'string (list of chars)');
+        });
 
         function constructor(c_args) {
-        	argsCheck(1, c_args.length, usertype.value + ' constructor');
-        	
-        	return Data.UserDefined(usertype.value, c_args[0]);
+            argsCheck(1, c_args.length, usertype.value + ' constructor');
+            
+            return Data.UserDefined(usertype, c_args[0]);
         }
         
-    	return Data.Function(constructor);
+        return Data.Function(constructor);
     }
     
     
     function udtType(args) {
-    	argsCheck(1, args.length, 'udt-type');
-    	
-    	var obj = args[0];
-    	
-    	typeCheck('userdefined', obj.type, 'udt-type', 'only arg');
-    	
-    	return Data.String(obj.usertype);
+        argsCheck(1, args.length, 'udt-type');
+        
+        var obj = args[0];
+        
+        typeCheck('userdefined', obj.type, 'udt-type', 'only arg');
+        
+        return obj.usertype;
     }
     
     
     function udtValue(args) {
-    	argsCheck(1, args.length, 'udt-value');
-    	
-    	var obj = args[0];
-    	
-    	typeCheck('userdefined', obj.type, 'udt-value', 'only arg');
-    	
-    	return obj.value;
+        argsCheck(1, args.length, 'udt-value');
+        
+        var obj = args[0];
+        
+        typeCheck('userdefined', obj.type, 'udt-value', 'only arg');
+        
+        return obj.value;
     }
 
 

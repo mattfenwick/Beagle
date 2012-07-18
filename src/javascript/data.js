@@ -5,11 +5,11 @@ var Data = (function () {
         this.value = value;
         this.type = 'number';
     }
-
-
-    function MyString(value) {
-        this.value = value;
-        this.type = 'string';
+    
+    
+    function Char(value) {
+    	this.value = value;
+    	this.type = 'char';
     }
 
 
@@ -60,8 +60,8 @@ var Data = (function () {
         'Number': function (x) {
             return new MyNumber(x)
         },
-        'String': function (x) {
-            return new MyString(x)
+        'Char': function(x) {
+        	return new Char(x);
         },
         'Function': function (x) {
             return new MyFunction(x)
@@ -83,6 +83,13 @@ var Data = (function () {
         },
         'UserDefined': function(x, y) {
             return new UserDefined(x, y);
+        },
+        'String': function(x) {
+            var chars = [], c;
+            for(c = 0; c < x.length; c++) {
+                chars.push(new Char(x[c]));
+            }
+        	return new List(chars);
         }
     };
 
