@@ -1,0 +1,16 @@
+(define dict
+  (lambda (table)
+   (cond ((equal? (type table) "simple-table")
+          (lambda (key)
+            (st-get table key)))
+         (true (dict-error "maps can only be built out of tables")))))
+
+     
+;; we're starting to see the problems with this approach here
+;; we want to be able to do `(mydict "blargh")`, but that 
+;; necessitates that `dict` is a function, which means that
+;; it is NOT a dict
+;;
+;; which probably means we'll have to end up doing something lik
+;;  `(dict-get my-dict "some key")` and
+;;  `(dict-remove my-dict "some other key")`, just like we did for simple tables
