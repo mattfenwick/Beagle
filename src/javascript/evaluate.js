@@ -50,7 +50,7 @@ var Evaluate = (function (Data, Functions, Environment) {
         }
         
         env.addBinding(name.value, value);
-        return Data.Nil();
+        return Data.Null();
     }
     
     
@@ -71,7 +71,7 @@ var Evaluate = (function (Data, Functions, Environment) {
         }
         
         env.setBinding(name.value, value);
-        return Data.Nil();
+        return Data.Null();
     }
 
 

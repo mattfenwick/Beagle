@@ -47,7 +47,7 @@ function testBeagle(beagle, data, parse) {
 
         var r = beagle.exec(e1);
         deepEqual(list([num(3)]), r.result[1], 'multiple expressions can be evaluated at once');
-        deepEqual(data.Nil(), r.result[0], "and the return value of 'define' is nil");
+        deepEqual(data.Null(), r.result[0], "and the return value of 'define' is null");
     });
 
 

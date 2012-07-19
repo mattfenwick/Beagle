@@ -37,9 +37,8 @@ var Data = (function () {
     }
 
 
-    function Nil() {
-        this.value = false;
-        this.type = 'nil';
+    function Null() {
+        this.type = 'null';
     }
 
 
@@ -78,8 +77,8 @@ var Data = (function () {
         'Symbol': function (x) {
             return new Symbol(x)
         },
-        'Nil': function () {
-            return new Nil()
+        'Null': function () {
+            return new Null()
         },
         'SpecialForm': function (x) {
             return new SpecialForm(x);
