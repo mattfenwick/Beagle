@@ -21,7 +21,9 @@ function testFunctions(funcs, data, testHelper) {
         var cons = funcs.cons,
             oneEl = cons([num(14), empty]),
             twoEl = cons([num(32), oneEl]),
-            oneLi = cons([empty, empty]);
+            oneLi = cons([empty, empty]),
+            str1 = str("eat"),
+            ch1 = ch("f");
         
       deepEqual(list([num(14)]), oneEl, 'an element consed onto the empty list returns a one-element list');
       
@@ -29,19 +31,25 @@ function testFunctions(funcs, data, testHelper) {
       
       deepEqual(list([]), empty, 'cons does not mutate:  it makes a new list');
       
-      deepEqual(list([empty]), oneLi, 'the first argument may be of any type, including a list');
+      deepEqual(list([empty]), oneLi, 'if the 2nd arg is a list, the 1st arg may be of any type ...');
+      
+      deepEqual(str("feat"), cons([ch1, str1]), 'but if the 2nd arg is a string, the 1st arg must be a char');
+      
+      expectException(function() {
+    	  cons([num(11), str1]);
+      }, 'TypeError', "otherwise, you'll get an error")
       
       expectException(function() {
           cons([num(11), num(12)]);
-      }, 'TypeError', 'the second argument must be a Beagle list');
+      }, 'TypeError', 'the second argument must be a Beagle list or string');
       
       expectException(function() {
           cons([num(11)]);
-      }, 'NumArgsError', 'too few arguments throws an exception ...');
+      }, 'NumArgsError', 'too few args: exception ...');
       
       expectException(function() {
           cons([num(3), empty, empty]);
-      }, 'NumArgsError', 'too many arguments is also a problem');
+      }, 'NumArgsError', 'too many args: exception');
     });
 
 
@@ -51,25 +59,31 @@ function testFunctions(funcs, data, testHelper) {
           twoEl = list([3, 4]),
           listFirst = list([list([14])]);
       
-      deepEqual(3, car([twoEl]), 'car returns the first element of a list, ');
+      deepEqual(3, car([twoEl]), 'car returns the first element of a list or string, ');
       
       deepEqual(list([14]), car([listFirst]), 'which may be a list');
+      
+      deepEqual(ch('x'), car([str('xylophone')]), 'the car of a string is a character');
 
       expectException(function() {
           car([empty]);
       }, 'ValueError', 'trying to take the car of an empty list throws an exception');
+
+      expectException(function() {
+          car([str("")]);
+      }, 'ValueError', 'as does taking the car of an empty string');
       
       expectException(function() {
           car([num(16)]);
-      }, 'TypeError', "car's argument must be a list");
+      }, 'TypeError', "car's argument must be a list/string");
       
       expectException(function() {
           car([]);
-      }, 'NumArgsError', 'too few arguments throws an exception ...');
+      }, 'NumArgsError', 'too few args: error');
       
       expectException(function() {
           car([twoEl, twoEl]);
-      }, 'NumArgsError', 'too many arguments is also a problem');
+      }, 'NumArgsError', 'too many args: error');
     });
       
 
@@ -86,23 +100,56 @@ function testFunctions(funcs, data, testHelper) {
       );
       
       deepEqual(empty, cdr([oneEl]), 'the cdr of a one-element list is an empty list');
+      
+      deepEqual(str("hark"), cdr([str("shark")]), 'the cdr of a string is another string, missing the first character');
 
       expectException(function() {
           cdr([empty]);
       }, 'ValueError', 'trying to take the cdr of an empty list throws an exception');
       
       expectException(function() {
+    	  cdr([str("")]);
+      }, 'ValueError', 'as does taking the cdr of an empty string');
+      
+      expectException(function() {
           cdr([num(16)]);
-        }, 'TypeError', "cdr's argument must be a list");
+        }, 'TypeError', "cdr needs a list or string");
       
       expectException(function() {
           cdr([]);
-      }, 'NumArgsError', 'too few arguments throws an exception ...');
+      }, 'NumArgsError', 'too few args: error');
       
       expectException(function() {
           cdr([oneEl, oneEl]);
-      }, 'NumArgsError', 'too many arguments is also a problem');
+      }, 'NumArgsError', 'too many args: error');
 
+    });
+    
+    
+    test("null?", function() {
+        var n = funcs['null?'],
+            empty = list([]);
+
+        deepEqual(data.Boolean(true), n([empty]), "'null?' takes one argument:  a list/string");
+        
+        deepEqual(data.Boolean(false), n([list([str("list")])]), "it returns true if the list is empty, and false otherwise");
+
+        deepEqual(data.Boolean(true), n([str("")]), "and similarly for strings, the empty string is true");
+        
+        deepEqual(data.Boolean(false), n([str("a")]), "any other string is false");
+
+        expectException(function() {
+            n([num(4)]);
+        }, 'TypeError', 'remember to give it a list or string');
+        
+        expectException(function() {
+            n([]);
+        }, 'NumArgsError', 'too few args: error');
+        
+        expectException(function() {
+            n([empty, empty]);
+        }, 'NumArgsError', 'too many args: error');
+        
     });
 
 
@@ -223,29 +270,6 @@ function testFunctions(funcs, data, testHelper) {
         
         expectException(function() {
             type([num(5), num(8)]);
-        }, 'NumArgsError', 'as does too many arguments');
-        
-    });
-    
-    
-    test("null?", function() {
-        var n = funcs['null?'],
-            empty = list([]);
-
-        deepEqual(data.Boolean(true), n([empty]), "'null?' takes one argument:  a list");
-        
-        deepEqual(data.Boolean(false), n([list([str("list")])]), "it returns true if the list is empty, and false otherwise");
-
-        expectException(function() {
-            n([num(4)]);
-        }, 'TypeError', 'remember to give it lists');
-        
-        expectException(function() {
-            n([]);
-        }, 'NumArgsError', 'too few arguments throws an exception ...');
-        
-        expectException(function() {
-            n([empty, empty]);
         }, 'NumArgsError', 'as does too many arguments');
         
     });

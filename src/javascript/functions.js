@@ -35,13 +35,25 @@ var Functions = (function (Data) {
         argsCheck(2, args.length, 'cons');
 
         var elem = args[0],
-            list = args[1];
+            list = args[1],
+            newList, i;
 
-        if(!(list.type === 'list' || list.type === 'string')) {
-            throw new FunctionError('TypeError', 'string or list', list.type, 'cons', "second argument");
+        if(list.type === 'list') {
+            newList = [elem];
+            for (i = 0; i < list.value.length; i++) {
+                newList.push(list.value[i]);
+            }
+
+            return new Data.List(newList);
         }
+        
+        if(list.type === 'string') {
+        	typeCheck('char', elem.type, 'cons', "string 'cons' requires a char as 1st arg");
 
-        return list.cons(elem);
+            return new Data.String(elem.value + list.value);
+        }
+        
+        throw new FunctionError('TypeError', 'string or list', list.type, 'cons', "second argument");
     };
 
 

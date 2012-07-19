@@ -24,27 +24,10 @@ var Data = (function () {
         this.type = 'list';
     }
 
-    List.prototype.cons = function(elem) {
-        var newList = [elem];
-        for (var i = 0; i < this.value.length; i++) {
-            newList.push(this.value[i]);
-        }
-
-        return new List(newList);
-    };
-
 
     function MyString(value) {
         this.value = value;
         this.type = 'string';
-    }
-
-    MyString.prototype.cons = function(c) {
-        if(c.type !== 'char') {
-            throw new Error("'string' 'cons' requires a 'char' as the first argument, got " + c.type);
-        }
-
-        return new MyString(c.value + this.value);
     }
 
 
