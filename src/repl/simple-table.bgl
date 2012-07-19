@@ -47,7 +47,7 @@
    (define add
      (lambda (table key value)
       (cond ((has? table key)
-             (add-error ...))
+             (add-error (++ "can't key:  table already has key " key)))
             (true (constructor (cons (list key value)
                                      (udt-value table)))))))
 
@@ -57,7 +57,8 @@
      (lambda (table key)
       (define helper
         (lambda (pairs)
-         (cond ((null? pairs) (remove-error "can't remove key"))
+         (cond ((null? pairs)
+                (remove-error (++ "can't remove key " key)))
                ((equal? key (car (car pairs)))
                 (cdr pairs))
                (true (cons (car pairs)
@@ -80,7 +81,7 @@
      (lambda (table key)
       (define pair (get-pair table key))
       (cond ((null? pair) 
-             (get-error "don't have key"))
+             (get-error (++ "table doesn't have key" key)))
             (true (car (cdr pair))))))
             
 
