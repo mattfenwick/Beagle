@@ -137,11 +137,11 @@ var Functions = (function (Data) {
             throw new FunctionError('TypeError', ltype, rtype, "eq?", "arguments must have identical types")
         }
 
-        if (ltype === 'number' || ltype === 'char' || ltype === 'symbol' || ltype === 'boolean') {
+        if (ltype === 'number' || ltype === 'char' || ltype === 'symbol' || ltype === 'boolean' || ltype === 'string') {
             return Data.Boolean(lval === rval);
         }
 
-        throw new FunctionError('TypeError', 'number/char/symbol/boolean', 
+        throw new FunctionError('TypeError', 'number/char/symbol/boolean/string', 
                   ltype, "eq?", "can't compare type");
     }
 

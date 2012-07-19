@@ -233,6 +233,9 @@ function testFunctions(funcs, data, testHelper) {
       deepEqual(t, eq([ch1, ch1]), 'chars');
       deepEqual(f, eq([ch1, ch2]), 'chars');
       
+      deepEqual(t, eq([str("abc"), str("abc")]), 'strings');
+      deepEqual(f, eq([str("def"), str("defg")]), 'strings');
+      
       deepEqual(t, eq([sym('abc'), sym('abc')]), 'symbols');
       deepEqual(f, eq([sym('abc'), sym('def')]), 'symbols');
       
