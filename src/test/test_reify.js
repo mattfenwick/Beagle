@@ -7,26 +7,27 @@ function testReify(reify, data, parse, testHelper) {
         ch = data.Char,
         sym = data.Symbol,
         num = data.Number,
+        str = data.String,
         expExc = testHelper.expectException;
 
     
     test("strings", function() {
-    	var str = SExpr('string', "yes"),
+        var str1 = SExpr('string', "yes"),
             emptyString = SExpr('string', "");
     
-    	deepEqual(
-            list([ch('y'), ch('e'), ch('s')]),
-            reify.makePrimitives(str), 
+        deepEqual(
+            str('yes'),
+            reify.makePrimitives(str1), 
             'strings are reified into lists of chars'
         );
         
-        deepEqual(list([]), reify.makePrimitives(emptyString), "an empty string becomes an empty list");
+        deepEqual(str(""), reify.makePrimitives(emptyString), "empty string: still empty");
     	
     });
     
     
     test("symbols", function() {
-    	var empty = SExpr('symbol', ""),
+        var empty = SExpr('symbol', ""),
             starts = ['!', '@', '#', '$', '%', '^', '&', '*', '_', '-', '+', '=', '<', '>', '?', '/', 'a', 'z', 'A', 'Z'],
             // this is not an exhaustive list ... should it be?
             nonos = [',', '(', ')', '"', "'", '[', '{', '|', '\\'];
@@ -73,7 +74,7 @@ function testReify(reify, data, parse, testHelper) {
             badtype = SExpr('boolean', 'false');
 
 
-        var l1 = list([sym('+'), list([ch('s'), ch('t'), ch('r'), ch('1')]), num(345)]);
+        var l1 = list([sym('+'), str('str1'), num(345)]);
         deepEqual(
             l1, 
             reify.makePrimitives(list1), 
@@ -84,7 +85,7 @@ function testReify(reify, data, parse, testHelper) {
             sym('+'), 
             list([
                 sym('-'), 
-                list([])
+                str("")
             ]), 
             sym('>>>')
         ]);
@@ -110,7 +111,7 @@ function testReify(reify, data, parse, testHelper) {
             float4 = SExpr('symbol', "0.00"),
             dec = SExpr('symbol', '.'),
             b1 = SExpr('symbol', "true"),
-            str = SExpr('string', '1234'),
+            str1 = SExpr('string', '1234'),
             notANum = SExpr('symbol', '4..0');
 
         deepEqual(
@@ -154,8 +155,8 @@ function testReify(reify, data, parse, testHelper) {
         );
 
         deepEqual(
-          list([ch('1'), ch('2'), ch('3'), ch('4')]),
-          reify.makePrimitives(str),
+          str('1234'),
+          reify.makePrimitives(str1),
           "that only sexpressions whose types are 'symbol' -- not 'string' -- can be reified into numbers,"
         );
         

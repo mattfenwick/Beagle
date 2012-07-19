@@ -24,6 +24,29 @@ var Data = (function () {
         this.type = 'list';
     }
 
+    List.prototype.cons = function(elem) {
+        var newList = [elem];
+        for (var i = 0; i < this.value.length; i++) {
+            newList.push(this.value[i]);
+        }
+
+        return new List(newList);
+    };
+
+
+    function MyString(value) {
+        this.value = value;
+        this.type = 'string';
+    }
+
+    MyString.prototype.cons = function(c) {
+        if(c.type !== 'char') {
+            throw new Error("'string' 'cons' requires a 'char' as the first argument, got " + c.type);
+        }
+
+        return new MyString(c.value + this.value);
+    }
+
 
     function MyFunction(value) {
         this.value = value;
@@ -85,11 +108,7 @@ var Data = (function () {
             return new UserDefined(x, y);
         },
         'String': function(x) {
-            var chars = [], c;
-            for(c = 0; c < x.length; c++) {
-                chars.push(new Char(x[c]));
-            }
-        	return new List(chars);
+        	return new MyString(x);
         }
     };
 

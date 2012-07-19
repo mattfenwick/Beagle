@@ -37,46 +37,71 @@ var Functions = (function (Data) {
         var elem = args[0],
             list = args[1];
 
-        typeCheck('list', list.type,  'cons', "second argument");
-
-        var newList = [elem];
-        for (var i = 0; i < list.value.length; i++) {
-            newList.push(list.value[i]);
+        if(!(list.type === 'list' || list.type === 'string')) {
+            throw new FunctionError('TypeError', 'string or list', list.type, 'cons', "second argument");
         }
 
-        return Data.List(newList);
+        return list.cons(elem);
     };
 
 
     function car(args) {
         argsCheck(1, args.length, 'car');
 
-        var list = args[0];
-        
-        typeCheck('list', list.type, "car", "only argument");
-        
-        if (list.value.length === 0) {
-            throw new FunctionError("ValueError", "non-empty list", "list", 
-                  'car', "cannot take car of empty list");
+        var list = args[0], fst;
+
+        if(!(list.type === 'list' || list.type === 'string')) {
+            throw new FunctionError('TypeError', 'string/list', list.type, 'car', "only argument");
         }
         
-        return list.value[0];
+        if (list.value.length === 0) {
+            throw new FunctionError("ValueError", "non-empty", "empty", 
+                  'car', "cannot take car of empty list/string");
+        }
+        
+        fst = list.value[0];
+        if(list.type === 'list') {
+            return fst;
+        } else { // it's a string, so the first is a char
+            return Data.Char(fst);
+        }
     }
 
 
     function cdr(args) {         
         argsCheck(1, args.length, 'cdr');
         
-        var list = args[0];
+        var list = args[0], 
+            rest;
         
-        typeCheck('list', list.type, 'cdr', 'only argument');
-    
+        if(!(list.type === 'list' || list.type === 'string')) {
+            throw new FunctionError('TypeError', 'string/list', list.type, 'cdr', "only argument");
+        } 
+   
         if (list.value.length === 0) {
-            throw new FunctionError("ValueError", 'non-empty list', 'list', 
-                  'cdr', "cannot take cdr of empty list");
+            throw new FunctionError("ValueError", 'non-empty', 'empty', 
+                  'cdr', "cannot take cdr of empty list/string");
         }
         
-        return Data.List(list.value.slice(1));
+        rest = list.value.slice(1);
+        if (list.type === 'list') {
+            return Data.List(rest);
+        } else { // it's a string
+            return Data.String(rest);
+        }
+    }
+    
+    
+    function nullQ(args) {
+        argsCheck(1, args.length, 'null?');
+        
+        var list = args[0];
+
+        if(!(list.type === 'list' || list.type === 'string')) {
+            throw new FunctionError('TypeError', 'string/list', list.type, 'null?', "only argument");
+        } 
+        
+        return Data.Boolean(list.value.length === 0);
     }
 
 
@@ -142,17 +167,6 @@ var Functions = (function (Data) {
     }
     
     
-    function nullQ(args) {
-        argsCheck(1, args.length, 'null?');
-        
-        var list = args[0];
-        
-        typeCheck('list', list.type, 'null?', 'only argument');
-        
-        return Data.Boolean(list.value.length === 0);
-    }
-    
-    
     function numberLessThan(args) {
         argsCheck(2, args.length, 'number-<');
         
@@ -171,11 +185,7 @@ var Functions = (function (Data) {
         
         var usertype = args[0];
         
-        typeCheck('list', usertype.type, 'data', 'only arg');
-        
-        usertype.value.map(function (c) {
-            typeCheck('char', c.type, 'data', 'string (list of chars)');
-        });
+        typeCheck('string', usertype.type, 'data', 'only arg');
 
         function constructor(c_args) {
             argsCheck(1, c_args.length, usertype.value + ' constructor');
