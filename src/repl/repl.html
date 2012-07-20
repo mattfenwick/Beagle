@@ -74,6 +74,10 @@ function printer(obj) {
     return "'" + obj.value;
   }
   
+  if( obj.type === 'error' ) {
+    return "error: " + printer(obj.errortype) + ", " + printer(obj.message) + ", trace: [" + printer(obj.trace) + "]";
+  }
+  
   if( obj.type === 'userdefined' ) {
     return "user-defined type: " + obj.usertype;
   }

@@ -59,6 +59,14 @@ var Data = (function () {
         this.value = value;
         this.type = 'userdefined';
     }
+    
+    
+    function MyError(errortype, message, trace) {
+    	this.errortype = errortype;
+    	this.message = message;
+    	this.trace = trace;
+    	this.type = 'error';
+    }
 
 
     return {
@@ -91,6 +99,9 @@ var Data = (function () {
         },
         'String': function(x) {
         	return new MyString(x);
+        },
+        'Error': function(type, message, trace) {
+        	return new MyError(type, message, trace);
         }
     };
 

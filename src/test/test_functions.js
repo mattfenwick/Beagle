@@ -293,11 +293,11 @@ function testFunctions(funcs, data, testHelper) {
         
         expectException(function() {
             lt([num(1)]);
-        }, 'NumArgsError', 'too few arguments throws an exception ...');
+        }, 'NumArgsError', 'too few args:  error');
         
         expectException(function() {
             lt([num(1), num(2), num(3)]);
-        }, 'NumArgsError', 'as does too many arguments');
+        }, 'NumArgsError', 'too many args: error');
     });
     
     
@@ -345,6 +345,74 @@ function testFunctions(funcs, data, testHelper) {
         expectException(function() {
             uv([num(13)]);
         }, 'TypeError', "'udt-value' also only works on user-defined types");
+    });
+    
+    
+    test("Error", function() {
+    	var err = funcs['Error'];
+
+        expectException(function() {
+            err([list([]), num(4), num(3)]);
+        }, 'TypeError', 'remember to give it strings for the first 2 args');
+        
+        expectException(function() {
+            err([str("abc"), str("def")]);
+        }, 'NumArgsError', 'too few args:  error');
+        
+        expectException(function() {
+            err([str("abc"), str("def"), str("abc"), str("def")]);
+        }, 'NumArgsError', 'too many args: error');
+    });
+    
+    
+    test("error-type", function() {
+        var errtype = funcs['error-type'];
+
+        expectException(function() {
+            errtype([list([])]);
+        }, 'TypeError', 'remember to give it an Error');
+        
+        expectException(function() {
+            errtype([]);
+        }, 'NumArgsError', 'too few args:  error');
+        
+        expectException(function() {
+            errtype([data.Error(str("abc"), str("def"), num(4)), num(1)]);
+        }, 'NumArgsError', 'too many args: error');
+    });
+    
+    
+    test("error-message", function() {
+        var errmess = funcs['error-message'];
+
+        expectException(function() {
+            errmess([list([])]);
+        }, 'TypeError', 'remember to give it an Error');
+        
+        expectException(function() {
+            errmess([]);
+        }, 'NumArgsError', 'too few args:  error');
+        
+        expectException(function() {
+            errmess([data.Error(str("abc"), str("def"), num(4)), num(1)]);
+        }, 'NumArgsError', 'too many args: error');
+    });
+    
+    
+    test("error-trace", function() {
+        var errtrace = funcs['error-trace'];
+
+        expectException(function() {
+            errtrace([list([])]);
+        }, 'TypeError', 'remember to give it an Error');
+        
+        expectException(function() {
+            errtrace([]);
+        }, 'NumArgsError', 'too few args:  error');
+        
+        expectException(function() {
+            errtrace([data.Error(str("abc"), str("def"), num(4)), num(1)]);
+        }, 'NumArgsError', 'too many args: error');
     });
     
 }

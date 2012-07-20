@@ -229,6 +229,53 @@ var Functions = (function (Data) {
         
         return obj.value;
     }
+    
+    
+    function errorMessage(args) {
+    	argsCheck(1, args.length, 'error-message');
+    	
+    	var err = args[0];
+    	
+    	typeCheck('error', err.type, 'error-message', 'only arg');
+    	
+    	return err.message;
+    }
+    
+    
+    function errorType(args) {
+    	argsCheck(1, args.length, 'error-type');
+    	
+    	var err = args[0];
+    	
+    	typeCheck('error', err.type, 'error-type', 'only arg');
+    	
+    	return err.errortype;
+    }
+    
+    
+    function errorTrace(args) {
+    	argsCheck(1, args.length, 'error-trace');
+    	
+    	var err = args[0];
+    	
+    	typeCheck('error', err.type, 'error-trace', 'only arg');
+    	
+    	return err.trace;
+    }
+    
+    
+    function newError(args) {
+    	argsCheck(3, args.length, 'Error');
+    	
+    	var errortype = args[0],
+    	    message = args[1],
+    	    trace = args[2];
+    	
+    	typeCheck('string', errortype.type, 'Error', '1st arg');
+    	typeCheck('string', message.type, 'Error', '2nd arg');
+    	
+    	return Data.Error(errortype, message, trace);
+    }
 
 
     return {
@@ -244,7 +291,11 @@ var Functions = (function (Data) {
         'number-<'  :  numberLessThan,
         'data'      :  data,
         'udt-type'  :  udtType,
-        'udt-value' :  udtValue
+        'udt-value' :  udtValue,
+        'error-trace'    :  errorTrace,
+        'error-message'  :  errorMessage,
+        'error-type'     :  errorType,
+        'Error'          :  newError
     };
 
 })(Data);
