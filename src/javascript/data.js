@@ -31,9 +31,36 @@ var Data = (function () {
     }
 
 
-    function MyFunction(value) {
-        this.value = value;
+    function MyFunction(numArgs, argTypes, name, code) {
+    	this.numArgs = numArgs;
+    	this.argTypes = argTypes;
+    	this.name = name;
+        this.value = code;
         this.type = 'function';
+    }
+    
+    MyFunction.prototype.apply = function(args) {
+    	if(this.numArgs !== args.length) {
+    		// exception
+    	}
+    	this.argTypes.map(function(pair)) {
+    		var position = pair[0],
+    		    type = pair[1];
+    		if(args[position].type !== type) {
+    			// exception
+    		}
+    	}
+    	return this.value(args);
+    }
+    
+    
+    function UncheckedFunction(code) {
+    	this.value = code;
+    	this.type = 'function';
+    }
+    
+    UncheckedFunction.prototype.apply = function(args) {
+    	return this.value(args);
     }
 
 
