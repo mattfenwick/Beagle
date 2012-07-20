@@ -42,14 +42,6 @@ function testFunctions(funcs, data, testHelper) {
       expectException(function() {
           cons([num(11), num(12)]);
       }, 'TypeError', 'the second argument must be a Beagle list or string');
-      
-      expectException(function() {
-          cons([num(11)]);
-      }, 'NumArgsError', 'too few args: exception ...');
-      
-      expectException(function() {
-          cons([num(3), empty, empty]);
-      }, 'NumArgsError', 'too many args: exception');
     });
 
 
@@ -76,14 +68,6 @@ function testFunctions(funcs, data, testHelper) {
       expectException(function() {
           car([num(16)]);
       }, 'TypeError', "car's argument must be a list/string");
-      
-      expectException(function() {
-          car([]);
-      }, 'NumArgsError', 'too few args: error');
-      
-      expectException(function() {
-          car([twoEl, twoEl]);
-      }, 'NumArgsError', 'too many args: error');
     });
       
 
@@ -114,14 +98,6 @@ function testFunctions(funcs, data, testHelper) {
       expectException(function() {
           cdr([num(16)]);
         }, 'TypeError', "cdr needs a list or string");
-      
-      expectException(function() {
-          cdr([]);
-      }, 'NumArgsError', 'too few args: error');
-      
-      expectException(function() {
-          cdr([oneEl, oneEl]);
-      }, 'NumArgsError', 'too many args: error');
 
     });
     
@@ -141,14 +117,6 @@ function testFunctions(funcs, data, testHelper) {
         expectException(function() {
             n([num(4)]);
         }, 'TypeError', 'remember to give it a list or string');
-        
-        expectException(function() {
-            n([]);
-        }, 'NumArgsError', 'too few args: error');
-        
-        expectException(function() {
-            n([empty, empty]);
-        }, 'NumArgsError', 'too many args: error');
         
     });
 
@@ -178,14 +146,6 @@ function testFunctions(funcs, data, testHelper) {
       expectException(function() {
           plus([num(8), list([])]);
         }, 'TypeError', "and the second argument must be numbers");
-      
-      expectException(function() {
-          plus([num(4)]);
-      }, 'NumArgsError', 'too few arguments throws an exception ...');
-      
-      expectException(function() {
-          plus([num(4), num(5), num(6)]);
-      }, 'NumArgsError', 'as does too many arguments');
 
     });
 
@@ -203,14 +163,6 @@ function testFunctions(funcs, data, testHelper) {
       expectException(function() {
           neg([list([])]);
         }, 'TypeError', "the first argument must be a number");
-      
-      expectException(function() {
-          neg([]);
-      }, 'NumArgsError', 'too few arguments throws an exception ...');
-      
-      expectException(function() {
-          neg([num(4), num(5)]);
-      }, 'NumArgsError', 'as does too many arguments');
     });
 
 
@@ -246,14 +198,6 @@ function testFunctions(funcs, data, testHelper) {
       expectException(function() {
           eq([list(7), list(7)]);
       }, 'TypeError', "'eq?' does not work on lists");
-            
-      expectException(function() {
-          eq([num(7)]);
-      }, 'NumArgsError', 'too few arguments throws an exception ...');
-      
-      expectException(function() {
-          eq([num(4), num(5), num(8)]);
-      }, 'NumArgsError', 'as does too many arguments');
       
     });
     
@@ -266,14 +210,6 @@ function testFunctions(funcs, data, testHelper) {
         deepEqual(str1, type([num(14)]), "'prim-type' is a function of one argument");
         
         deepEqual(str2, type([list([])]), "it returns the type of its argument as a string");
-        
-        expectException(function() {
-            type([]);
-        }, 'NumArgsError', 'too few arguments throws an exception ...');
-        
-        expectException(function() {
-            type([num(5), num(8)]);
-        }, 'NumArgsError', 'as does too many arguments');
         
     });
     
@@ -290,14 +226,6 @@ function testFunctions(funcs, data, testHelper) {
         expectException(function() {
             lt([list([]), num(4)]);
         }, 'TypeError', 'remember to give it numbers');
-        
-        expectException(function() {
-            lt([num(1)]);
-        }, 'NumArgsError', 'too few args:  error');
-        
-        expectException(function() {
-            lt([num(1), num(2), num(3)]);
-        }, 'NumArgsError', 'too many args: error');
     });
     
     
@@ -324,14 +252,6 @@ function testFunctions(funcs, data, testHelper) {
             da([num(4)]);
         }, 'TypeError', "remember to give 'data' a string");
         
-        expectException(function() {
-            da([]);
-        }, 'NumArgsError', 'too few args: exception');
-        
-        expectException(function() {
-            da([str("abc"), str("def")]);
-        }, 'NumArgsError', 'too many: exception');
-        
         
         deepEqual(str("obj"), ut([obj1]), "udt-type returns the type (as a string) of a user-defined datatype");
         
@@ -354,14 +274,6 @@ function testFunctions(funcs, data, testHelper) {
         expectException(function() {
             err([list([]), num(4), num(3)]);
         }, 'TypeError', 'remember to give it strings for the first 2 args');
-        
-        expectException(function() {
-            err([str("abc"), str("def")]);
-        }, 'NumArgsError', 'too few args:  error');
-        
-        expectException(function() {
-            err([str("abc"), str("def"), str("abc"), str("def")]);
-        }, 'NumArgsError', 'too many args: error');
     });
     
     
@@ -371,14 +283,6 @@ function testFunctions(funcs, data, testHelper) {
         expectException(function() {
             errtype([list([])]);
         }, 'TypeError', 'remember to give it an Error');
-        
-        expectException(function() {
-            errtype([]);
-        }, 'NumArgsError', 'too few args:  error');
-        
-        expectException(function() {
-            errtype([data.Error(str("abc"), str("def"), num(4)), num(1)]);
-        }, 'NumArgsError', 'too many args: error');
     });
     
     
@@ -388,14 +292,6 @@ function testFunctions(funcs, data, testHelper) {
         expectException(function() {
             errmess([list([])]);
         }, 'TypeError', 'remember to give it an Error');
-        
-        expectException(function() {
-            errmess([]);
-        }, 'NumArgsError', 'too few args:  error');
-        
-        expectException(function() {
-            errmess([data.Error(str("abc"), str("def"), num(4)), num(1)]);
-        }, 'NumArgsError', 'too many args: error');
     });
     
     
@@ -405,14 +301,54 @@ function testFunctions(funcs, data, testHelper) {
         expectException(function() {
             errtrace([list([])]);
         }, 'TypeError', 'remember to give it an Error');
-        
-        expectException(function() {
-            errtrace([]);
-        }, 'NumArgsError', 'too few args:  error');
-        
-        expectException(function() {
-            errtrace([data.Error(str("abc"), str("def"), num(4)), num(1)]);
-        }, 'NumArgsError', 'too many args: error');
+    });
+    
+    
+    test("function number of arguments", function() {
+    	
+    	var args = {
+    		'cons'         : 2,
+    		'car'          : 1,
+    		'cdr'          : 1,
+    		'null?'        : 1, 
+    		'+'            : 2,
+    		'neg'          : 1,
+    		'number-<'     : 2,
+    		'eq?'          : 2,
+    		'prim-type'    : 1,
+    		'data'         : 1,
+    		'udt-value'    : 1,
+    		'udt-type'     : 1,
+    		'error-trace'  : 1,
+    		'error-message': 1,
+    		'error-type'   : 1,
+    		'Error'        : 3
+    	}, 
+    	n_args = [
+    	    [],
+    	    [str("abc")],
+    	    [str("abc"), str("abc")],
+    	    [str("abc"), str("abc"), str("abc")],
+    	    [str("abc"), str("abc"), str("abc"), str("abc")]
+    	];
+    	
+    	for(var fname in Functions) {
+    		// because 'list' is variadic
+    		if(fname === 'list') {
+    			continue;
+    		}
+    		if(!(fname in args)) {
+    			ok(false, "no entry for " + fname);
+    		}
+    		numArgs = args[fname];
+    		expectException(function() {
+    			Functions[fname](n_args[numArgs - 1]);
+    		}, 'NumArgsError', 'function ' + fname + ': too few arguments');
+    		expectException(function() {
+    			Functions[fname](n_args[numArgs + 1]);
+    		}, 'NumArgsError', 'function ' + fname + ': too many arguments');
+    	}
+    	
     });
     
 }
