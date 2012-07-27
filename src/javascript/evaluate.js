@@ -129,9 +129,18 @@ var Evaluate = (function (Data, Functions, Environment) {
         
         return names;
     }
+    
+    
+    function makeArray(size, initial) {
+        var arr = [];
+        for(var i = 0; i < size; i++) {
+            arr.push(initial);
+        }
+        return arr;
+    }
 
 
-    function make_closure(env, lam_args) {
+    function lambda(env, lam_args) {
         if( lam_args.length < 2 ) {
             throw new SpecialFormError("NumArgsError", "list of arguments and at least 1 body form",
                       "missing one or both", "lambda/special", "body may not be empty");
@@ -147,19 +156,16 @@ var Evaluate = (function (Data, Functions, Environment) {
         //   and puts its arguments in the environment
         //   then it evaluates its body in the new environment
         function closure(c_args) {
-            var ln = names.length,
-                la = c_args.length,
-                newEnv = Environment.Environment(env, {});
+            var newEnv = Environment.Environment(env, {}),
+                j, k;
 
-            argsCheck(ln, la, 'closure');
-
-            for (var j = 0; j < names.length; j++) {
+            for (j = 0; j < names.length; j++) {
                 // arguments don't need to be evaluated here
                 newEnv.addBinding(names[j].value, c_args[j]);
             }
 
             // evaluate all the body forms except for the last ...
-            for(var k = 0; k < bodies.length - 1; k++) {
+            for(k = 0; k < bodies.length - 1; k++) {
                 evaluate(bodies[k], newEnv);
             }
 
@@ -167,12 +173,7 @@ var Evaluate = (function (Data, Functions, Environment) {
             return evaluate(bodies[k], newEnv);
         }
 
-        return closure;
-    }
-    
-    
-    function lambda(env, args) {
-        return Data.Function(make_closure(env, args));
+        return Data.Function(makeArray(names.length, null), 'closure', closure);
     }
     
     
@@ -207,14 +208,17 @@ var Evaluate = (function (Data, Functions, Environment) {
         bindings['cond']   = Data.SpecialForm(cond);
         bindings['lambda'] = Data.SpecialForm(lambda);
         bindings['quote']  = Data.SpecialForm(quote);
+
         // the special form that should be a function
-        bindings['eval'] = Data.SpecialForm(beagleEval);
+        bindings['eval']   = Data.SpecialForm(beagleEval);
+        
         // the boolean constants
-        bindings['true']  = Data.Boolean(true);
-        bindings['false'] = Data.Boolean(false);
+        bindings['true']   = Data.Boolean(true);
+        bindings['false']  = Data.Boolean(false);
+
         // the functions
         for(name in Functions) {
-            bindings[name] = Data.Function(Functions[name]);            
+            bindings[name] = Functions[name];
         };
 
         return Environment.Environment(null, bindings);
@@ -228,12 +232,12 @@ var Evaluate = (function (Data, Functions, Environment) {
             return evaluate(arg, env);
         });
 
-        return func(evaledArgs);
+        return func.fapply(evaledArgs);
     }
     
     
     function applySpecial(func, env, args) {
-        return func(env, args);
+        return func.value(env, args);
     }
 
 
@@ -243,15 +247,14 @@ var Evaluate = (function (Data, Functions, Environment) {
         }
 
         var first = evaluate(sexpr.value[0], env),
-            args = sexpr.value.slice(1),
-            func = first.value;
+            args = sexpr.value.slice(1);
 
         if (first.type === 'function') {
-            return applyFunction(func, env, args);
+            return applyFunction(first, env, args);
         }
 
         if (first.type === 'specialform') {
-            return applySpecial(func, env, args);
+            return applySpecial(first, env, args);
         }
 
         throw new Error("first element in list must be function or special form (was " + first.type + ")");
@@ -288,8 +291,8 @@ var Evaluate = (function (Data, Functions, Environment) {
 
 
     function evaluate(sexpr, env) {
-    	env.logEvaluation(sexpr);
-    	
+        env.logEvaluation(sexpr);
+        
         if (!env || !sexpr) {
             throw new Error("evaluate missing sexpr or environment");
         }

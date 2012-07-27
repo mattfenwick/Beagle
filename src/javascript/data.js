@@ -1,6 +1,36 @@
 var Data = (function () {
     "use strict";
 
+
+    function FunctionError(type, expected, actual, fname, message) {
+        this.type = type;
+        this.expected = expected;
+        this.actual = actual;
+        this.fname = fname;
+        this.message = message;
+    }
+
+
+    FunctionError.prototype.toString = function() {
+        return this.type + " in " + this.fname + ": " + this.message + 
+               ", expected " + this.expected + " but got " + this.actual;
+    };
+
+
+    function typeCheck(expected, actual, fname, message) {
+        if (expected !== actual) {
+            throw new FunctionError('TypeError', expected, actual, fname, message);
+        }
+    }
+
+
+    function argsCheck(expected, actual, fname, message) {
+        if (expected !== actual) {
+            throw new FunctionError('NumArgsError', expected, actual, fname, message);
+        }
+    }
+    
+
     function MyNumber(value) {
         this.value = value;
         this.type = 'number';
@@ -8,8 +38,8 @@ var Data = (function () {
     
     
     function Char(value) {
-    	this.value = value;
-    	this.type = 'char';
+        this.value = value;
+        this.type = 'char';
     }
 
 
@@ -31,36 +61,32 @@ var Data = (function () {
     }
 
 
-    function MyFunction(numArgs, argTypes, name, code) {
-    	this.numArgs = numArgs;
-    	this.argTypes = argTypes;
-    	this.name = name;
+    function MyFunction(argTypes, name, code) {
+        this.argTypes = argTypes;
+        this.name = name;
         this.value = code;
         this.type = 'function';
     }
     
-    MyFunction.prototype.apply = function(args) {
-    	if(this.numArgs !== args.length) {
-    		// exception
-    	}
-    	this.argTypes.map(function(pair)) {
-    		var position = pair[0],
-    		    type = pair[1];
-    		if(args[position].type !== type) {
-    			// exception
-    		}
-    	}
-    	return this.value(args);
+    MyFunction.prototype.fapply = function(args) {
+        argsCheck(this.argTypes.length, args.length, this.name);
+        for(var i = 0; i < this.argTypes.length; i++) {
+            if(this.argTypes[i] !== null) {// if it IS null, we don't need to worry about it
+            	console.log(JSON.stringify([args, this.argTypes, args[i], this.argTypes[i]]));
+                typeCheck(this.argTypes[i], args[i].type, this.name, 'argument ' + (i + 1));
+            }
+        }
+        return this.value(args);
     }
     
     
-    function UncheckedFunction(code) {
-    	this.value = code;
-    	this.type = 'function';
+    function VariadicFunction(code) {
+        this.value = code;
+        this.type = 'function';
     }
     
-    UncheckedFunction.prototype.apply = function(args) {
-    	return this.value(args);
+    VariadicFunction.prototype.fapply = function(args) {
+        return this.value(args);
     }
 
 
@@ -89,31 +115,34 @@ var Data = (function () {
     
     
     function MyError(errortype, message, trace) {
-    	this.errortype = errortype;
-    	this.message = message;
-    	this.trace = trace;
-    	this.type = 'error';
+        this.errortype = errortype;
+        this.message = message;
+        this.trace = trace;
+        this.type = 'error';
     }
 
 
     return {
         'Number': function (x) {
-            return new MyNumber(x)
+            return new MyNumber(x);
         },
         'Char': function(x) {
-        	return new Char(x);
+            return new Char(x);
         },
-        'Function': function (x) {
-            return new MyFunction(x)
+        'Function': function (types, name, body) {
+            return new MyFunction(types, name, body);
+        },
+        'VariadicFunction': function(x) {
+            return new VariadicFunction(x);
         },
         'List': function (x) {
-            return new List(x)
+            return new List(x);
         },
         'Symbol': function (x) {
-            return new Symbol(x)
+            return new Symbol(x);
         },
         'Null': function () {
-            return new Null()
+            return new Null();
         },
         'SpecialForm': function (x) {
             return new SpecialForm(x);
@@ -125,10 +154,10 @@ var Data = (function () {
             return new UserDefined(x, y);
         },
         'String': function(x) {
-        	return new MyString(x);
+            return new MyString(x);
         },
         'Error': function(type, message, trace) {
-        	return new MyError(type, message, trace);
+            return new MyError(type, message, trace);
         }
     };
 

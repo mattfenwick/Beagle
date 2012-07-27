@@ -199,10 +199,10 @@ function testEvaluate(evaluate, funcs, data, envir, testHelper) {
         var lam = ev.lambda,
             env = ev.getDefaultEnv(),
             args1 = lis([]),
-            args2 = lis([sym('abc')]),
-            args3 = lis([sym('q'), sym('r')]),
             body1 = num(4),
+            args2 = lis([sym('abc')]),
             body2 = sym('abc'),
+            args3 = lis([sym('q'), sym('r')]),
             body3 = lis([sym('+'), sym('q'), num(4)]);
         
         var a = lam(env, [args1, body1]);
@@ -213,19 +213,19 @@ function testEvaluate(evaluate, funcs, data, envir, testHelper) {
         );
         deepEqual(
         	num(4),
-        	a.value([]),
+        	a.fapply([]),
         	'the closure can be evaluated -- it expects a list of arguments'
         );
         
         deepEqual(
         	str('me!!'),
-        	lam(env, [args2, body2]).value([str('me!!')]),
+        	lam(env, [args2, body2]).fapply([str('me!!')]),
         	'the closure is evaluated in an environment with the parameters bound to its arguments'
         );
         
         deepEqual(
         	num(89),
-        	lam(env, [args3, body3]).value([num(85), str('unused')]),
+        	lam(env, [args3, body3]).fapply([num(85), str('unused')]),
         	'the body can be an atom or a list'
         );
 
@@ -245,7 +245,7 @@ function testEvaluate(evaluate, funcs, data, envir, testHelper) {
         }, 'TypeError', '... and every element in that list must be a symbol');
         
         expectExc(function() {
-        	lam(env, [args1, body1]).value([num(1)]);
+        	lam(env, [args1, body1]).fapply([num(1)]);
         }, 'NumArgsError', 'the number of arguments to the closure must also be correct');
     
     });
@@ -291,7 +291,7 @@ function testEvaluate(evaluate, funcs, data, envir, testHelper) {
           ]),
           l3 = lis([sym('list')]),
           t = data.Boolean(true),
-          cons = data.Function(funcs.cons),
+          cons = funcs.cons,
           myif = data.SpecialForm(ev['if']);
           
       deepEqual(num(31), ev.eval(int_, env), "there are several self-evaluating forms: 1) numbers ...");

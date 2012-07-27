@@ -19,9 +19,9 @@ function testFunctions(funcs, data, testHelper) {
 
     test("cons", function() {
         var cons = funcs.cons,
-            oneEl = cons([num(14), empty]),
-            twoEl = cons([num(32), oneEl]),
-            oneLi = cons([empty, empty]),
+            oneEl = cons.fapply([num(14), empty]),
+            twoEl = cons.fapply([num(32), oneEl]),
+            oneLi = cons.fapply([empty, empty]),
             str1 = str("eat"),
             ch1 = ch("f");
         
@@ -31,73 +31,41 @@ function testFunctions(funcs, data, testHelper) {
       
       deepEqual(list([]), empty, 'cons does not mutate:  it makes a new list');
       
-      deepEqual(list([empty]), oneLi, 'if the 2nd arg is a list, the 1st arg may be of any type ...');
-      
-      deepEqual(str("feat"), cons([ch1, str1]), 'but if the 2nd arg is a string, the 1st arg must be a char');
-      
-      expectException(function() {
-    	  cons([num(11), str1]);
-      }, 'TypeError', "otherwise, you'll get an error")
-      
-      expectException(function() {
-          cons([num(11), num(12)]);
-      }, 'TypeError', 'the second argument must be a Beagle list or string');
+      deepEqual(list([empty]), oneLi, 'the 1st arg may be of any type ...');
     });
 
 
     test("car", function() {
-    
       var car = funcs.car,
           twoEl = list([3, 4]),
           listFirst = list([list([14])]);
       
-      deepEqual(3, car([twoEl]), 'car returns the first element of a list or string, ');
+      deepEqual(3, car.fapply([twoEl]), 'car returns the first element of a list, ');
       
-      deepEqual(list([14]), car([listFirst]), 'which may be a list');
+      deepEqual(list([14]), car.fapply([listFirst]), 'which may be a list');
       
-      deepEqual(ch('x'), car([str('xylophone')]), 'the car of a string is a character');
-
       expectException(function() {
-          car([empty]);
+          car.fapply([empty]);
       }, 'ValueError', 'trying to take the car of an empty list throws an exception');
-
-      expectException(function() {
-          car([str("")]);
-      }, 'ValueError', 'as does taking the car of an empty string');
-      
-      expectException(function() {
-          car([num(16)]);
-      }, 'TypeError', "car's argument must be a list/string");
     });
       
 
     test("cdr", function() {
-    
       var cdr = funcs.cdr,
           fourEl = list([3, 4, 10, 'hello']),
           oneEl = list([64]);
 
       deepEqual(
           list([4, 10, 'hello']), 
-          cdr([fourEl]),
+          cdr.fapply([fourEl]),
           "cdr returns the 'rest' of a list after the first element"
       );
       
-      deepEqual(empty, cdr([oneEl]), 'the cdr of a one-element list is an empty list');
-      
-      deepEqual(str("hark"), cdr([str("shark")]), 'the cdr of a string is another string, missing the first character');
+      deepEqual(empty, cdr.fapply([oneEl]), 'the cdr of a one-element list is an empty list');
 
       expectException(function() {
-          cdr([empty]);
+          cdr.fapply([empty]);
       }, 'ValueError', 'trying to take the cdr of an empty list throws an exception');
-      
-      expectException(function() {
-    	  cdr([str("")]);
-      }, 'ValueError', 'as does taking the cdr of an empty string');
-      
-      expectException(function() {
-          cdr([num(16)]);
-        }, 'TypeError', "cdr needs a list or string");
 
     });
     
@@ -106,47 +74,28 @@ function testFunctions(funcs, data, testHelper) {
         var n = funcs['null?'],
             empty = list([]);
 
-        deepEqual(data.Boolean(true), n([empty]), "'null?' takes one argument:  a list/string");
+        deepEqual(data.Boolean(true), n.fapply([empty]), "'null?' takes one argument:  a list");
         
-        deepEqual(data.Boolean(false), n([list([str("list")])]), "it returns true if the list is empty, and false otherwise");
-
-        deepEqual(data.Boolean(true), n([str("")]), "and similarly for strings, the empty string is true");
-        
-        deepEqual(data.Boolean(false), n([str("a")]), "any other string is false");
-
-        expectException(function() {
-            n([num(4)]);
-        }, 'TypeError', 'remember to give it a list or string');
+        deepEqual(data.Boolean(false), n.fapply([list([str("list")])]), "it returns true if the list is empty, and false otherwise");
         
     });
 
 
     test("list", function() {
-      
       var listf = funcs.list;
-      deepEqual(list([3, 4, 5]), listf([3, 4, 5]), "'list' is a variadic function which returns its arguments in a list");
       
+      deepEqual(list([3, 4, 5]), listf.fapply([3, 4, 5]), "'list' is a variadic function which returns its arguments in a list");
     });
 
 
     test("+", function() {
-
       var plus = funcs['+'];
 
-      deepEqual(num(32), plus([num(27), num(5)]), "'+' is for adding two numbers");
+      deepEqual(num(32), plus.fapply([num(27), num(5)]), "'+' is for adding two numbers");
 
-      deepEqual(num(14), plus([num(18), num(-4)]), "they can be positive or negative");
+      deepEqual(num(14), plus.fapply([num(18), num(-4)]), "they can be positive or negative");
 
-      deepEqual(num(-17), plus([num(-9), num(-8)]), "or both negative");
-
-      expectException(function() {
-          plus([list([]), num(4)]);
-      }, 'TypeError', 'both the first argument ...');
-      
-      expectException(function() {
-          plus([num(8), list([])]);
-        }, 'TypeError', "and the second argument must be numbers");
-
+      deepEqual(num(-17), plus.fapply([num(-9), num(-8)]), "or both negative");
     });
 
 
@@ -156,13 +105,9 @@ function testFunctions(funcs, data, testHelper) {
           m3 = num(-3),
           m14 = num(-14);
 
-      deepEqual(m3, neg([p3]), "'neg' negates a number, flipping the sign");
+      deepEqual(m3, neg.fapply([p3]), "'neg' negates a number, flipping the sign");
 
-      deepEqual(m14, neg([neg([m14])]), "a number is its own double negative");
-      
-      expectException(function() {
-          neg([list([])]);
-        }, 'TypeError', "the first argument must be a number");
+      deepEqual(m14, neg.fapply([neg.fapply([m14])]), "a number is its own double negative");
     });
 
 
@@ -175,28 +120,24 @@ function testFunctions(funcs, data, testHelper) {
           ch1 = ch('x'),
           ch2 = ch('y');
 
-      deepEqual(t, eq([t, t]), 'booleans');
-      deepEqual(f, eq([f, t]), 'booleans');
+      deepEqual(t, eq.fapply([t, t]), 'booleans');
+      deepEqual(f, eq.fapply([f, t]), 'booleans');
       
-
-      deepEqual(f, eq([num(3), num(31)]), 'number');
-      deepEqual(t, eq([num(2331), num(2331)]), 'number');
+      deepEqual(f, eq.fapply([num(3), num(31)]), 'numbers');
+      deepEqual(t, eq.fapply([num(2331), num(2331)]), 'numbers');
       
-      deepEqual(t, eq([ch1, ch1]), 'chars');
-      deepEqual(f, eq([ch1, ch2]), 'chars');
+      deepEqual(t, eq.fapply([ch1, ch1]), 'chars');
+      deepEqual(f, eq.fapply([ch1, ch2]), 'chars');
       
-      deepEqual(t, eq([str("abc"), str("abc")]), 'strings');
-      deepEqual(f, eq([str("def"), str("defg")]), 'strings');
-      
-      deepEqual(t, eq([sym('abc'), sym('abc')]), 'symbols');
-      deepEqual(f, eq([sym('abc'), sym('def')]), 'symbols');
+      deepEqual(t, eq.fapply([sym('abc'), sym('abc')]), 'symbols');
+      deepEqual(f, eq.fapply([sym('abc'), sym('def')]), 'symbols');
       
       expectException(function() {
-          eq([num(16), db(true)]);
+          eq.fapply([num(16), db(true)]);
       }, 'TypeError', "'eq?' arguments must be of the same type");
             
       expectException(function() {
-          eq([list(7), list(7)]);
+          eq.fapply([list(7), list(7)]);
       }, 'TypeError', "'eq?' does not work on lists");
       
     });
@@ -217,15 +158,11 @@ function testFunctions(funcs, data, testHelper) {
     test("number-<", function() {
         var lt = funcs['number-<'];
 
-        deepEqual(data.Boolean(false), lt([num(2), num(1)]), "'number-<' takes two numbers and compares them");
+        deepEqual(data.Boolean(false), lt.fapply([num(2), num(1)]), "'number-<' takes two numbers and compares them");
         
-        deepEqual(data.Boolean(true), lt([num(11), num(39)]), "it returns true if the first is < the second");
+        deepEqual(data.Boolean(true), lt.fapply([num(11), num(39)]), "it returns true if the first is < the second");
         
-        deepEqual(data.Boolean(false), lt([num(4), num(4)]), "and false otherwise -- including if they're the same");
-
-        expectException(function() {
-            lt([list([]), num(4)]);
-        }, 'TypeError', 'remember to give it numbers');
+        deepEqual(data.Boolean(false), lt.fapply([num(4), num(4)]), "and false otherwise -- including if they're the same");
     });
     
     
@@ -269,7 +206,7 @@ function testFunctions(funcs, data, testHelper) {
     
     
     test("Error", function() {
-    	var err = funcs['Error'];
+        var err = funcs['Error'];
 
         expectException(function() {
             err([list([]), num(4), num(3)]);
@@ -305,50 +242,81 @@ function testFunctions(funcs, data, testHelper) {
     
     
     test("function number of arguments", function() {
-    	
-    	var args = {
-    		'cons'         : 2,
-    		'car'          : 1,
-    		'cdr'          : 1,
-    		'null?'        : 1, 
-    		'+'            : 2,
-    		'neg'          : 1,
-    		'number-<'     : 2,
-    		'eq?'          : 2,
-    		'prim-type'    : 1,
-    		'data'         : 1,
-    		'udt-value'    : 1,
-    		'udt-type'     : 1,
-    		'error-trace'  : 1,
-    		'error-message': 1,
-    		'error-type'   : 1,
-    		'Error'        : 3
-    	}, 
-    	n_args = [
-    	    [],
-    	    [str("abc")],
-    	    [str("abc"), str("abc")],
-    	    [str("abc"), str("abc"), str("abc")],
-    	    [str("abc"), str("abc"), str("abc"), str("abc")]
-    	];
-    	
-    	for(var fname in Functions) {
-    		// because 'list' is variadic
-    		if(fname === 'list') {
-    			continue;
-    		}
-    		if(!(fname in args)) {
-    			ok(false, "no entry for " + fname);
-    		}
-    		numArgs = args[fname];
-    		expectException(function() {
-    			Functions[fname](n_args[numArgs - 1]);
-    		}, 'NumArgsError', 'function ' + fname + ': too few arguments');
-    		expectException(function() {
-    			Functions[fname](n_args[numArgs + 1]);
-    		}, 'NumArgsError', 'function ' + fname + ': too many arguments');
-    	}
-    	
+        var n_args = [
+            [],
+            [str("abc")],
+            [str("abc"), str("abc")],
+            [str("abc"), str("abc"), str("abc")],
+            [str("abc"), str("abc"), str("abc"), str("abc")]
+        ];
+        
+        for(var fname in Functions) {
+            // because 'list' is variadic
+            if(fname === 'list') {
+                continue;
+            }
+            
+            f = Functions[fname];
+            numArgs = f.argTypes.length;
+            expectException(function() {
+                f.fapply(n_args[numArgs - 1]);
+            }, 'NumArgsError', 'function ' + fname + ': too few arguments');
+            expectException(function() {
+                f.fapply(n_args[numArgs + 1]);
+            }, 'NumArgsError', 'function ' + fname + ': too many arguments');
+        }
+        
+    });
+    
+    
+    function replace(array, index, newValue) {
+        var newArray = array.map(function(x) {return x;});
+        if(!newArray.hasOwnProperty(index) && !(index < newArray.length)) {
+            throw new Error("can't set replace index " + index + ", doesn't exist");
+        }
+        newArray[index] = newValue;
+        return newArray;
+    }
+    
+    
+    test("function argument types", function() {
+        var funcs = {
+                'cons'     : [num(3), list([])],
+                'car'      : [list([num(4)])],
+                'cdr'      : [list([num(14)])],
+                'null?'    : [list([num(44)])],
+                '+'        : [num(3), num(21)],
+                'neg'      : [num(3)],
+                'number-<' : [num(3), num(21)],
+                'eq?'      : [num(3), num(21)],
+            },
+            types = {
+                'number' : Data.Char('c'),
+                'char'   : Data.Boolean(true),
+                'boolean': Data.Symbol('sy'),
+                'symbol' : Data.List([]),
+                'list'   : Data.Number(14)
+            },
+            i, j, f, newArgs, fname, tempArgs;
+        
+        // for each function
+        for(fname in funcs) {
+            f = Functions[fname];
+            newArgs = funcs[fname]; // should do this by reading the function's data instead
+            // for each argument to that function
+            for(j = 0; j < newArgs.length; j++) {
+                if(f.argTypes[j] !== null) {
+                    tempArgs = replace(newArgs, j, types[newArgs[j].type]);
+                    expectException(function() {
+                        f.fapply(tempArgs);
+                    }, 'TypeError', 'for argument ' + (j + 1) + ' of function ' + fname);
+                } else {
+                    // if it's null, then no type error is possible,
+                    // so we don't need to check it
+                    ok(true, "arg " + (j + 1) + " to " + fname + " may be of any type");
+                }
+            }
+        }
     });
     
 }

@@ -1,130 +1,66 @@
 var Functions = (function (Data) {
     "use strict";
 
-
-    function FunctionError(type, expected, actual, fname, message) {
-        this.type = type;
-        this.expected = expected;
-        this.actual = actual;
-        this.fname = fname;
-        this.message = message;
-    }
-
-
-    FunctionError.prototype.toString = function() {
-        return this.type + " in " + this.fname + ": " + this.message + 
-               ", expected " + this.expected + " but got " + this.actual;
-    };
-
-
-    function typeCheck(expected, actual, fname, message) {
-        if (expected !== actual) {
-            throw new FunctionError('TypeError', expected, actual, fname, message);
-        }
-    }
-
-
-    function argsCheck(expected, actual, fname, message) {
-        if (expected !== actual) {
-            throw new FunctionError('NumArgsError', expected, actual, fname, message);
-        }
-    }
-
     
-    var cons = Data.UncheckedFunction(
+    var cons = Data.Function(
+        [null, 'list'],
+        'cons',
         function (args) {        
-            argsCheck(2, args.length, 'cons');
-    
             var elem = args[0],
                 list = args[1],
                 newList, i;
     
-            if(list.type === 'list') {
-                newList = [elem];
-                for (i = 0; i < list.value.length; i++) {
-                    newList.push(list.value[i]);
-                }
-    
-                return new Data.List(newList);
+            newList = [elem];
+            for (i = 0; i < list.value.length; i++) {
+                newList.push(list.value[i]);
             }
-            
-            if(list.type === 'string') {
-                typeCheck('char', elem.type, 'cons', "string 'cons' requires a char as 1st arg");
     
-                return new Data.String(elem.value + list.value);
-            }
-            
-            throw new FunctionError('TypeError', 'string or list', list.type, 'cons', "second argument");
+            return new Data.List(newList);
         }
     );
 
 
-    var car = Data.UncheckedFunction(
+    var car = Data.Function(
+        ['list'],
+        'car',
         function (args) {
-            argsCheck(1, args.length, 'car');
-    
-            var list = args[0], fst;
-    
-            if(!(list.type === 'list' || list.type === 'string')) {
-                throw new FunctionError('TypeError', 'string/list', list.type, 'car', "only argument");
-            }
+            var list = args[0];
             
             if (list.value.length === 0) {
-                throw new FunctionError("ValueError", "non-empty", "empty", 
-                      'car', "cannot take car of empty list/string");
+                throw new Error(["ValueError", "cannot take car of empty list"]);
             }
             
-            fst = list.value[0];
-            if(list.type === 'list') {
-                return fst;
-            } else { // it's a string, so the first is a char
-                return Data.Char(fst);
-            }
+            return list.value[0];
         }
     );
 
 
-    var cdr = Data.UncheckedFunction(
+    var cdr = Data.Function(
+        ['list'],
+        'cdr',
         function (args) {         
-            argsCheck(1, args.length, 'cdr');
-            
-            var list = args[0], 
-                rest;
-            
-            if(!(list.type === 'list' || list.type === 'string')) {
-                throw new FunctionError('TypeError', 'string/list', list.type, 'cdr', "only argument");
-            } 
-       
+            var list = args[0];
+
             if (list.value.length === 0) {
-                throw new FunctionError("ValueError", 'non-empty', 'empty', 
-                      'cdr', "cannot take cdr of empty list/string");
+                throw new Error(["ValueError", "cannot take cdr of empty list"]);
             }
             
-            rest = list.value.slice(1);
-            if (list.type === 'list') {
-                return Data.List(rest);
-            } else { // it's a string
-                return Data.String(rest);
-            }
-        }
+            return Data.List(list.value.slice(1));
+        }        
     );
     
     
     var nullQ = Data.Function(
-        1,
-        function(args) {
-            return (args[0].type === 'list' || args[0].type === 'string');
-        },
+        ['list'],
         'null?',
         function (args) {             
             var list = args[0];
-            
             return Data.Boolean(list.value.length === 0);
         }
     );
 
 
-    var list = Data.UncheckedFunction(
+    var list = Data.VariadicFunction(
         function (args) {
             return Data.List(args);
         }
@@ -135,40 +71,37 @@ var Functions = (function (Data) {
         'number' : 1,
         'char'   : 1,
         'symbol' : 1,
-        'boolean': 1,
-        'string' : 1
+        'boolean': 1
     };
 
 
     var eqQ = Data.Function(
-        2,
+        [null, null],
+        'eq?',
         function(args) {        
             var left = args[0],
                 right = args[1],    
                 ltype = left.type,
                 rtype = right.type;
             if (ltype !== rtype) {
-                throw new FunctionError('TypeError', ltype, rtype, "eq?", "arguments must have identical types");
+                throw new Error(['TypeError', ltype, rtype, "eq?", "arguments must have identical types"]);
             }
             if(!(ltype in COMPARABLE)) {
-                throw new FunctionError('TypeError', 'number/char/symbol/boolean/string', 
-                      ltype, "eq?", "can't compare type");
+                throw new Error(['TypeError', 'number/char/symbol/boolean', 
+                      ltype, "eq?", "can't compare type"]);
             }
-        },
-        'eq?',
-        function (args) {
+            if(!(rtype in COMPARABLE)) {
+                throw new Error(['TypeError', 'number/char/symbol/boolean', 
+                      rtype, "eq?", "can't compare type"]);
+            }
             return Data.Boolean(args[0].value === args[1].value);
         }
     );
 
 
     var plus = Data.Function(
-        2,
-        function(args) {
-            typeCheck('number', args[0].type, '+', 'first argument');
-            typeCheck('number', args[1].type, '+', 'second argument');
-        },
-        'plus',
+        ['number', 'number'],
+        '+',
         function(args) {
             return Data.Number(args[0].value + args[1].value);
         }
@@ -176,10 +109,7 @@ var Functions = (function (Data) {
 
 
     var neg = Data.Function(
-        1,
-        function(args) {
-            typeCheck('number', args[0].type, 'neg', 'only argument');
-        },
+        ['number'],
         'neg',
         function neg(args) {
             return Data.Number(-args[0].value);
@@ -188,8 +118,7 @@ var Functions = (function (Data) {
     
     
     var primType = Data.Function(
-        1,
-        function(args) {},
+        [null],
         'prim-type',
         function(args) {
             return Data.String(args[0].type);
@@ -198,11 +127,7 @@ var Functions = (function (Data) {
     
     
     var numberLessThan = Data.Function(
-        2,
-        function(args) {
-            typeCheck('number', args[0].type, 'number-<', 'first argument');
-            typeCheck('number', args[1].type, 'number-<', 'second argument');
-        },
+        ['number', 'number'],
         'number-<',
         function numberLessThan(args) {
             return Data.Boolean(args[0].value < args[1].value);
@@ -211,29 +136,22 @@ var Functions = (function (Data) {
     
     
     var data = Data.Function(
-        1,
-        function(args) {         
-            typeCheck('string', args[0].type, 'data', 'only arg');
-        },
+        [null],
         'data',
         function(args) {
             return Data.Function(
-                1,
-                function() {},
-                usertype.value + ' constructor',
+                [null],
+                args[0].value + ' constructor', // do we need to convert 'usertype.value' to a string?
                 function(c_args) {
                     return Data.UserDefined(args[0], c_args[0]);
                 }
-            )
+            );
         }
     );
     
     
     var udtType = Data.Function(
-        1,
-        function(args) {
-            typeCheck('userdefined', args[0].type, 'udt-type', 'only arg');
-        },
+        ['userdefined'],
         'udt-type',
         function(args) {
             return args[0].usertype;
@@ -242,10 +160,7 @@ var Functions = (function (Data) {
     
     
     var udtValue = Data.Function(
-        1,
-        function(args) {
-            typeCheck('userdefined', args[0].type, 'udt-value', 'only arg');
-        },
+        ['userdefined'],
         'udt-value',
         function(args) {
             return args[0].value;
@@ -254,10 +169,7 @@ var Functions = (function (Data) {
     
     
     var errorMessage = Data.Function(
-        1,
-        function(args) {
-            typeCheck('error', args[0].type, 'error-message', 'only arg');
-        },
+        ['error'],
         'error-message',
         function(args) {
             return args[0].message;
@@ -265,40 +177,35 @@ var Functions = (function (Data) {
     );
     
     
-    function errorType(args) {
-        argsCheck(1, args.length, 'error-type');
-        
-        var err = args[0];
-        
-        typeCheck('error', err.type, 'error-type', 'only arg');
-        
-        return err.errortype;
-    }
+    var errorType = Data.Function(
+        ['error'],
+        'error-type',
+        function(args) {
+            return args[0].errortype;
+        }
+    );
     
     
-    function errorTrace(args) {
-        argsCheck(1, args.length, 'error-trace');
-        
-        var err = args[0];
-        
-        typeCheck('error', err.type, 'error-trace', 'only arg');
-        
-        return err.trace;
-    }
+    var errorTrace = Data.Function(
+        ['error'],
+        'error-trace',
+        function(args) {
+            return args[0].trace;
+        }
+    );
     
     
-    function newError(args) {
-        argsCheck(3, args.length, 'Error');
+    var newError = Data.Function(
+        ['error', null, null],
+        'Error',
+        function(args) {
+            var errortype = args[0],
+                message = args[1],
+                trace = args[2];
         
-        var errortype = args[0],
-            message = args[1],
-            trace = args[2];
-        
-        typeCheck('string', errortype.type, 'Error', '1st arg');
-        typeCheck('string', message.type, 'Error', '2nd arg');
-        
-        return Data.Error(errortype, message, trace);
-    }
+            return Data.Error(errortype, message, trace);
+        }
+    );
 
 
     return {
