@@ -3,6 +3,7 @@ function testReify(reify, data, parse, testHelper) {
     module("reification");
 
     var SExpr = parse.SExpression,
+        app = data.Application,
         list = data.List,
         ch = data.Char,
         sym = data.Symbol,
@@ -58,8 +59,8 @@ function testReify(reify, data, parse, testHelper) {
     });
     
 
-    test("lists", function () {
-        expect(4);
+    test("applications", function () {
+        expect(6);
 
         var list1 = SExpr('list', [
                 SExpr('symbol', "+"),
@@ -74,21 +75,16 @@ function testReify(reify, data, parse, testHelper) {
             badtype = SExpr('boolean', 'false');
 
 
-        var l1 = list([sym('+'), str('str1'), num(345)]);
+        var l1 = app([sym('+'), str('str1'), num(345)]);
         deepEqual(
             l1, 
             reify.makePrimitives(list1), 
             'lists containing symbols and strings are easy to reify ...'
         );
 
-        var l2 = list([
-            sym('+'), 
-            list([
-                sym('-'), 
-                str("")
-            ]), 
-            sym('>>>')
-        ]);
+        var l2 = app(
+            [sym('+'), app([sym('-'), str("")]), sym('>>>')]
+        );
         deepEqual(
             l2, 
             reify.makePrimitives(list2),
@@ -98,6 +94,10 @@ function testReify(reify, data, parse, testHelper) {
         expExc(function() {
             reify.makePrimitives(badtype);
         }, 'TypeError', "reification only recognizes SExpression types 'string', 'symbol', and 'list'");
+        
+        expExc(function() {
+        	reify.makePrimitives(SExpr('list', []));
+        }, 'SyntaxError', 'the empty list cannot be reified, because an Application needs a list containing (at least) a function or special form');
     });
 
 

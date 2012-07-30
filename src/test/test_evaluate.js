@@ -7,7 +7,8 @@ function testEvaluate(evaluate, funcs, data, envir, testHelper) {
         num = data.Number,
         lis = data.List,
         empty = lis([]),
-        str = data.makeCharList;
+        str = data.makeCharList,
+        app = data.Application;
     
     module("Evaluate");
     
@@ -197,7 +198,7 @@ function testEvaluate(evaluate, funcs, data, envir, testHelper) {
     test("lambda", function() {
         var lam = ev.lambda,
             env = ev.getDefaultEnv(),
-            args1 = lis([]),
+            args1 = app([lis([])]),
             body1 = num(4),
             args2 = lis([sym('abc')]),
             body2 = sym('abc'),

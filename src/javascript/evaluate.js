@@ -115,13 +115,11 @@ var Evaluate = (function (Data, Functions, Environment) {
     
     
     function extractArgNames(args) {
-        typeCheck('list', args.type, 'lambda/special', 'first argument');
-
         var names = [],
             i = 1;
 
-        args.value.map(function(sym) {
-            typeCheck('symbol', sym.type, 'lambda/special', "argument " + i);
+        args.map(function(sym) {
+            typeCheck('symbol', sym.type, 'lambda/special parameters', "parameter " + i);
             i++;
 
             names.push(sym);
@@ -146,7 +144,9 @@ var Evaluate = (function (Data, Functions, Environment) {
                       "missing one or both", "lambda/special", "body may not be empty");
         }
         
-        var args = lam_args[0],
+        typeCheck('application', lam_args[0].type, 'lambda/special', 'first argument');
+        
+        var args = lam_args[0].getAllArgs(), // get args out of the unused 'Application'
             bodies = lam_args.slice(1),
             names = extractArgNames(args);
 
@@ -241,13 +241,9 @@ var Evaluate = (function (Data, Functions, Environment) {
     }
 
 
-    function evaluateList(sexpr, env) {
-        if (sexpr.value.length === 0) {
-            throw new SpecialFormError('ValueError', '', '', 'evaluateList', "cannot evaluate empty list");
-        }
-
-        var first = evaluate(sexpr.value[0], env),
-            args = sexpr.value.slice(1);
+    function evaluateApplication(sexpr, env) {
+        var first = evaluate(sexpr.getOperator(), env),
+            args = sexpr.getArgs();
 
         if (first.type === 'function') {
             return applyFunction(first, env, args);
@@ -267,7 +263,7 @@ var Evaluate = (function (Data, Functions, Environment) {
         'boolean'      :  1,
         'function'     :  1,
         'specialform'  :  1,
-        'string'       :  1
+        'list'         :  1
     };
 
 
@@ -297,8 +293,8 @@ var Evaluate = (function (Data, Functions, Environment) {
             throw new Error("evaluate missing sexpr or environment");
         }
 
-        if (sexpr.type === 'list') {
-            return evaluateList(sexpr, env);
+        if (sexpr.type === 'application') {
+            return evaluateApplication(sexpr, env);
         }
 
         return evaluateAtom(sexpr, env);

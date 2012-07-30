@@ -46,14 +46,19 @@ var Reify = (function(Data) {
     //   where the sexpression is either a list, string, or symbol
     //   and the BeagleObject is either a List, Symbol, or Number
     function makePrimitives(sexpr) {
-        var i, value, elems, c, chars;
+        var elems;
 
         if (sexpr.type === 'list') {
+        	
+        	if(sexpr.value.length === 0) {
+        		throw new ReifyError("SyntaxError", "can't reify Application from empty list");
+        	}
+        	
             elems = sexpr.value.map(function(s) {
                 return makePrimitives(s);
             });
 
-            return Data.List(elems);
+            return Data.Application(elems);
         }
 
         if (sexpr.type === "string") {

@@ -66,7 +66,7 @@ var Data = (function () {
         argsCheck(this.argTypes.length, args.length, this.name);
         for(var i = 0; i < this.argTypes.length; i++) {
             if(this.argTypes[i] !== null) {// if it IS null, we don't need to worry about it
-            	console.log(JSON.stringify([args, this.argTypes, args[i], this.argTypes[i]]));
+                console.log(JSON.stringify([args, this.argTypes, args[i], this.argTypes[i]]));
                 typeCheck(this.argTypes[i], args[i].type, this.name, 'argument ' + (i + 1));
             }
         }
@@ -105,6 +105,24 @@ var Data = (function () {
         this.value = value;
         this.type = type;
     }
+    
+    
+    function Application(args) {
+        this.type = 'application';
+        this.args = args;
+    }
+    
+    Application.prototype.getAllArgs = function() {
+        return this.args;
+    };
+    
+    Application.prototype.getOperator = function() {
+        return this.args[0];
+    };
+    
+    Application.prototype.getArgs = function() {
+        return this.args.slice(1);
+    };
 
     
     function makeCharList(jsString) {
@@ -118,7 +136,7 @@ var Data = (function () {
 
 
     return {
-    	// the 4 basics
+        // the 4 basics
         'Number': function (x) {
             return new MyNumber(x);
         },
@@ -135,6 +153,11 @@ var Data = (function () {
         // the way to combine stuff
         'List': function (x) {
             return new List(x);
+        },
+        
+        // 'syntax'
+        'Application': function(args) {
+            return new Application(args);
         },
         
         // functions + special forms
