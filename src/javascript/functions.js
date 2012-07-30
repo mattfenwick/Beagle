@@ -111,17 +111,8 @@ var Functions = (function (Data) {
     var neg = Data.Function(
         ['number'],
         'neg',
-        function neg(args) {
-            return Data.Number(-args[0].value);
-        }
-    );
-    
-    
-    var primType = Data.Function(
-        [null],
-        'prim-type',
         function(args) {
-            return Data.String(args[0].type);
+            return Data.Number(-args[0].value);
         }
     );
     
@@ -129,81 +120,65 @@ var Functions = (function (Data) {
     var numberLessThan = Data.Function(
         ['number', 'number'],
         'number-<',
-        function numberLessThan(args) {
+        function(args) {
             return Data.Boolean(args[0].value < args[1].value);
         }
     );
     
     
-    var data = Data.Function(
+    var datum = Data.Function(
+        ['list', null],
+        'datum',
+        function(args) {
+            var typeList = args[0],
+                type = typeList.map(function(c) {
+                    if(c.type !== 'char') {
+                        throw new Error("'datum' requires a list of chars");
+                    }
+                    return c.value;
+                }).join('');
+                value = args[1];
+                
+            if(type.length === 0) {
+                throw new Error("datum type may not be empty");
+            }
+            
+            return Data.Datum(type, value);
+        }
+    );
+    
+    
+    var type = Data.Function(
         [null],
-        'data',
+        'type',
         function(args) {
-            return Data.Function(
-                [null],
-                args[0].value + ' constructor', // do we need to convert 'usertype.value' to a string?
-                function(c_args) {
-                    return Data.UserDefined(args[0], c_args[0]);
-                }
-            );
+            return Data.makeCharList(args[0].type);
         }
     );
     
     
-    var udtType = Data.Function(
-        ['userdefined'],
-        'udt-type',
+    // does this belong elsewhere?
+    var BUILT_INS = {
+        'number' : 1,
+        'char'   : 1,
+        'boolean': 1,
+        'symbol' : 1,
+        'list'   : 1,
+        'function': 1,
+        'specialform': 1,
+        'null'   : 1  // not sure if I need this
+    };
+    
+    
+    var value = Data.Function(
+        [null],
+        'value',
         function(args) {
-            return args[0].usertype;
-        }
-    );
-    
-    
-    var udtValue = Data.Function(
-        ['userdefined'],
-        'udt-value',
-        function(args) {
-            return args[0].value;
-        }
-    );
-    
-    
-    var errorMessage = Data.Function(
-        ['error'],
-        'error-message',
-        function(args) {
-            return args[0].message;
-        }
-    );
-    
-    
-    var errorType = Data.Function(
-        ['error'],
-        'error-type',
-        function(args) {
-            return args[0].errortype;
-        }
-    );
-    
-    
-    var errorTrace = Data.Function(
-        ['error'],
-        'error-trace',
-        function(args) {
-            return args[0].trace;
-        }
-    );
-    
-    
-    var newError = Data.Function(
-        ['error', null, null],
-        'Error',
-        function(args) {
-            var errortype = args[0],
-                message = args[1],
-                trace = args[2];
-        
-            return Data.Error(errortype, message, trace);
+            var obj = args[0];
+            if(obj.type in BUILT_INS) {
+                throw new Error("'value' doesn't work on built-ins (was " + obj.type + " )");
+            }
+            return obj.value;
         }
     );
 
@@ -217,15 +192,7 @@ var Functions = (function (Data) {
         '+'         :  plus,
         'neg'       :  neg,
         'number-<'  :  numberLessThan,
-        'eq?'       :  eqQ,
-        'prim-type' :  primType,
-        'data'      :  data,
-        'udt-type'  :  udtType,
-        'udt-value' :  udtValue,
-        'error-trace'    :  errorTrace,
-        'error-message'  :  errorMessage,
-        'error-type'     :  errorType,
-        'Error'          :  newError
+        'eq?'       :  eqQ
     };
 
 })(Data);

@@ -10,7 +10,7 @@ function testFunctions(funcs, data, testHelper) {
     
     var list = data.List,
         ch = data.Char,
-        str = data.String,
+        str = data.makeCharList,
         sym = data.Symbol,
         empty = list([]),
         num = data.Number,
@@ -109,6 +109,17 @@ function testFunctions(funcs, data, testHelper) {
 
       deepEqual(m14, neg.fapply([neg.fapply([m14])]), "a number is its own double negative");
     });
+    
+    
+    test("number-<", function() {
+        var lt = funcs['number-<'];
+
+        deepEqual(data.Boolean(false), lt.fapply([num(2), num(1)]), "'number-<' takes two numbers and compares them");
+        
+        deepEqual(data.Boolean(true), lt.fapply([num(11), num(39)]), "it returns true if the first is < the second");
+        
+        deepEqual(data.Boolean(false), lt.fapply([num(4), num(4)]), "and false otherwise -- including if they're the same");
+    });
 
 
     test("eq?", function() {
@@ -140,104 +151,6 @@ function testFunctions(funcs, data, testHelper) {
           eq.fapply([list(7), list(7)]);
       }, 'TypeError', "'eq?' does not work on lists");
       
-    });
-    
-    
-    test("prim-type", function() {
-        var type = funcs['prim-type'],
-            str1 = str('number'),
-            str2 = str('list');
-
-        deepEqual(str1, type([num(14)]), "'prim-type' is a function of one argument");
-        
-        deepEqual(str2, type([list([])]), "it returns the type of its argument as a string");
-        
-    });
-    
-    
-    test("number-<", function() {
-        var lt = funcs['number-<'];
-
-        deepEqual(data.Boolean(false), lt.fapply([num(2), num(1)]), "'number-<' takes two numbers and compares them");
-        
-        deepEqual(data.Boolean(true), lt.fapply([num(11), num(39)]), "it returns true if the first is < the second");
-        
-        deepEqual(data.Boolean(false), lt.fapply([num(4), num(4)]), "and false otherwise -- including if they're the same");
-    });
-    
-    
-    test("data, udt-type and udt-value", function() {
-        var da = funcs['data'],
-            con1 = da([str("obj")]),
-            ut = funcs['udt-type'],
-            uv = funcs['udt-value'],
-            obj1 = con1.value([num(39)]);
-
-        deepEqual(
-            "function", 
-            con1.type, 
-            "'data' creates user-defined types, taking one string argument and returning a constructor function"
-        );
-        
-        deepEqual(
-            data.UserDefined(str("obj"), num(39)), 
-            obj1, 
-            "constructors take one argument, and return an object with the appropriate type"
-        );
-
-        expectException(function() {
-            da([num(4)]);
-        }, 'TypeError', "remember to give 'data' a string");
-        
-        
-        deepEqual(str("obj"), ut([obj1]), "udt-type returns the type (as a string) of a user-defined datatype");
-        
-        expectException(function() {
-            ut([num(13)]);
-        }, 'TypeError', "udt-type only works on user-defined types");
-        
-        
-        deepEqual(num(39), uv([obj1]), "'udt-value' returns the value of a user-defined datatype");
-        
-        expectException(function() {
-            uv([num(13)]);
-        }, 'TypeError', "'udt-value' also only works on user-defined types");
-    });
-    
-    
-    test("Error", function() {
-        var err = funcs['Error'];
-
-        expectException(function() {
-            err([list([]), num(4), num(3)]);
-        }, 'TypeError', 'remember to give it strings for the first 2 args');
-    });
-    
-    
-    test("error-type", function() {
-        var errtype = funcs['error-type'];
-
-        expectException(function() {
-            errtype([list([])]);
-        }, 'TypeError', 'remember to give it an Error');
-    });
-    
-    
-    test("error-message", function() {
-        var errmess = funcs['error-message'];
-
-        expectException(function() {
-            errmess([list([])]);
-        }, 'TypeError', 'remember to give it an Error');
-    });
-    
-    
-    test("error-trace", function() {
-        var errtrace = funcs['error-trace'];
-
-        expectException(function() {
-            errtrace([list([])]);
-        }, 'TypeError', 'remember to give it an Error');
     });
     
     

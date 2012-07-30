@@ -7,7 +7,7 @@ function testReify(reify, data, parse, testHelper) {
         ch = data.Char,
         sym = data.Symbol,
         num = data.Number,
-        str = data.String,
+        str = data.makeCharList,
         expExc = testHelper.expectException;
 
     

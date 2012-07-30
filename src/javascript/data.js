@@ -55,12 +55,6 @@ var Data = (function () {
     }
 
 
-    function MyString(value) {
-        this.value = value;
-        this.type = 'string';
-    }
-
-
     function MyFunction(argTypes, name, code) {
         this.argTypes = argTypes;
         this.name = name;
@@ -107,58 +101,66 @@ var Data = (function () {
     }
     
     
-    function UserDefined(usertype, value) {
-        this.usertype = usertype;
+    function Datum(type, value) {
         this.value = value;
-        this.type = 'userdefined';
+        this.type = type;
     }
+
     
-    
-    function MyError(errortype, message, trace) {
-        this.errortype = errortype;
-        this.message = message;
-        this.trace = trace;
-        this.type = 'error';
+    function makeCharList(jsString) {
+        var list = [],
+            i;
+        for(i = 0; i < jsString.length; i++) {
+            list.push(new Char(jsString[i]));
+        }
+        return new List(list);
     }
 
 
     return {
+    	// the 4 basics
         'Number': function (x) {
             return new MyNumber(x);
         },
         'Char': function(x) {
             return new Char(x);
         },
+        'Boolean': function (x) {
+            return new MyBoolean(x);
+        },
+        'Symbol': function (x) {
+            return new Symbol(x);
+        },
+        
+        // the way to combine stuff
+        'List': function (x) {
+            return new List(x);
+        },
+        
+        // functions + special forms
         'Function': function (types, name, body) {
             return new MyFunction(types, name, body);
         },
         'VariadicFunction': function(x) {
             return new VariadicFunction(x);
         },
-        'List': function (x) {
-            return new List(x);
-        },
-        'Symbol': function (x) {
-            return new Symbol(x);
-        },
-        'Null': function () {
-            return new Null();
-        },
         'SpecialForm': function (x) {
             return new SpecialForm(x);
         },
-        'Boolean': function (x) {
-            return new MyBoolean(x);
+        
+        // like () in Haskell??
+        'Null': function () {
+            return new Null();
         },
-        'UserDefined': function(x, y) {
-            return new UserDefined(x, y);
+        
+        // the 'base' of all Lisp objects
+        'Datum': function(type, value) {
+            return new Datum(type, value);
         },
-        'String': function(x) {
-            return new MyString(x);
-        },
-        'Error': function(type, message, trace) {
-            return new MyError(type, message, trace);
-        }
+        
+        // convenience function
+        'makeCharList': makeCharList
+        
     };
 
 })();

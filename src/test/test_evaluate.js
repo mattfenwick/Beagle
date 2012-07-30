@@ -7,7 +7,7 @@ function testEvaluate(evaluate, funcs, data, envir, testHelper) {
         num = data.Number,
         lis = data.List,
         empty = lis([]),
-        str = data.String;
+        str = data.makeCharList;
     
     module("Evaluate");
     
@@ -16,9 +16,8 @@ function testEvaluate(evaluate, funcs, data, envir, testHelper) {
         var env = ev.getDefaultEnv();
         var names = [
             'define', 'lambda', 'if', 'quote', 'eval', 'true', 'false',
-            'cons', 'car', 'cdr', 'list', 'eq?', '+', 'neg', 'set!', 'prim-type',
-            'cond', 'null?', 'number-<', 'data', 'udt-type', 'udt-value',
-            'Error', 'error-type', 'error-message', 'error-trace'
+            'cons', 'car', 'cdr', 'list', 'eq?', '+', 'neg', 'set!',
+            'cond', 'null?', 'number-<'
         ];
 
         names.map(function(n) {

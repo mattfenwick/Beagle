@@ -57,7 +57,7 @@ var Reify = (function(Data) {
         }
 
         if (sexpr.type === "string") {
-        	return Data.String(sexpr.value);
+        	return Data.makeCharList(sexpr.value);
         }
 
         if (sexpr.type === 'symbol') {
