@@ -2,20 +2,26 @@ var Parse = (function () {
     "use strict";
 
     var TOKEN_TYPES = {
-    	'open-paren':   1,
-    	'close-paren':  1,
-    	'open-square':  1,
-    	'close-square': 1,
-    	'symbol':       1,
-    	'string':       1,
-    	'comment':      1,
-    	'whitespace':   1
+        'whitespace'   : /^\s+/,
+        'open-paren'   : /^\(/,
+        'close-paren'  : /^\)/,
+        'open-square'  : /^\[/,
+        'close-square' : /^\]/,
+        'symbol'       : /^[^;\s\(\)"]+/,  /* not ;, whitespace, (, ), " */
+        'comment'      : /^;+(.*)/,        /* because: 1) * is greedy; 2) . doesn't match \n */
+        'string'       : /^"([^"]*)"/,
     }
+    
+    var TOKEN_ORDER = [
+        'whitespace', 'open-paren', 'open-square', 'close-paren', 
+        'close-square', 'symbol' // both 'comment' and 'string' require special handling ... until I can figure out a better way
+    ];
+    
 
     function Token(type, value) {
-    	if(!(type in TOKEN_TYPES)) {
-    		throw new Error("invalid token type: " + type);
-    	}
+        if(!(type in TOKEN_TYPES)) {
+            throw new Error("invalid token type: " + type);
+        }
         this.type = type;
         this.value = value;
     }
@@ -39,78 +45,41 @@ var Parse = (function () {
     }
 
 
-    var SYMBOL       = /^[^;\s\(\)"]+/,  /* not ;, whitespace, (, ), " */
-        OPEN_PAREN   = "(",
-        CLOSE_PAREN  = ")",
-        STRING       = /^"([^"]*)"/,
-        WHITESPACE   = /^\s+/,
-        COMMENT      = /^;+(.*)/,        /* assumes that: 1) * is greedy; 2) . doesn't match \n */
-        OPEN_SQUARE  = "[",
-        CLOSE_SQUARE = "]";
-
 
     // String -> Maybe (Token, String)
     //   where false is the "empty" value
     //   throws a ParseError if a string is started but not stopped
+    //   or if the input doesn't match any token definitions
     function nextToken(string) {
-        var match;
+        var match, i, name;
 
         // 0. empty string
         if (string === "") {
             return false;
         }
 
-        // 1. leading whitespace
-        if (match = string.match(WHITESPACE)) {
-            return {
-                'token': new Token('whitespace', match[0]),
-                'rest': string.substring(match[0].length)
-            };
+        // 1. through 6.
+        for(i = 0; i < TOKEN_ORDER.length; i++) {
+            name = TOKEN_ORDER[i];
+        	if(match = string.match(TOKEN_TYPES[name])) {
+            	return {
+            		'token': new Token(name, match[0]),
+            		'rest': string.substring(match[0].length)
+            	};
+            }
         }
 
-        // 2. first char is '('
-        if (string[0] === OPEN_PAREN) {
-            return {
-                'token': new Token('open-paren', string[0]),
-                'rest': string.substring(1)
-            };
-        }
-        
-        // 3. first char is '['
-        if (string[0] === OPEN_SQUARE) {
-            return {
-                'token': new Token('open-square', string[0]),
-                'rest': string.substring(1)
-            };
-        }
-
-        // 4. first char is ')'
-        if (string[0] === CLOSE_PAREN) {
-            return {
-                'token': new Token('close-paren', string[0]),
-                'rest': string.substring(1)
-            };
-        }
-        
-        // 5. first char is ']'
-        if (string[0] === CLOSE_SQUARE) {
-            return {
-                'token': new Token('close-square', string[0]),
-                'rest': string.substring(1)
-            };
-        }
-
-        // 6. comment
-        if (match = string.match(COMMENT)) {
+        // 7. comment
+        if (match = string.match(TOKEN_TYPES['comment'])) {
             return {
                 'token': new Token('comment', match[1]),
                 'rest': string.substring(match[0].length)
             };
         }
 
-        // 7. string
+        // 8. string
         if (string[0] === '"') {
-            match = string.match(STRING);
+            match = string.match(TOKEN_TYPES['string']);
             if (match) {
                 return {
                     'token': new Token('string', match[1]),
@@ -119,15 +88,6 @@ var Parse = (function () {
             } else {
                 throw new ParseError("tokenizer error: end-of-string (\") not found", string);
             }
-        }
-
-        // 8. symbol
-        match = string.match(SYMBOL);
-        if (match) {
-            return {
-                'token': new Token('symbol', match[0]),
-                'rest': string.substring(match[0].length)
-            };
         }
 
         throw new ParseError("unexpected tokenizer error:  no tokens match string", string);
