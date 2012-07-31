@@ -37,6 +37,7 @@ var Parse = (function () {
     function ParseError(message, value) {
         this.message = message;
         this.value = value;
+        this.type = 'ParseError';
     }
 
 
@@ -103,10 +104,11 @@ var Parse = (function () {
         }
         return tokens;
     }
+    
 
 
     // [Token] -> Maybe SExpression
-    //   returns false if token stream is empty or first token is NOT a symbol or string
+    //   returns false if token stream is empty or first token is NOT a symbol/string
     function getAtom(tokens) {
         if (tokens.length === 0) {
             return false;
