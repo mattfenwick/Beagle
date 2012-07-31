@@ -107,23 +107,12 @@ var Data = (function () {
     }
     
     
-    function Application(args) {
+    function Application(operator, args) {
         this.type = 'application';
+        this.operator = operator;
         this.args = args;
     }
     
-    Application.prototype.getAllArgs = function() {
-        return this.args;
-    };
-    
-    Application.prototype.getOperator = function() {
-        return this.args[0];
-    };
-    
-    Application.prototype.getArgs = function() {
-        return this.args.slice(1);
-    };
-
     
     function makeCharList(jsString) {
         var list = [],
@@ -156,8 +145,8 @@ var Data = (function () {
         },
         
         // 'syntax'
-        'Application': function(args) {
-            return new Application(args);
+        'Application': function(op, args) {
+            return new Application(op, args);
         },
         
         // functions + special forms

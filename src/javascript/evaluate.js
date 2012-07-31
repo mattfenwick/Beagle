@@ -115,10 +115,12 @@ var Evaluate = (function (Data, Functions, Environment) {
     
     
     function extractArgNames(args) {
+        typeCheck('list', args.type, 'lambda/special', 'first argument');
+
         var names = [],
             i = 1;
 
-        args.map(function(sym) {
+        args.value.map(function(sym) {
             typeCheck('symbol', sym.type, 'lambda/special parameters', "parameter " + i);
             i++;
 
@@ -146,7 +148,7 @@ var Evaluate = (function (Data, Functions, Environment) {
         
         typeCheck('application', lam_args[0].type, 'lambda/special', 'first argument');
         
-        var args = lam_args[0].getAllArgs(), // get args out of the unused 'Application'
+        var args = lam_args[0],
             bodies = lam_args.slice(1),
             names = extractArgNames(args);
 
