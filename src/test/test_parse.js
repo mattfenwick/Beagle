@@ -1,85 +1,51 @@
 
 function testParse(lang) {
 
-
     module("tokenizer");
     
     test("nextToken", function() {
-    	expect(11);
-
-      var open = "((duh",
-          close = ") what's going on",
-          symbol = "abc)(()",
-          number = "12345 )",
-          empty = "",
-          str = '"abc" ',
-          wsstr = '"ab cd" f',
-          semsym = 'wh;at',
-          comm = '; this is\nhi',
-          ws = '\n\thello\n',
-          badstring = '"abc';
-
-      var p = lang.nextToken(empty);
-      ok(p === false, "empty string:  no token found, false returned");
-
-      var o = lang.nextToken(open);
-      deepEqual({
-        'rest': '(duh', 
-        'token': lang.Token('open', '(')
-      }, o, "single '(': open token");
-
-      var c = lang.nextToken(close);
-      deepEqual({
-        'rest': " what's going on",
-        'token': lang.Token('close', ')')
-      }, c, "single ')': close token");
-
-      var s = lang.nextToken(symbol);
-      deepEqual({
-        'rest': ')(()',
-        'token': lang.Token('symbol', 'abc')
-      }, s, "all letters:  symbol token");
-
-      var n = lang.nextToken(number);
-      deepEqual({
-        'rest': ' )',
-        'token': lang.Token('symbol', '12345')
-      }, n, "all numbers:  symbol token");
+        expect(13);
+        
+        var tok = lang.Token,
+            testCases = [
+                ['empty string', "",          false                                                 ],
+                
+                ['open-paren',   "((duh",     {'rest': '(duh',   'token': tok('open', '(')         }],//change token name
+                
+                ['close-paren',  ") bleh",    {'rest': ' bleh',  'token': tok('close', ')')        }],// ... here too
+                
+                ['symbol',       "abc)(()",   {'rest': ')(()',   'token': tok('symbol', 'abc')     }],
+                
+                ['number',       "12345 )",   {'rest': ' )',     'token': tok('symbol', '12345')   }],
+                
+                ['whitespace',   '\n\them\n', {'rest': 'hem\n',  'token': tok('whitespace', '\n\t')}],
+                
+                ["comments begin with a ; and end at the next newline (\\n)",      
+                                 "; out\nme", {'rest': '\nme',   'token': tok('comment', ' out')   }],
+                                 
+                ['string',       '"abc" ',    {'rest': ' ',      'token': tok('string', 'abc')     }],
+                
+                ['open-square',  "[bl ; h",   {'rest': 'bl ; h', 'token': tok('open-square', '[')  }],
+                
+                ['close-square', "][][",      {'rest': '[][',    'token': tok('close-square', ']') }],
+                
+                ['string with whitespace',
+                                 '"ab cd" f', {'rest': ' f',     'token': tok('string', 'ab cd')   }],
+                                 
+                ["symbols may not include ;'s",
+                                 'wh;at',     {'rest': ';at',    'token': tok('symbol', 'wh')      }]
+        ];
+        
+        testCases.map(function(data) {
+            deepEqual(data[2], lang.nextToken(data[1]), data[0]);
+        });
       
-      var q = lang.nextToken(str);
-      deepEqual({
-        'token': lang.Token('string', 'abc'), 
-        'rest': ' '
-      }, q, 'enclosed in " marks:  string token');
-      
-      var r = lang.nextToken(wsstr);
-      deepEqual({
-        'token': lang.Token('string', 'ab cd'),
-        'rest': ' f'
-      }, r, 'string tokens can contain whitespace');
-
-      var zz = lang.nextToken(semsym);
-      deepEqual({
-        "rest": ";at", 
-        "token": lang.Token('symbol', 'wh')
-      }, zz, "symbols may not include ;'s");
-      
-      deepEqual({
-        'rest': '\nhi',
-        'token': lang.Token('comment', ' this is')
-      }, lang.nextToken(comm), "comments begin with a ; and end at the next newline (\\n)");
-      
-      deepEqual({
-        'rest': 'hello\n',
-        'token': lang.Token('whitespace', '\n\t')
-      }, lang.nextToken(ws), "whitespace (\\s in a regex) is also a token");
-      
-      var bsb = true;
-      try {
-        lang.nextToken(badstring);
-        bsb = false;
-      } catch(e) {};
-      ok(bsb, 'a " (start string) without a matching " (close string) throws an exception');
+        var bsb = true;
+        try {
+            lang.nextToken('"abc');
+            bsb = false;
+        } catch(e) {};
+        ok(bsb, 'a " (start string) without a matching " (close string) throws an exception');
     });
     
 
@@ -142,7 +108,7 @@ function testParse(lang) {
       deepEqual([t1[1], t1[3]], t2, 'all whitespace and comment tokens are discarded by stripping');
 
     });  
-	  
+      
 
     module("parse");
     

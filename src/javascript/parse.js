@@ -27,13 +27,14 @@ var Parse = (function () {
     }
 
 
-    var SYMBOL = /^[^;\s\(\)"]+/,
-        /* not ;, whitespace, (, ), " */
-        OPEN = "(",
-        CLOSE = ")",
-        STRING = /^"([^"]*)"/,
-        WHITESPACE = /^\s+/,
-        COMMENT = /^;+(.*)/; /* assumes that: 1) * is greedy; 2) . doesn't match \n */
+    var SYMBOL       = /^[^;\s\(\)"]+/,  /* not ;, whitespace, (, ), " */
+        OPEN         = "(",
+        CLOSE        = ")",
+        STRING       = /^"([^"]*)"/,
+        WHITESPACE   = /^\s+/,
+        COMMENT      = /^;+(.*)/,        /* assumes that: 1) * is greedy; 2) . doesn't match \n */
+        OPEN_SQUARE  = "[",
+        CLOSE_SQUARE = "]";
 
 
     // String -> Maybe (Token, String)
@@ -62,16 +63,32 @@ var Parse = (function () {
                 'rest': string.substring(1)
             };
         }
+        
+        // 3. first char is '['
+        if (string[0] === OPEN_SQUARE) {
+            return {
+                'token': new Token('open-square', string[0]),
+                'rest': string.substring(1)
+            };
+        }
 
-        // 3. first char is ')'
+        // 4. first char is ')'
         if (string[0] === CLOSE) {
             return {
                 'token': new Token('close', string[0]),
                 'rest': string.substring(1)
             };
         }
+        
+        // 5. first char is ']'
+        if (string[0] === CLOSE_SQUARE) {
+            return {
+                'token': new Token('close-square', string[0]),
+                'rest': string.substring(1)
+            };
+        }
 
-        // 4. comment
+        // 6. comment
         if (match = string.match(COMMENT)) {
             return {
                 'token': new Token('comment', match[1]),
@@ -79,7 +96,7 @@ var Parse = (function () {
             };
         }
 
-        // 5. string
+        // 7. string
         if (string[0] === '"') {
             match = string.match(STRING);
             if (match) {
@@ -92,7 +109,7 @@ var Parse = (function () {
             }
         }
 
-        // 6. symbol
+        // 8. symbol
         match = string.match(SYMBOL);
         if (match) {
             return {
