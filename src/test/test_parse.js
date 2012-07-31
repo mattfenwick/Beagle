@@ -1,18 +1,19 @@
 
-function testParse(lang) {
+function testParse(lang, testHelper) {
 
     module("tokenizer");
+    var expectExc = testHelper.expectException;
     
     test("nextToken", function() {
-        expect(13);
+        expect(14);
         
         var tok = lang.Token,
             testCases = [
                 ['empty string', "",          false                                                 ],
                 
-                ['open-paren',   "((duh",     {'rest': '(duh',   'token': tok('open', '(')         }],//change token name
+                ['open-paren',   "((duh",     {'rest': '(duh',   'token': tok('open-paren', '(')   }],//change token name
                 
-                ['close-paren',  ") bleh",    {'rest': ' bleh',  'token': tok('close', ')')        }],// ... here too
+                ['close-paren',  ") bleh",    {'rest': ' bleh',  'token': tok('close-paren', ')')  }],// ... here too
                 
                 ['symbol',       "abc)(()",   {'rest': ')(()',   'token': tok('symbol', 'abc')     }],
                 
@@ -40,141 +41,102 @@ function testParse(lang) {
             deepEqual(data[2], lang.nextToken(data[1]), data[0]);
         });
       
-        var bsb = true;
-        try {
+        expectExc(function() {
             lang.nextToken('"abc');
-            bsb = false;
-        } catch(e) {};
-        ok(bsb, 'a " (start string) without a matching " (close string) throws an exception');
+        }, 'ParseError', 'a " (start string) without a matching " (close string) throws an exception');
     });
     
 
     test("tokenize", function() {
-        var s1 = "  \t\n \t(abc)",
-            s2 = "(((((((\n  ",
-            s3 = "))) \t)\n(((",
-            s4 = "abc123    abc(der)",
-            s5 = "(+ 1 1 (+ 1 1 (+ 1 (+ 1 1))))",
-            s6 = "";
-
-        deepEqual([
-            lang.Token('whitespace', "  \t\n \t"), 
-            lang.Token('open', "("), 
-            lang.Token('symbol', "abc"),
-            lang.Token('close', ")")
-        ], lang.tokenize(s1), "all consecutive whitespace is collapsed into a single token");
-
-        var open = lang.Token('open', "(");
-        deepEqual([
-            open, open, open, open, open, open, open, lang.Token('whitespace', "\n  ")
-        ], lang.tokenize(s2), "adjacent '('s are separate tokens");
-
-        var close = lang.Token('close', ')');
-        deepEqual([
-            close, close, close, lang.Token('whitespace', " \t"), close, lang.Token('whitespace', "\n"), open, open, open
-        ], lang.tokenize(s3), "lots of ')'s, '('s, and whitespace");
-
-        deepEqual([
-            lang.Token('symbol', "abc123"), lang.Token('whitespace', "    "), 
-            lang.Token('symbol', "abc"), open, lang.Token('symbol', "der"), close
-        ], lang.tokenize(s4), "symbols are terminated by '(' and ')'");
-
-        var o = lang.Token('symbol', '1'),
-            p = lang.Token('symbol', '+'),
-            s = lang.Token('whitespace', ' ');
-        deepEqual([
-            open, p, s, o, s, o, s, open, p, s, o, s, o, s, 
-            open, p, s, o, s, open, p, s, o, s, o, close,
-            close, close, close
-        ], lang.tokenize(s5), "lots of nested lists");
-
-        deepEqual([], lang.tokenize(s6), "an empty string yields an empty list");
-
+        var tok = lang.Token,
+            op = tok('open-paren', "("),
+            cp = tok('close-paren', ')'),
+            o = tok('symbol', '1'),
+            p = tok('symbol', '+'),
+            s = tok('whitespace', ' ');
+        
+        var testCases = [
+            ["all consecutive whitespace is collapsed into a single token",
+                         "  \t\n \t(abc)",       [tok('whitespace', "  \t\n \t"), op, tok('symbol', "abc"), cp]],
+            ["adjacent '('s are separate tokens",
+                         "(((((((\n  ",          [op, op, op, op, op, op, op, tok('whitespace', "\n  ")]],
+            ["lots of ')'s, '('s, and whitespace",
+                         "))) \t)\n(((",         [cp, cp, cp, tok('whitespace', " \t"), cp, tok('whitespace', "\n"), op, op, op]],
+            ["symbols are terminated by '(' and ')'",
+                         "abc123    abc(der)",   [tok('symbol', "abc123"), tok('whitespace', "    "), 
+                                                  tok('symbol', "abc"), op, tok('symbol', "der"), cp]],
+            ["lots of nested parentheses",
+                         "(+ 1 1 (+ 1 1 (+ 1 (+ 1 1))))",
+                                                 [op, p, s, o, s, o, s, op, p, s, o, s, o, s, 
+                                                  op, p, s, o, s, op, p, s, o, s, o, cp, cp, cp, cp]],
+            ["an empty string yields an empty list of tokens", 
+                         "",                     []]
+        ];
+        
+        testCases.map(function(data) {
+            deepEqual(data[2], lang.tokenize(data[1]), data[0]);
+        });
     });
     
 
     test("strip comments and whitespace", function() {
-
         var t1 = [
             lang.Token('comment', 'abc'), 
             lang.Token('string', 'derrrr'), 
             lang.Token('whitespace', '\t\n     \n'), 
-            lang.Token('open', '('),
+            lang.Token('open-paren', '('),
             lang.Token('whitespace', '   \t\t\t\n\t')
         ]; 
 
         var t2 = lang.stripTokens(t1);
 
         deepEqual([t1[1], t1[3]], t2, 'all whitespace and comment tokens are discarded by stripping');
-
     });  
       
 
     module("parse");
     
     test("getAtom", function() {
-
-        var open = lang.Token('open', '('),
-            close = lang.Token('close', ')');
-
-        var t1 = [open, lang.Token('symbol', "duh")],
-            t2 = [
-                lang.Token('symbol', "123abc"), 
-                open,
-                lang.Token('symbol', 'barf')
-            ],
-            t3 = [close, "abc", open],
-            com = [lang.Token('comment', 'blargh')],
-            str = [lang.Token('string', 'me!')],
-            ws = [lang.Token('whitespace', '\n \t')];
-
-        var o = lang.getAtom(t1);
-        equal(false, o, "'(' is not an atom");
-      
-        equal(false, lang.getAtom(t3), " ... nor is ')' ...");
-      
-        equal(false, lang.getAtom(com), " ... nor is a comment ...");
-      
-        equal(false, lang.getAtom(ws), " ... nor is whitespace");
-
-        var p = lang.getAtom(t2);
-        deepEqual({
-            'result': lang.SExpression('symbol', "123abc"), 
-            'rest': t2.slice(1)
-        }, p, "however, symbols ARE atoms ...");
-
-        var z = lang.getAtom(str);
-        deepEqual({
-            'result': lang.SExpression('string', 'me!'),
-            'rest': []
-        }, z, "... and so are strings");
-                  
-        equal(false, lang.getAtom([]), "and don't forget:  there's no atoms in an empty list");
-
+        var open = lang.Token('open-paren', '('),
+            close = lang.Token('close-paren', ')'),
+            barf = lang.Token('symbol', 'barf'),
+            testCases = [
+                ["'(' is not an atom",        [open, lang.Token('symbol', "duh")], false],
+                [" ... nor is ')' ...",       [close, "abc", open],                false],
+                [" ... nor is a comment ...", [lang.Token('comment', 'blargh')],   false],
+                [" ... nor is whitespace",    [lang.Token('whitespace', '\n \t')], false],
+                ["symbols ARE atoms ...",     [lang.Token('symbol', "123abc"), open, barf],
+                          {'result': lang.SExpression('symbol', "123abc"),'rest': [open, barf]}],
+                ["... as are strings",        [lang.Token('string', 'me!')], 
+                          {'result': lang.SExpression('string', 'me!'), 'rest': []}],
+                ["and don't forget:  there's no atoms in an empty list of tokens", [], false]
+            ];
+        
+        testCases.map(function(data) {
+            deepEqual(data[2], lang.getAtom(data[1]), data[0]);
+        });
     });
 
 
 
     test("getList", function() {
         expect(11);
-        function m(t) {
-            var o = {'value': t};
-            if( t === '(' )      {o.type = 'open'; }
-            else if( t === ')' ) {o.type = 'close';}
-            else { o.type = 'symbol';}
-            return o;
-        }
+
+        var open = lang.Token('open-paren', '('),
+            close = lang.Token('close-paren', ')'),
+            sym = lang.Token('symbol', 'abc'),
+            str = lang.Token('string', 'bleh');
 
         var t0 = [],
-            t1 = ["("].map(m),
-            t2 = [")"].map(m),
-            t3 = ["(", ")"].map(m),
-            t4 = ["abc"].map(m),
-            t5 = ["(", "abc", ")", "def"].map(m),
-            t6 = ["(", "1", "(", "+", ")", "2", ")", "(", "rest!"].map(m),
-            t7 = ["(", "abc", "(", "-", ")", "ohnoes"].map(m),
-            t8 = ["(", "(", "(", "(", ")", ")", ")", ")", "12345"].map(m),
-            t9 = ["(", "(", "(", "(", ")", ")", ")"].map(m);
+            t1 = [open],
+            t2 = [close],
+            t3 = [open, close],
+            t4 = [sym],
+            t5 = [open, sym, close, sym],
+            t6 = [open, sym, open, sym, close, sym, close, open, sym],
+            t7 = [open, sym, open, sym, close, sym],
+            t8 = [open, open, open, open, close, close, close, close, sym],
+            t9 = [open, open, open, open, close, close, close];
 
 
         var t = lang.getList(t0);
@@ -203,7 +165,7 @@ function testParse(lang) {
         var s = lang.getList(t4);
         equal(false, s, "you can't get a list from a symbol ...");
       
-        equal(false, lang.getList(['"123"', '+'].map(m)), " ... or from a string");
+        equal(false, lang.getList([str, sym]), " ... or from a string");
 
         var q = lang.getList(t5);
         deepEqual({
@@ -214,9 +176,9 @@ function testParse(lang) {
         var r = lang.getList(t6);
         deepEqual({
             'result': lang.SExpression('list', [
-                lang.SExpression('symbol', '1'),
-                lang.SExpression('list', [lang.SExpression('symbol', '+')]),
-                lang.SExpression('symbol', '2')
+                lang.SExpression('symbol', 'abc'),
+                lang.SExpression('list', [lang.SExpression('symbol', 'abc')]),
+                lang.SExpression('symbol', 'abc')
             ]),
             'rest': t6.slice(7)
         }, r, "... it has a nested list, in which case it extends to its 'balancing' ')'");
@@ -250,8 +212,8 @@ function testParse(lang) {
     test("check token separation", function() {
 
         var tokens = [lang.Token('symbol', 'abc'), lang.Token('comment', 'nope'),
-                      lang.Token('whitespace', '   '), lang.Token('open', '('),
-                      lang.Token('close', ')'), lang.Token('string', 'hahaha')];
+                      lang.Token('whitespace', '   '), lang.Token('open-paren', '('),
+                      lang.Token('close-paren', ')'), lang.Token('string', 'hahaha')];
 
         var types = {'string': 1, 'symbol': 1};
 

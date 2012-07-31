@@ -1,9 +1,21 @@
 var Parse = (function () {
     "use strict";
 
+    var TOKEN_TYPES = {
+    	'open-paren':   1,
+    	'close-paren':  1,
+    	'open-square':  1,
+    	'close-square': 1,
+    	'symbol':       1,
+    	'string':       1,
+    	'comment':      1,
+    	'whitespace':   1
+    }
 
-    // Token types: open, close, symbol, string, comment
     function Token(type, value) {
+    	if(!(type in TOKEN_TYPES)) {
+    		throw new Error("invalid token type: " + type);
+    	}
         this.type = type;
         this.value = value;
     }
@@ -28,8 +40,8 @@ var Parse = (function () {
 
 
     var SYMBOL       = /^[^;\s\(\)"]+/,  /* not ;, whitespace, (, ), " */
-        OPEN         = "(",
-        CLOSE        = ")",
+        OPEN_PAREN   = "(",
+        CLOSE_PAREN  = ")",
         STRING       = /^"([^"]*)"/,
         WHITESPACE   = /^\s+/,
         COMMENT      = /^;+(.*)/,        /* assumes that: 1) * is greedy; 2) . doesn't match \n */
@@ -57,9 +69,9 @@ var Parse = (function () {
         }
 
         // 2. first char is '('
-        if (string[0] === OPEN) {
+        if (string[0] === OPEN_PAREN) {
             return {
-                'token': new Token('open', string[0]),
+                'token': new Token('open-paren', string[0]),
                 'rest': string.substring(1)
             };
         }
@@ -73,9 +85,9 @@ var Parse = (function () {
         }
 
         // 4. first char is ')'
-        if (string[0] === CLOSE) {
+        if (string[0] === CLOSE_PAREN) {
             return {
-                'token': new Token('close', string[0]),
+                'token': new Token('close-paren', string[0]),
                 'rest': string.substring(1)
             };
         }
@@ -154,7 +166,7 @@ var Parse = (function () {
 
 
     // [Token] -> Maybe SExpression
-    //   returns false if tokens is empty or doesn't start with open
+    //   returns false if tokens is empty or doesn't start with open-paren
     //   throws an error if first token is a ')'
     //   throws an error if a properly 'balanced' list can't be found
     function getList(tokens) {
@@ -165,19 +177,19 @@ var Parse = (function () {
             return false;
         }
 
-        if (tokens[0].type === 'close') {
+        if (tokens[0].type === 'close-paren') {
             throw new ParseError("')' token found without matching '('", inputTokens);
         }
 
         // a list *has* to start with a '('
-        if (tokens[0].type !== 'open') {
+        if (tokens[0].type !== 'open-paren') {
             return false;
         }
 
         tokens = tokens.slice(1);
 
         // keep going until a ')'
-        while (tokens[0] && (tokens[0].type !== 'close')) {
+        while (tokens[0] && (tokens[0].type !== 'close-paren')) {
             // a list could have as many nested lists or atoms as it pleased
             sexpr = getSExpression(tokens);
             if (!sexpr) {
@@ -187,8 +199,8 @@ var Parse = (function () {
             tokens = sexpr.rest;
         }
 
-        // a list needs a close-paren
-        if (tokens[0] && tokens[0].type === 'close') {
+        // a list must end with a ')'
+        if (tokens[0] && tokens[0].type === 'close-paren') {
             return {
                 result: new SExpression('list', elems),
                 rest: tokens.slice(1)
@@ -232,7 +244,7 @@ var Parse = (function () {
     }
 
 
-    // assumes the tokens are of type 'string', 'symbol', 'open', and 'close'
+    // assumes the tokens are of type 'string', 'symbol', 'open-paren', and 'close-paren'
     //   anything else should throw an exception
     function makeSExpressions(tokens) {
         var sexprs = [],
