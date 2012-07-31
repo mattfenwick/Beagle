@@ -109,7 +109,7 @@ instance), so let's get rid of them, leaving us with these tokens:
 
 
 
-### Stage 3: Syntactic analysis ### 
+### Stage 3: Syntactic analysis ###
 
 In this step, we assemble the tokens according to our grammar, which is:
 

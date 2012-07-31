@@ -83,8 +83,8 @@ assuming that `(define x "new")` has already been executed:
 
 ## Evaluation ##
 
- - step 6:  macro expansion.  **We didn't use any macros, and this
-   hasn't yet been implemented in Beagle.**
+ - step 6:  macro expansion.  There are currently **no** macros in
+   Beagle, and this may never change.
 
  - step 7:  evaluate/reduce data structure.  The evaluation rule is
    that if it's a list, we evaluate each of the elements, and then 

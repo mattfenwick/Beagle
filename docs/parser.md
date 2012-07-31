@@ -20,7 +20,6 @@ Loosely using [BNF](http://en.wikipedia.org/wiki/Backus%E2%80%93Naur_Form):
     CLOSE:          ')'
 
 Also, comments are indicated by `;` (when not in a string) and extend to the end of the line.
-**I don't know how to represent comments in formal grammars.**
 
 
 ## Tokens ##
