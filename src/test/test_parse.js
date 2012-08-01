@@ -146,36 +146,5 @@ function testParse(lang, testHelper) {
         var t2 = lang.stripTokens(t1);
 
         deepEqual([t1[1], t1[3]], t2, 'all whitespace and comment tokens are discarded by stripping');
-    }); 
-    
-    
-
-    test("check token separation", function() {
-
-        var tokens = [lang.Token('symbol',      'abc'),   lang.Token('comment',    'nope'),
-                      lang.Token('whitespace',  '   '),   lang.Token('open-paren', '('),
-                      lang.Token('close-paren', ')'),     lang.Token('string',     'hahaha'),
-                      lang.Token('integer',     '32'),    lang.Token('float',      '3.45')];
-
-        var types = {'string': 1, 'symbol': 1, 'integer': 1, 'float': 1};
-
-        var passed, myTokens;
-        tokens.map(function(t1) {
-        	tokens.map(function(t2) {
-                passed = true;
-                try {
-                    myTokens = [t1, t2];
-                    lang.checkTokenSeparation(myTokens);
-                    passed = true;
-                } catch(e) {
-                    passed = false;
-                };
-                if( types[t1.type] && types[t2.type] ) {
-                    ok(!passed, "consecutive " + JSON.stringify(myTokens) + ' should throw an exception');
-                } else {
-                    ok(passed, "consecutive " + JSON.stringify(myTokens) + ' should NOT throw');
-                }
-            }); // inner
-        }); // outer
     });
 }

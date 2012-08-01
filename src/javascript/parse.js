@@ -7,10 +7,10 @@ var Parse = (function () {
         'close-paren'  : /^\)/,
         'open-square'  : /^\[/,
         'close-square' : /^\]/,
+        'comment'      : /^;+(.*)/,        /* because: 1) * is greedy; 2) . doesn't match \n */
         'float'        : /^(?:\d*\.\d+|\d+\.\d*)/,
         'integer'      : /^\d+/,
         'symbol'       : /^[a-zA-Z\!\@\#\$\%\^\&\*\-\_\=\+\-\?\*\/\!\<\>][a-zA-Z0-9\!\@\#\$\%\^\&\*\-\_\=\+\-\?\*\/\!\<\>]*/,
-        'comment'      : /^;+(.*)/,        /* because: 1) * is greedy; 2) . doesn't match \n */
         'string'       : /^"([^"]*)"/,
     }
     
@@ -143,32 +143,6 @@ var Parse = (function () {
         }
         return tokens.filter(isNotCommentNorWS);
     }
-    
-    
-    var NONCONSECUTIVE_TYPES = {
-        'string' : 1,
-        'symbol' : 1,
-        'integer': 1,
-        'float'  : 1 
-    };
-
-
-    // [Token] -> void
-    //   - returns nothing if no problems
-    //   - throws a TokenError 
-    //      if a (string or symbol) is immediately followed
-    //      by another string or symbol
-    function checkTokenSeparation(tokens) {
-        var i, type1, type2;
-        for (i = 0; i < tokens.length - 1; i++) {
-            type1 = tokens[i].type;
-            type2 = tokens[i + 1].type;
-            if (NONCONSECUTIVE_TYPES[type1] && NONCONSECUTIVE_TYPES[type2]) {
-                throw new TokenError("found consecutive string/symbol/integer/float tokens", tokens.slice(i, i + 2));
-            }
-            // good to go
-        }
-    }
 
 
     return {
@@ -182,8 +156,7 @@ var Parse = (function () {
 
         // the core public functionality
         'tokenize': tokenize,
-        'stripTokens': stripTokens,
-        'checkTokenSeparation': checkTokenSeparation
+        'stripTokens': stripTokens
     };
 
 })();
