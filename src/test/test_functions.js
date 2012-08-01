@@ -147,6 +147,11 @@ function testFunctions(funcs, data, testHelper) {
     });
     
     
+    test("datum, type, and value", function() {
+    	ok(false, "not public yet");
+    });
+    
+    
     test("function number of arguments", function() {
         var n_args = [
                 [],
