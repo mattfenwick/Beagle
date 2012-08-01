@@ -2,13 +2,13 @@
 function testParse(lang, testHelper) {
 
     module("tokenizer");
-    var expectExc = testHelper.expectException;
+    var expectExc = testHelper.expectException,
+        tok = lang.Token;
     
     test("nextToken", function() {
         expect(15);
         
-        var tok = lang.Token,
-            testCases = [
+        var testCases = [
                 ['empty string', "",          false                                                 ],
                 
                 ['open-paren',   "((duh",     {'rest': '(duh',   'token': tok('open-paren', '(')   }],//change token name
@@ -47,6 +47,59 @@ function testParse(lang, testHelper) {
             lang.nextToken('"abc');
         }, 'TokenError', 'a " (start string) without a matching " (close string) throws an exception');
     });
+    
+    
+    test("symbols", function() {        
+        var starts = ['!', '@', '#', '$', '%', '^', '&', '*', '_', '-', '+', '=', '<', '>', '?', '/', 'a', 'z', 'A', 'Z'],
+            // this is not an exhaustive list ... should it be?
+            nonos = [',', '"', "'", '{', '}', '|', '\\'];
+        
+        starts.map(function(c) {
+            deepEqual(
+                {rest: "", token: tok('symbol', c)}, 
+                lang.nextToken(c), 
+                "Beagle symbols may start with " + c
+            );
+        });
+        
+        nonos.map(function(c) {
+            expectExc(function() {
+                lang.nextToken(c);
+            }, 'TokenError', 'Beagle symbols may *not* start with ' + c);
+        });
+        
+        deepEqual(
+            {'rest': '', 'token': tok('symbol', 'j3451kl!@#$%^&*_-+=<>?/')},
+            lang.nextToken('j3451kl!@#$%^&*_-+=<>?/'),
+            "Beagle symbols may start with a letter or !@#$%^&*_-+=<>?/, followed by any number of letters, digits or !@#$%^&*()_-+=<>?/"
+        );
+    });
+
+
+    test("numbers", function () {
+        var testCases = [
+                ['a number if the symbol is all digits',     '345',   tok('integer', '345')],
+                ['digits followed by a decimal point',       '03.',   tok('float', '03.'  )],
+                ['digits, decimal point, and more digits',   '3.456', tok('float', '3.456')],
+                ['leading decimal point followed by digits', '.001',  tok('float', '.001' )],
+                ["leading and trialing 0's",                 '0.00',  tok('float', '0.00' )]];
+
+        testCases.map(function(data) {
+            deepEqual({"rest": "", "token": data[2]}, lang.nextToken(data[1]), data[0]);
+        });
+        
+        expectExc(function() {
+            lang.nextToken('4..0');
+        }, 'TokenError', "if it starts with a digit, it *must* be tokenizable as an integer or float");
+
+        expectExc(function(){
+            lang.nextToken('0a');
+        }, 'TokenError', "another example of forcing number tokenization");
+        
+        expectExc(function() {
+            lang.nextToken('.');
+        }, 'TokenError', "'.' is not a valid token");
+    }); 
     
 
     test("tokenize", function() {
@@ -99,29 +152,30 @@ function testParse(lang, testHelper) {
 
     test("check token separation", function() {
 
-        var tokens = [lang.Token('symbol', 'abc'), lang.Token('comment', 'nope'),
-                      lang.Token('whitespace', '   '), lang.Token('open-paren', '('),
-                      lang.Token('close-paren', ')'), lang.Token('string', 'hahaha')];
+        var tokens = [lang.Token('symbol',      'abc'),   lang.Token('comment',    'nope'),
+                      lang.Token('whitespace',  '   '),   lang.Token('open-paren', '('),
+                      lang.Token('close-paren', ')'),     lang.Token('string',     'hahaha'),
+                      lang.Token('integer',     '32'),    lang.Token('float',      '3.45')];
 
-        var types = {'string': 1, 'symbol': 1};
+        var types = {'string': 1, 'symbol': 1, 'integer': 1, 'float': 1};
 
-        var i, j, passed, myTokens;
-        for(i = 0; i < tokens.length; i++) {
-            for(j = 0; j < tokens.length; j++) {
+        var passed, myTokens;
+        tokens.map(function(t1) {
+        	tokens.map(function(t2) {
                 passed = true;
                 try {
-                    myTokens = [tokens[i], tokens[j]];
+                    myTokens = [t1, t2];
                     lang.checkTokenSeparation(myTokens);
                     passed = true;
                 } catch(e) {
                     passed = false;
                 };
-                if( types[tokens[i].type] && types[tokens[j].type] ) {
-                    ok(!passed, 'consecutive strings/symbols throws an exception');
+                if( types[t1.type] && types[t2.type] ) {
+                    ok(!passed, "consecutive " + JSON.stringify(myTokens) + ' should throw an exception');
                 } else {
-                    ok(passed, "no problem for tokens " + JSON.stringify(myTokens));
+                    ok(passed, "consecutive " + JSON.stringify(myTokens) + ' should NOT throw');
                 }
-            } // inner for-loop
-        } // outer for-loop
+            }); // inner
+        }); // outer
     });
 }
