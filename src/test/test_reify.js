@@ -60,9 +60,9 @@ function testReify(reify, data, parse, testHelper) {
 
         deepEqual(
             {'rest': [], result: app(sym('+'), 
-            		                 [app(sym('-'), 
-            		                	  [str("")]),
-            		                  sym('>>>')])},
+                                     [app(sym('-'), 
+                                          [str("")]),
+                                      sym('>>>')])},
             reify.getNextForm(list2),
             '... and may be nested'
         );
@@ -71,119 +71,92 @@ function testReify(reify, data, parse, testHelper) {
             reify.getNextForm([op, cp]);
         }, 'ValueError', 'Application needs (at least) a function or special form -- an empty one cannot be reified');
     });
-      
 
-    module("parse");
     
     test("getAtom", function() {
-        var open = lang.Token('open-paren', '('),
-            close = lang.Token('close-paren', ')'),
-            barf = lang.Token('symbol', 'barf'),
+        var barf = tok('symbol', 'barf'),
             testCases = [
-                ["'(' is not an atom",        [open, lang.Token('symbol', "duh")], false],
-                [" ... nor is ')' ...",       [close, "abc", open],                false],
-                [" ... nor is a comment ...", [lang.Token('comment', 'blargh')],   false],
-                [" ... nor is whitespace",    [lang.Token('whitespace', '\n \t')], false],
-                ["symbols ARE atoms ...",     [lang.Token('symbol', "123abc"), open, barf],
-                          {'result': lang.SExpression('symbol', "123abc"),'rest': [open, barf]}],
-                ["... as are strings",        [lang.Token('string', 'me!')], 
-                          {'result': lang.SExpression('string', 'me!'), 'rest': []}],
-                ["and don't forget:  there's no atoms in an empty list of tokens", [], false]
+                ["'(' is not an atom",        [op, barf],                   false],
+                [" ... nor is ')' ...",       [close, barf, op],            false],
+                [" ... nor is a comment ...", [tok('comment', 'blargh')],   false],
+                [" ... nor is whitespace",    [tok('whitespace', '\n \t')], false],
+                ["symbols ARE atoms ...",     [barf, op, barf],             {'result': sym("barf"), 'rest': [tok('open-paren', '('), barf]}],
+                ["... as are strings",        [tok('string', 'me!')],       {'result': str('me!'),  'rest': []}],
+                ["no atoms in empty list of tokens", [],                    false]
             ];
         
         testCases.map(function(data) {
-            deepEqual(data[2], lang.getAtom(data[1]), data[0]);
+            deepEqual(data[2], reify.getAtom(data[1]), data[0]);
         });
     });
 
 
 
     test("getList", function() {
-        expect(11);
+        expect(15);
 
-        var open = lang.Token('open-paren', '('),
-            close = lang.Token('close-paren', ')'),
-            sym = lang.Token('symbol', 'abc'),
-            str = lang.Token('string', 'bleh');
-
-        var t0 = [],
-            t1 = [open],
-            t2 = [close],
-            t3 = [open, close],
-            t4 = [sym],
-            t5 = [open, sym, close, sym],
-            t6 = [open, sym, open, sym, close, sym, close, open, sym],
-            t7 = [open, sym, open, sym, close, sym],
-            t8 = [open, open, open, open, close, close, close, close, sym],
-            t9 = [open, open, open, open, close, close, close];
+        var abc = tok('symbol', 'abc'),
+            bleh = tok('string', 'bleh'),
+            t6 = [os, abc, os, abc, cs, abc, cs, os, abc],
+            t7 = [os, abc, os, abc, cs, abc],
+            t8 = [os, os, os, os, cs, cs, cs, cs, abc],
+            t9 = [os, os, os, os, cs, cs, cs];
 
 
-        var t = lang.getList(t0);
+        var t = reify.getList([]);
         equal(false, t, "trying to get a list from an empty token stream returns false ... ");
 
-        var a = true;
-        try {
-            lang.getList(t1);
-            a = false;
-        } catch(e) {}
-        ok(a, "... while a '(' without a matching ')' throws an error,");
+        expExc(function() {
+            reify.getList([os]);
+        }, 'ParseError', "... while a '[' without a matching ']' throws an error,");
 
-        var b = true;
-        try {
-            lang.getList(t2);
-            b = false;
-        } catch(e) {}
-        ok(b, "and a leading ')' also throws an error");
+        expExc(function() {
+            reify.getList([cs]);
+        }, 'ParseError', "and a leading ']' also throws an error");
 
-        var p = lang.getList(t3);
+        var p = reify.getList([os, cs]);
         deepEqual({
-            result: lang.SExpression('list', []),
+            result: list([]),
             rest: []
-        }, p, "() is parsed as an empty list");
+        }, p, "[] is parsed as an empty list");
 
-        var s = lang.getList(t4);
+        var s = reify.getList([abc]);
         equal(false, s, "you can't get a list from a symbol ...");
       
-        equal(false, lang.getList([str, sym]), " ... or from a string");
+        equal(false, reify.getList([str, sym]), " ... or from a string");
 
-        var q = lang.getList(t5);
+        var q = reify.getList([os, abc, cs, abc]);
         deepEqual({
-            'result': lang.SExpression('list', [lang.SExpression('symbol', 'abc')]), 
-            'rest':  t5.slice(3)
-        }, q, "a list extends from the opening '(' to the next ')', unless ...");
+            'result': list([sym('abc')]), 
+            'rest':  [abc]
+        }, q, "a list extends from the opening '[' to the next ']', unless ...");
 
-        var r = lang.getList(t6);
+        var r = reify.getList(t6);
         deepEqual({
-            'result': lang.SExpression('list', [
-                lang.SExpression('symbol', 'abc'),
-                lang.SExpression('list', [lang.SExpression('symbol', 'abc')]),
-                lang.SExpression('symbol', 'abc')
+            'result': list([
+                sym('abc'),
+                list([sym('abc')]),
+                sym('abc')
             ]),
             'rest': t6.slice(7)
-        }, r, "... it has a nested list, in which case it extends to its 'balancing' ')'");
+        }, r, "... it has a nested list, in which case it extends to its 'balancing' ']'");
 
-        var u = true;
-        try {
-            lang.getList(t7);
-            u = false;
-        } catch(e) {};
-        ok(u, "therefore: a missing 'balancing' ')' throws an error");
+        expExc(function() {
+            reify.getList(t7);
+        }, 'ParseError', "therefore: a missing 'balancing' ']' throws an error");
       
-        var v = lang.getList(t8);
+        var v = reify.getList(t8);
         deepEqual({
-            'result': lang.SExpression('list',
-                [lang.SExpression('list',
-                    [lang.SExpression('list',
-                        [lang.SExpression('list', [])])])]),
+            'result': list([
+                list([
+                    list([
+                        list([])])])]),
             'rest': t8.slice(8)
         }, v, "lists may be arbitrarily deeply nested ...");
       
-        var w = true;
-        try {
-            lang.getList(t9);
-            w = false;
-        } catch(e) {};
-        ok(w, "... as long as the parentheses match");
+        expExc(function() {
+            reify.getList(t9);
+        }, 'ParseError', "... as long as the parentheses match");
     });
 
 }

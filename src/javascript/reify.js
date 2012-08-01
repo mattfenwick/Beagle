@@ -1,9 +1,10 @@
 var Reify = (function(Data) {
     
     
-    function ParseError(type, message) {
-        this.type = type;
+    function ParseError(message, value) {
+        this.type = 'ParseError';
         this.message = message;
+        this.value = value;
     }
     
     
@@ -19,8 +20,8 @@ var Reify = (function(Data) {
 /////////////////////// new stuff
 
     var TOKEN_OPS = {
-        'integer' : Data.Number,
-        'float'   : Data.Number,
+        'integer' : function(str) {return Data.Number(Number(str));},
+        'float'   : function(str) {return Data.Number(Number(str));},
         'string'  : Data.makeCharList,
         'symbol'  : Data.Symbol
     };
@@ -32,9 +33,10 @@ var Reify = (function(Data) {
             return false;
         }
 
-        var first = tokens[0];
+        var first = tokens[0],
+            op = TOKEN_OPS[first.type];
 
-        if (op = TOKEN_OPS[first.type]) {
+        if (op) {
             return {
                 result: op(first.value),
                 rest: tokens.slice(1)
@@ -71,7 +73,7 @@ var Reify = (function(Data) {
         // keep going until a stop token
         while (tokens[0] && (tokens[0].type !== stop)) {
             // could be arbitrarily many nested forms
-            sexpr = getSExpression(tokens);
+            sexpr = getNextForm(tokens);
             if (!sexpr) {
                 return false;
             }
@@ -108,7 +110,7 @@ var Reify = (function(Data) {
     }
 
 
-    function getSExpression(tokens) {
+    function getNextForm(tokens) {
         var sexpr;
 
         if (tokens.length === 0) {
@@ -146,7 +148,7 @@ var Reify = (function(Data) {
         var sexprs = [],
             sexpr;
 
-        while (sexpr = getSExpression(tokens)) {
+        while (sexpr = getNextForm(tokens)) {
             sexprs.push(sexpr.result);
             tokens = sexpr.rest;
         }
@@ -169,7 +171,7 @@ var Reify = (function(Data) {
         'getAtom'        : getAtom,
         'getApplication' : getApplication,
         'getList'        : getList,
-        'getForm'        : getSExpression,
+        'getNextForm'    : getNextForm,
 
         // the public function
         'makeAST'        : makeAST,        
