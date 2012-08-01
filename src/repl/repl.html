@@ -44,9 +44,9 @@
     </div>
     
     <div>
-     <div>parsed s-expression of last expression:</div>
+     <div>tokenization of last expression:</div>
      <div id="lastsexpr"></div>
-     <div>Primitives of last parse:</div>
+     <div>AST of last parse:</div>
      <div id="lastprims"></div>
     </div>
    </div>
@@ -131,8 +131,8 @@ function displayEnv(envi) {
   
   evaler.bind("success", function(obj) {
     displayEnv(env);
-    $("#lastsexpr").text(JSON.stringify(obj.parsed));
-    $("#lastprims").text(JSON.stringify(obj.primitives) + "<br />" + JSON.stringify(obj.result[0]));
+    $("#lastsexpr").text(JSON.stringify(obj.tokens));
+    $("#lastprims").text(JSON.stringify(obj.ast) + "<br />" + JSON.stringify(obj.result[0]));
     $("#expr").val("");
   });
 
