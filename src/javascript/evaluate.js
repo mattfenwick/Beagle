@@ -253,7 +253,7 @@ var Evaluate = (function (Data, Functions, Environment) {
             return applySpecial(first, env, args);
         }
 
-        throw new Error("first element in list must be function or special form (was " + first.type + ")");
+        throw new Error("first element in Application must be function or special form (was " + first.type + ")");
     }
     
     

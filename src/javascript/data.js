@@ -72,16 +72,6 @@ var Data = (function () {
         }
         return this.value(args);
     }
-    
-    
-    function VariadicFunction(code) {
-        this.value = code;
-        this.type = 'function';
-    }
-    
-    VariadicFunction.prototype.fapply = function(args) {
-        return this.value(args);
-    }
 
 
     function Null() {
@@ -155,9 +145,6 @@ var Data = (function () {
         // functions + special forms
         'Function': function (types, name, body) {
             return new MyFunction(types, name, body);
-        },
-        'VariadicFunction': function(x) {
-            return new VariadicFunction(x);
         },
         'SpecialForm': function (x) {
             return new SpecialForm(x);

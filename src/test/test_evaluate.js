@@ -17,7 +17,7 @@ function testEvaluate(evaluate, funcs, data, envir, testHelper) {
         var env = ev.getDefaultEnv();
         var names = [
             'define', 'lambda', 'if', 'quote', 'eval', 'true', 'false',
-            'cons', 'car', 'cdr', 'list', 'eq?', '+', 'neg', 'set!',
+            'cons', 'car', 'cdr', 'eq?', '+', 'neg', 'set!',
             'cond', 'null?', 'number-<'
         ];
 
@@ -30,8 +30,8 @@ function testEvaluate(evaluate, funcs, data, envir, testHelper) {
             bindings++;
         }
 
-        equal(18, bindings, 'there are 18 built-in special forms and functions');
-        equal(18, names.length, 'and we need to test for all of them');
+        equal(17, bindings, 'there are 17 built-in special forms and functions');
+        equal(17, names.length, 'and we need to test for all of them');
     });
 
 
@@ -282,8 +282,8 @@ function testEvaluate(evaluate, funcs, data, envir, testHelper) {
           sym1 = sym('cons'),
           l1 = app(
               sym('car'),
-              [app(sym('list'), [num(87)])
-          ]),
+              [lis([num(87)])]
+          ),
           l2 = app(
               sym('cons'),
               [str('what?'), lis([])]
@@ -316,16 +316,16 @@ function testEvaluate(evaluate, funcs, data, envir, testHelper) {
 
       expectExc(function() {
           ev.eval(app(), env);
-      }, 'ValueError', 'trying to evaluate an empty application throws an exception');
+      }, 'ValueError', 'trying to create an empty Application throws an exception');
     
       deepEqual(
-          lis([cons]),
-          ev.eval(app(sym('list'), [sym('cons')]), env),
+          t,
+          ev.eval(app(sym('null?'), [lis([])]), env),
           'for function applications, the arguments are evaluated before the function is applied'
       );
 
       expectExc(function() {
-          ev.eval(lis([sym('list'), sym('shouldblowup')]), env);
+          ev.eval(app(sym('cons'), [sym('shouldblowup'), lis([])]), env);
       }, 'UndefinedVariableError', 'thus, passing an unbound symbol to a function throws an exception ...');
 
       deepEqual(

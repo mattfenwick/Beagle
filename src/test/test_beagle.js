@@ -11,22 +11,22 @@ function testBeagle(beagle, data, tokens, parser) {
         expect(7);
 
         var e0 = "456",
-            e1 = " ( list 11 \t \n ) ",
-            e2 = "(cons 3 (list))",
-            e3 = '(car (cdr (cons 1 (cons "blargh" (cons 3 (cons 4 (list)))))))',
+            e1 = " ( neg 11 \t \n ) ",
+            e2 = "(cons 3 [])",
+            e3 = '(car (cdr (cons 1 (cons "blargh" (cons 3 (cons 4 []))))))',
             e4 = ' 3 ; this is a comment',
             e5 = '"abc"123',
             ex = beagle.exec;
 
         deepEqual([num(456)], ex(e0).result, 'can evaluate an atom');
 
-        deepEqual([list([num(1), num(2)])], ex("(list 1 2)").result, 'can evaluate a simple list');
+        deepEqual([num(3)], ex("(+ 1 2)").result, 'can evaluate a simple application');
 
-        deepEqual([list([num(11)])], ex(e1).result, 'can evaluate a simple list while ignoring whitespace');
+        deepEqual([num(-11)], ex(e1).result, 'can evaluate a simple application while ignoring whitespace');
 
-        deepEqual([list([num(3)])], ex(e2).result, 'can evaluate a nested list');
+        deepEqual([list([num(3)])], ex(e2).result, 'can evaluate a nested application');
 
-        deepEqual([str('blargh')], ex(e3).result, 'can evaluate a deeply nested list');
+        deepEqual([str('blargh')], ex(e3).result, 'can evaluate a deeply nested application');
 
         deepEqual([num(3)], ex(e4).result, 'can ignore comments');
 
@@ -42,7 +42,7 @@ function testBeagle(beagle, data, tokens, parser) {
     test("multiple expressions", function() {
         expect(2);
 
-        var e1 = "(define x 3) (cons x (list))"
+        var e1 = "(define x 3) (cons x [])"
             ;
 
         var r = beagle.exec(e1);

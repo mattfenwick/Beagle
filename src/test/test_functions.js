@@ -81,13 +81,6 @@ function testFunctions(funcs, data, testHelper) {
     });
 
 
-    test("list", function() {
-      var listf = funcs.list;
-      
-      deepEqual(list([3, 4, 5]), listf.fapply([3, 4, 5]), "'list' is a variadic function which returns its arguments in a list");
-    });
-
-
     test("+", function() {
       var plus = funcs['+'];
 
@@ -165,11 +158,6 @@ function testFunctions(funcs, data, testHelper) {
             f, numArgs;
         
         for(var fname in Functions) {
-            // because 'list' is variadic
-            if(fname === 'list') {
-                continue;
-            }
-            
             f = Functions[fname];
             numArgs = f.argTypes.length;
             expectException(function() {

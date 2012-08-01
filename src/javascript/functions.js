@@ -58,13 +58,6 @@ var Functions = (function (Data) {
             return Data.Boolean(list.value.length === 0);
         }
     );
-
-
-    var list = Data.VariadicFunction(
-        function (args) {
-            return Data.List(args);
-        }
-    );
     
     
     var COMPARABLE = {
@@ -187,7 +180,6 @@ var Functions = (function (Data) {
         'cons'      :  cons,
         'car'       :  car,
         'cdr'       :  cdr,
-        'list'      :  list,
         'null?'     :  nullQ,
         '+'         :  plus,
         'neg'       :  neg,
