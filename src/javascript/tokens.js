@@ -1,4 +1,4 @@
-var Parse = (function () {
+var Tokens = (function () {
     "use strict";
 
     var TOKEN_TYPES = {

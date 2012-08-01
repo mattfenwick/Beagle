@@ -1,5 +1,5 @@
 
-function testParse(lang, testHelper) {
+function testTokens(lang, testHelper) {
 
     module("tokenizer");
     var expectExc = testHelper.expectException,

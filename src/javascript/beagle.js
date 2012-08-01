@@ -1,12 +1,7 @@
-var Beagle = (function (parse, evaluate, reify) {
+var Beagle = (function (tokens, parser, evaluate) {
     "use strict";
 
     var env = evaluate.getDefaultEnv();
-
-
-    function primMaker(sexpr) {
-        return reify.makePrimitives(sexpr);
-    }
 
 
     function evaler(p) {
@@ -18,42 +13,35 @@ var Beagle = (function (parse, evaluate, reify) {
     //   returns a list of s-expressions,
     //   throws if strings and symbols aren't properly separated
     //   throws if there are still tokens left in the token stream
-    function parseString(str) {
-        var allTokens = parse.tokenize(str),
-            tokens, sexprs;
-
-        // throws an exception if any problems found
-        //   otherwise keep going if tokens are fine
-        parse.checkTokenSeparation(allTokens);
+    function getTokens(str) {
+        var allTokens = tokens.tokenize(str),
+            toks;
 
         // remove whitespace and comment tokens
-        tokens = parse.stripTokens(allTokens);
+        toks = tokens.stripTokens(allTokens);
 
-        // throws an exception if anything weird in 'tokens'
-        sexprs = parse.makeSExpressions(tokens);
-
-        return sexprs;
+        return toks;
     }
 
 
     function exec(str) {
-        var results = parseString(str),
-            prims = results.map(primMaker),
-            evaled = prims.map(evaler);
+        var toks = getTokens(str),
+            trees = parser.makeAST(toks),
+            evaled = trees.map(evaler);
 
         return {
             'string': str,
             'result': evaled,
-            'parsed': results,
-            'primitives': prims
+            'tokens': toks,
+            'ast'   : trees
         };
     }
 
 
     return {
-        'exec': exec,
-        'environment': env,
-        'parseString': parseString
+        'exec'        : exec,
+        'environment' : env,
+        'getTokens'   : getTokens
     };
 
-})(Parse, Evaluate, Reify);
+})(Tokens, Parser, Evaluate);

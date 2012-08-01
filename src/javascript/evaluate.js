@@ -244,8 +244,8 @@ var Evaluate = (function (Data, Functions, Environment) {
 
 
     function evaluateApplication(sexpr, env) {
-        var first = evaluate(sexpr.getOperator(), env),
-            args = sexpr.getArgs();
+        var first = evaluate(sexpr.operator, env),
+            args = sexpr.args;
 
         if (first.type === 'function') {
             return applyFunction(first, env, args);

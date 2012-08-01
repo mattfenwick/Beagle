@@ -5,7 +5,7 @@ function testBeagle(beagle, data, parse) {
     
     var list = data.List,
         num = data.Number,
-        str = data.String;
+        str = data.makeCharList;
     
     test("single expressions", function() {
         expect(7);
@@ -51,7 +51,7 @@ function testBeagle(beagle, data, parse) {
     });
 
 
-    test("parseString", function() {
+    test("getTokens", function() {
         expect(9);
         var p1 = "(+ 3 2) ; a comment",
             p2 = "3 4",

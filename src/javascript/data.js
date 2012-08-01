@@ -66,7 +66,7 @@ var Data = (function () {
         argsCheck(this.argTypes.length, args.length, this.name);
         for(var i = 0; i < this.argTypes.length; i++) {
             if(this.argTypes[i] !== null) {// if it IS null, we don't need to worry about it
-                console.log(JSON.stringify([args, this.argTypes, args[i], this.argTypes[i]]));
+                // console.log(JSON.stringify([args, this.argTypes, args[i], this.argTypes[i]]));
                 typeCheck(this.argTypes[i], args[i].type, this.name, 'argument ' + (i + 1));
             }
         }
@@ -109,6 +109,9 @@ var Data = (function () {
     
     function Application(operator, args) {
         this.type = 'application';
+        if(!operator) {
+            throw new FunctionError('ValueError', 'function', 'nothing', 'Application constructor', '1st argument');
+        }
         this.operator = operator;
         this.args = args;
     }

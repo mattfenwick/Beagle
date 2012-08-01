@@ -10,16 +10,16 @@
 
   <script type="text/javascript" src="../javascript/environment.js"></script>
   <script type="text/javascript" src="../javascript/data.js"></script>
-  <script type="text/javascript" src="../javascript/parse.js"></script>
-  <script type="text/javascript" src="../javascript/reify.js"></script>
+  <script type="text/javascript" src="../javascript/tokens.js"></script>
+  <script type="text/javascript" src="../javascript/parser.js"></script>
   <script type="text/javascript" src="../javascript/functions.js"></script>
   <script type="text/javascript" src="../javascript/evaluate.js"></script>
   <script type="text/javascript" src="../javascript/beagle.js"></script>
   
-  <script type="text/javascript" src="test_parse.js"></script>
+  <script type="text/javascript" src="test_tokens.js"></script>
   <script type="text/javascript" src="test_data.js"></script>
   <script type="text/javascript" src="test_environment.js"></script>
-  <script type="text/javascript" src="test_reify.js"></script>
+  <script type="text/javascript" src="test_parser.js"></script>
   <script type="text/javascript" src="test_functions.js"></script>
   <script type="text/javascript" src="test_evaluate.js"></script>
   <script type="text/javascript" src="test_beagle.js"></script>
@@ -29,19 +29,19 @@
 <script>
   $(document).ready(function(){
 	
-    testParse(Parse, TestHelper);
+    testTokens(Tokens, TestHelper);
     
     testData(Data);
 
     testEnvironment(Environment);
 
-    testReify(Reify, Data, Parse, TestHelper);
+    testParser(Parser, Data, Tokens, TestHelper);
 	
     testFunctions(Functions, Data, TestHelper);
 	
     testEvaluate(Evaluate, Functions, Data, Environment, TestHelper);
     
-    testBeagle(Beagle, Data, Parse);
+    testBeagle(Beagle, Data, Tokens, Parser);
     
   });
 </script>

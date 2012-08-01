@@ -1,8 +1,8 @@
-function testReify(reify, data, parse, testHelper) {
+function testParser(reify, data, tokens, testHelper) {
 
     module("AST construction");
 
-    var tok = parse.Token,
+    var tok = tokens.Token,
         app = data.Application,
         list = data.List,
         ch = data.Char,
