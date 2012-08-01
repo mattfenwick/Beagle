@@ -156,12 +156,13 @@ function testFunctions(funcs, data, testHelper) {
     
     test("function number of arguments", function() {
         var n_args = [
-            [],
-            [str("abc")],
-            [str("abc"), str("abc")],
-            [str("abc"), str("abc"), str("abc")],
-            [str("abc"), str("abc"), str("abc"), str("abc")]
-        ];
+                [],
+                [str("abc")],
+                [str("abc"), str("abc")],
+                [str("abc"), str("abc"), str("abc")],
+                [str("abc"), str("abc"), str("abc"), str("abc")]
+            ],
+            f, numArgs;
         
         for(var fname in Functions) {
             // because 'list' is variadic

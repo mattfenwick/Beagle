@@ -1,5 +1,5 @@
 
-function testBeagle(beagle, data, parse) {
+function testBeagle(beagle, data, tokens, parser) {
 
     module("beagle");
     
@@ -52,80 +52,36 @@ function testBeagle(beagle, data, parse) {
 
 
     test("getTokens", function() {
-        expect(9);
-        var p1 = "(+ 3 2) ; a comment",
-            p2 = "3 4",
-            p3 = '(+ (- (* 4 "blargh" 17)))',
-            p4 = '(+ (- (* 4 "blargh" 17))',
-            p5 = "()",
-            p6 = "abc",
+        expect(5);
+        var p1 = "(+ 3 3) ; a comment",
+            p3 = '(+ (+ (+ 3 3 3)))',
+            p5 = "[]",
             p7 = "",
-            p8 = "(define x 4) \n (define y 5)",
-            p9 = "abc 1 2 3 (duh)",
-            sexpr = parse.SExpression;
+            p8 = "   (+ 3) ;barf me \n [3] ;derr  ",
+            tok = tokens.Token,
+            op = tok('open-paren', '('),
+            cp = tok('close-paren', ')'),
+            os = tok('open-square', '['),
+            cs = tok('close-square', ']'),
+            sym1 = tok('symbol', '+'),
+            num1 = tok('integer', '3');
 
-      var a = beagle.parseString(p1);
+      var a = beagle.getTokens(p1);
       deepEqual(
-          [sexpr('list', [sexpr('symbol', '+'), sexpr('symbol', '3'), sexpr('symbol', '2')])],
+          [op, sym1, num1, num1, cp],
           a, 'a simple list of three elements, all symbols; whitespace and comments are tossed'
       );
 
-      var b = beagle.parseString(p2);
-      deepEqual([sexpr("symbol", '3'), sexpr('symbol', '4')], b, 'multiple atoms are fine');
+      var c = beagle.getTokens(p3);
+      deepEqual([op, sym1, op, sym1, op, sym1, num1, num1, num1, cp, cp, cp], c, 'deeply nested lists are no problem ...');
 
-      var c = beagle.parseString(p3);
-      deepEqual([
-          sexpr("list", [
-              sexpr('symbol', '+'), 
-              sexpr('list', [
-                  sexpr('symbol', '-'),
-                  sexpr('list', [
-                      sexpr('symbol', '*'),
-                      sexpr('symbol', '4'),
-                      sexpr('string', 'blargh'),
-                      sexpr('symbol', '17'),
-                  ])
-              ])
-          ])], c, 'deeply nested lists are no problem ...');
-
-      var d = false;
-      try {
-        beagle.parseString(p4);
-      } catch(e) {
-        d = true;
-      };
-      ok(d, "... as long as they don't have unbalanced parentheses");
-
-      var e = beagle.parseString(p5);
-      deepEqual([sexpr('list', [])], e, 'the empty list is easy to parse');
-
-      var f = beagle.parseString(p6);
-      deepEqual([sexpr('symbol', 'abc')], f, 'and so is a lone symbol');
+      var e = beagle.getTokens(p5);
+      deepEqual([os, cs], e, 'the empty list is easy to parse');
   
-      var g = beagle.parseString(p7);
-      deepEqual(g, [], "the empty string can be parsed but doesn't return anything");
+      var g = beagle.getTokens(p7);
+      deepEqual(g, [], "the empty string can be tokenized but doesn't return any tokens");
 
-      deepEqual([
-          sexpr('list', [
-              sexpr('symbol', 'define'),
-              sexpr('symbol', 'x'),
-              sexpr('symbol', '4')
-          ]),
-          sexpr('list', [
-              sexpr('symbol', 'define'),
-              sexpr('symbol', 'y'),
-              sexpr('symbol', '5')
-          ])
-      ], beagle.parseString(p8), 'multiple sexpressions are fine');
-            
-      deepEqual([
-          sexpr('symbol', 'abc'),
-          sexpr('symbol', '1'),
-          sexpr('symbol', '2'),
-          sexpr('symbol', '3'),
-          sexpr('list', [sexpr('symbol', 'duh')])       
-      ], beagle.parseString(p9), "even if there's lots of them!");
-
+      deepEqual([op, sym1, num1, cp, os, num1, cs], beagle.getTokens(p8), 'multiple sexpressions are fine');
     });
 
 }
