@@ -27,7 +27,7 @@ var Functions = (function (Data) {
             var list = args[0];
             
             if (list.value.length === 0) {
-                throw new Error(["ValueError", "cannot take car of empty list"]);
+                throw Data.FunctionError("ValueError", "non-empty list", "empty list", 'car', "1st arg");
             }
             
             return list.value[0];
@@ -42,7 +42,7 @@ var Functions = (function (Data) {
             var list = args[0];
 
             if (list.value.length === 0) {
-                throw new Error(["ValueError", "cannot take cdr of empty list"]);
+                throw Data.FunctionError("ValueError", "non-empty list", "empty list", 'cdr', '1st arg');
             }
             
             return Data.List(list.value.slice(1));
@@ -84,15 +84,15 @@ var Functions = (function (Data) {
                 ltype = left.type,
                 rtype = right.type;
             if (ltype !== rtype) {
-                throw new Error(['TypeError', ltype, rtype, "eq?", "arguments must have identical types"]);
+                throw Data.FunctionError('TypeError', ltype, rtype, "eq?", "arguments must have identical types");
             }
             if(!(ltype in COMPARABLE)) {
-                throw new Error(['TypeError', 'number/char/symbol/boolean', 
-                      ltype, "eq?", "can't compare type"]);
+                throw Data.FunctionError('TypeError', 'number/char/symbol/boolean', 
+                      ltype, "eq?", "can't compare type");
             }
             if(!(rtype in COMPARABLE)) {
-                throw new Error(['TypeError', 'number/char/symbol/boolean', 
-                      rtype, "eq?", "can't compare type"]);
+                throw Data.FunctionError('TypeError', 'number/char/symbol/boolean', 
+                      rtype, "eq?", "can't compare type");
             }
             return Data.Boolean(args[0].value === args[1].value);
         }

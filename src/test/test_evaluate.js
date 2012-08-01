@@ -30,8 +30,8 @@ function testEvaluate(evaluate, funcs, data, envir, testHelper) {
             bindings++;
         }
 
-        equal(26, bindings, 'there are 26 built-in special forms and functions');
-        equal(26, names.length, 'and we need to test for all of them');
+        equal(18, bindings, 'there are 18 built-in special forms and functions');
+        equal(18, names.length, 'and we need to test for all of them');
     });
 
 
@@ -198,12 +198,12 @@ function testEvaluate(evaluate, funcs, data, envir, testHelper) {
     test("lambda", function() {
         var lam = ev.lambda,
             env = ev.getDefaultEnv(),
-            args1 = app([lis([])]),
+            args1 = lis([]),
             body1 = num(4),
             args2 = lis([sym('abc')]),
             body2 = sym('abc'),
             args3 = lis([sym('q'), sym('r')]),
-            body3 = lis([sym('+'), sym('q'), num(4)]);
+            body3 = app(sym('+'), [sym('q'), num(4)]);
         
         var a = lam(env, [args1, body1]);
         deepEqual(
@@ -280,16 +280,16 @@ function testEvaluate(evaluate, funcs, data, envir, testHelper) {
           int_ = num(31),
           str1 = str("abcde"),
           sym1 = sym('cons'),
-          l1 = lis([
+          l1 = app(
               sym('car'),
-              lis([sym('list'), num(87)])
+              [app(sym('list'), [num(87)])
           ]),
-          l2 = lis([
+          l2 = app(
               sym('cons'),
-              str('what?'),
-              lis([sym('list')])
-          ]),
-          l3 = lis([sym('list')]),
+              [str('what?'), lis([])]
+          ),
+          l3 = app(sym('neg'), [num(4)]),
+          l4 = lis([num(13), str('duh')]),
           t = data.Boolean(true),
           cons = funcs.cons,
           myif = data.SpecialForm(ev['if']);
@@ -302,23 +302,25 @@ function testEvaluate(evaluate, funcs, data, envir, testHelper) {
 
       deepEqual(cons, ev.eval(cons, env), "... 4) functions ...");
 
-      deepEqual(myif, ev.eval(myif, env), "... and 5) special forms");
+      deepEqual(myif, ev.eval(myif, env), "... 5) special forms");
           
+      deepEqual(l4, ev.eval(l4, env), "... 6) lists");
+      
       deepEqual(cons, ev.eval(sym1, env), "symbols evaluate to the current binding");
 
       expectExc(function() {
           ev.eval(sym('blarghabag'), env);
       }, 'UndefinedVariableError', 'evaluating a symbol with no binding throws an exception');
     
-      deepEqual(lis([]), ev.eval(l3, env), "lists: the 1st element is eval'ed to a function/specialform and applied to the rest of the list");
+      deepEqual(num(-4), ev.eval(l3, env), "in an Application, the 1st element is a function/specialform which is applied to the remaining elements");
 
       expectExc(function() {
-          ev.eval(lis([]), env);
-      }, 'ValueError', 'trying to evaluate the empty list throws an exception');
+          ev.eval(app(), env);
+      }, 'ValueError', 'trying to evaluate an empty application throws an exception');
     
       deepEqual(
           lis([cons]),
-          ev.eval(lis([sym('list'), sym('cons')]), env),
+          ev.eval(app(sym('list'), [sym('cons')]), env),
           'for function applications, the arguments are evaluated before the function is applied'
       );
 
@@ -328,14 +330,14 @@ function testEvaluate(evaluate, funcs, data, envir, testHelper) {
 
       deepEqual(
           t,
-          ev.eval(lis([sym('if'), t, t, sym('shouldblowup')]), env),
-          " ... but doesn't do so for special forms that don't evaluate all their arguments"
+          ev.eval(app(sym('if'), [t, t, sym('shouldblowup')]), env),
+          " ... but might not do so for special forms that don't always evaluate all their arguments"
       );
           
       deepEqual(
           num(87),
           ev.eval(l1, env),
-          'this is just another example of evaluating a list'
+          'this is just another example of evaluating an application'
       );
           
       deepEqual(

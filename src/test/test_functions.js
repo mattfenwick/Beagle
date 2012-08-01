@@ -46,7 +46,7 @@ function testFunctions(funcs, data, testHelper) {
       
       expectException(function() {
           car.fapply([empty]);
-      }, 'ValueError', 'trying to take the car of an empty list throws an exception');
+      }, 'ValueError', 'taking the car of an empty list throws an exception');
     });
       
 

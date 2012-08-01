@@ -146,8 +146,6 @@ var Evaluate = (function (Data, Functions, Environment) {
                       "missing one or both", "lambda/special", "body may not be empty");
         }
         
-        typeCheck('application', lam_args[0].type, 'lambda/special', 'first argument');
-        
         var args = lam_args[0],
             bodies = lam_args.slice(1),
             names = extractArgNames(args);
@@ -257,6 +255,15 @@ var Evaluate = (function (Data, Functions, Environment) {
 
         throw new Error("first element in list must be function or special form (was " + first.type + ")");
     }
+    
+    
+    function evaluateList(sexpr, env) {
+    	var elems = sexpr.value.map(function(e) {
+    		return evaluate(e, env);
+    	});
+    	
+    	return Data.List(elems);
+    }
 
 
     var SELF_EVALUATING_TYPES  = {
@@ -264,8 +271,7 @@ var Evaluate = (function (Data, Functions, Environment) {
         'char'         :  1,
         'boolean'      :  1,
         'function'     :  1,
-        'specialform'  :  1,
-        'list'         :  1
+        'specialform'  :  1
     };
 
 
@@ -297,6 +303,10 @@ var Evaluate = (function (Data, Functions, Environment) {
 
         if (sexpr.type === 'application') {
             return evaluateApplication(sexpr, env);
+        }
+        
+        if (sexpr.type === 'list') {
+        	return evaluateList(sexpr, env);
         }
 
         return evaluateAtom(sexpr, env);

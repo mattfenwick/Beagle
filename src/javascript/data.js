@@ -174,7 +174,12 @@ var Data = (function () {
         },
         
         // convenience function
-        'makeCharList': makeCharList
+        'makeCharList': makeCharList,
+        
+        // custom errors
+        'FunctionError': function(a,b,c,d,e) {
+            return new FunctionError(a,b,c,d,e);
+        }
         
     };
 
