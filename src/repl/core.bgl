@@ -164,3 +164,23 @@
   (lambda [ls]
    (reduce (flip join-lists) [[]] ls)))
    
+   
+(define error
+  (lambda [type message trace]
+   (datum "error" [type message trace])))
+   
+;; error-type :: Error -> String
+(define error-type
+  (lambda [err]
+   (car (value err)))) ;; the 1st elem
+   
+;; error-message :: Error -> String
+(define error-message
+  (lambda [err]
+   (car (cdr (value err))))) ;; the 2nd elem
+   
+;; error-trace :: Error -> a
+(define error-trace
+  (lambda [err]
+   (car (cdr (cdr (value err)))))) ;; the 3rd elem
+   

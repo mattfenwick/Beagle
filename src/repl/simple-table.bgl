@@ -17,78 +17,82 @@
 
 ;; the implementation
 ;; IMPORTANT:  still missing 'error' function
-((lambda ()
+((lambda []
   
-   (define constructor (data "simple-table"))
+   ;; constructor :: [Pair] -> Simple-Table
+   ;;   unsafe (doesn't check input)
+   (define constructor 
+     (lambda [pairs]
+      (datum "simple-table" pairs)))
    
    ;; empty :: Simple-Table
-   (define empty (constructor (list)))
+   (define empty (constructor []))
    
+   ;; get-pair :: Simple-Table -> key -> Either Pair []
    (define get-pair
-     (lambda (table key)
+     (lambda [table key]
       (define helper
-        (lambda (elems)
-         (cond ((null? elems) 
-                (list))
-               ((equal? (car (car elems)) key)
-                (car elems))
-               (true 
-                (helper (cdr elems))))))
-      (helper (udt-value table))))
+        (lambda [elems]
+          (cond [(null? elems) []]
+                [(equal? (car (car elems)) key)
+                 (car elems)]
+                [true 
+                 (helper (cdr elems))])))
+      (helper (value table))))
       
    
    ;; has? :: Simple-Table -> key -> Boolean
    (define has?
-     (lambda (table key)
+     (lambda [table key]
       (not (null? (get-pair table key)))))
 
    
    ;; add :: Simple-Table -> key -> value -> Error Simple-Table
    (define add
-     (lambda (table key value)
-      (cond ((has? table key)
-             (add-error (++ "can't key:  table already has key " key)))
-            (true (constructor (cons (list key value)
-                                     (udt-value table)))))))
+     (lambda [table key val]
+       (cond [(has? table key)
+              (error "ValueError" (++ "can't key:  table already has key " key) [])]
+             [true (constructor (cons [key val]
+                                      (value table)))])))
 
 
    ;; remove :: Simple-Table -> key -> Error Simple-Table
    (define remove
-     (lambda (table key)
+     (lambda [table key]
       (define helper
-        (lambda (pairs)
-         (cond ((null? pairs)
-                (remove-error (++ "can't remove key " key)))
-               ((equal? key (car (car pairs)))
-                (cdr pairs))
-               (true (cons (car pairs)
-                           (helper (cdr pairs))))))) 
-      (constructor (helper (udt-value table)))))
+        (lambda [pairs]
+          (cond [(null? pairs)
+                 (error "ValueError" (++ "can't remove key: not in table " key) [])]
+                [(equal? key (car (car pairs)))
+                 (cdr pairs)]
+                [true (cons (car pairs)
+                            (helper (cdr pairs)))]))) 
+      (constructor (helper (value table)))))
 
 
    ;; set :: Simple-Table -> key -> value -> Simple-Table
    (define set
-     (lambda (table key value)
+     (lambda [table key val]
       (define new-pairs
-        (udt-value (cond ((has? table key)
-                          (remove table key))
-                         (true table))))
-      (constructor (cons (list key value) new-pairs))))
+        (value (cond [(has? table key)
+                      (remove table key)]
+                     [true table])))
+      (constructor (cons [key val] new-pairs))))
       
 
    ;; get :: Simple-Table -> key -> Error Simple-Table                            
    (define get
-     (lambda (table key)
-      (define pair (get-pair table key))
-      (cond ((null? pair) 
-             (get-error (++ "table doesn't have key" key)))
-            (true (car (cdr pair))))))
+     (lambda [table key]
+       (define pair (get-pair table key))
+       (cond [(null? pair) 
+              (error "ValueError" (++ "table doesn't have key" key) [])]
+             [true (car (cdr pair))])))
             
 
    ;; new :: List -> Simple-Table
    (define new
-     (lambda (pairs)
-      (reduce (lambda (b p)
+     (lambda [pairs]
+      (reduce (lambda [b p]
                 (add b (car p) (car (cdr p))))
               empty 
               pairs)))
@@ -96,8 +100,8 @@
 
    ;; elems :: Simple-Table -> List
    (define elems
-     (lambda (table)
-      (udt-value table)))
+     (lambda [table]
+      (value table)))
    
 
    (set! st-new new)

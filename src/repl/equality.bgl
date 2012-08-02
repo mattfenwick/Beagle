@@ -1,61 +1,56 @@
 
-;;;;;; type reflection
-
-;; get the type of an object
-;;   also works for user-defined types
-(define type
-  (lambda (obj)
-   (cond ((eq? (prim-type obj) "userdefined")
-          (udt-type obj))
-         (true (prim-type obj)))))
-       
-       
 ;;;;;; primitive equality
 ;; can compare any two instances of primitive data types, which are:
 ;;   - numbers
 ;;   - symbols
-;;   - strings
+;;   - chars
 ;;   - booleans
 ;;   - lists containing only primitive data types
 
 (define equal?
   ;; this is kind of like a javascript module
-  ((lambda ()
+  ((lambda []
+  
+    (define eq-string?
+      (lambda [l r]
+       (cond [(null? l) (null? r)]
+             [(null? r) false]
+             [true (and (eq? (car l) (car r))
+                        (eq-string? (cdr l) (cdr r)))])))
    
     ;; compares any 2 atoms
     ;;   they're equal if they have the same types,
     ;;   and the same values
-    ;; atoms include numbers, symbols, strings, and booleans
+    ;; atoms are numbers, symbols, chars, and booleans
     ;;   lists are not atoms
     (define eqan?
-      (lambda (l r)
-       (cond ((eq? (prim-type l) (prim-type r))
-              (eq? l r))
-             (true false))))
+      (lambda [l r]
+       (cond [(eq-string? (type l) (type r))  (eq? l r)]
+             [true false])))
     
     ;; returns 'true' if 's' is a list; false otherwise
     (define list?
-      (lambda (s)
-       (eqan? "list" (prim-type s))))
+      (lambda [s]
+       (eq-string? "list" (type s))))
    
     ;; compares two lists composed of primitives 
     (define eqlist?
-      (lambda (l r)
-       (cond ((null? l) (null? r))         ;; this is like ((and (null? l) (null? r))  true)
-             ((null? r) false)             ;; and          ((or  (null? l) (null? r)) false)
-             (true (and (prim-equal? (car l) (car r))
-                        (prim-equal? (cdr l) (cdr r)))))))
+      (lambda [l r]
+       (cond [(null? l) (null? r)]         ;; this is like ((and (null? l) (null? r))  true)
+             [(null? r) false]             ;; and          ((or  (null? l) (null? r)) false)
+             [true (and (prim-equal? (car l) (car r))
+                        (prim-equal? (cdr l) (cdr r)))])))
     
     ;; compares any 2 primitives
     ;;   they're equal if they have the same types,
     ;;   and the same values
     (define prim-equal?
-      (lambda (l r)
-       (cond ((and (list? l) (list? r))
-              (eqlist? l r))
-             ((or (list? l) (list? r)) 
-              false)
-             (true (eqan? l r)))))
+      (lambda [l r]
+       (cond [(and (list? l) (list? r))
+              (eqlist? l r)]
+             [(or (list? l) (list? r)) 
+              false]
+             [true (eqan? l r)])))
             
     ;; this is the return value of the 'module'
     prim-equal?)))
