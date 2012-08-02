@@ -119,21 +119,39 @@ var Functions = (function (Data) {
     );
     
     
+    // does this belong elsewhere? (in Data?)
+    var BUILT_INS = {
+        'number'      : 1,
+        'char'        : 1,
+        'boolean'     : 1,
+        'symbol'      : 1,
+        'list'        : 1,
+        'function'    : 1,
+        'specialform' : 1,
+        'application' : 1,
+        'null'        : 1  // not sure if I need this
+    };
+    
+    
     var datum = Data.Function(
         ['list', null],
         'datum',
         function(args) {
             var typeList = args[0],
-                type = typeList.map(function(c) {
+                type = typeList.value.map(function(c) {// need to get value right?
                     if(c.type !== 'char') {
-                        throw new Error("'datum' requires a list of chars");
+                        throw Data.FunctionError('TypeError', "list of chars", 'list with ' + c.type, 'datum', '1st arg');
                     }
                     return c.value;
                 }).join('');
                 value = args[1];
                 
             if(type.length === 0) {
-                throw new Error("datum type may not be empty");
+                throw Data.FunctionError('ValueError', "non-empty type", "empty type", "datum", '1st arg');
+            }
+            
+            if(type in BUILT_INS) {
+            	throw Data.FunctionError("ValueError", 'non built-in type', type, 'datum', "1st arg");
             }
             
             return Data.Datum(type, value);
@@ -150,26 +168,13 @@ var Functions = (function (Data) {
     );
     
     
-    // does this belong elsewhere?
-    var BUILT_INS = {
-        'number' : 1,
-        'char'   : 1,
-        'boolean': 1,
-        'symbol' : 1,
-        'list'   : 1,
-        'function': 1,
-        'specialform': 1,
-        'null'   : 1  // not sure if I need this
-    };
-    
-    
     var value = Data.Function(
         [null],
         'value',
         function(args) {
             var obj = args[0];
             if(obj.type in BUILT_INS) {
-                throw new Error("'value' doesn't work on built-ins (was " + obj.type + " )");
+                throw Data.FunctionError('TypeError', 'non built-in type', obj.type, 'value', "1st arg");
             }
             return obj.value;
         }
@@ -184,7 +189,10 @@ var Functions = (function (Data) {
         '+'         :  plus,
         'neg'       :  neg,
         'number-<'  :  numberLessThan,
-        'eq?'       :  eqQ
+        'eq?'       :  eqQ,
+        'type'      :  type,
+        'datum'     :  datum,
+        'value'     :  value
     };
 
 })(Data);

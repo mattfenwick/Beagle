@@ -78,20 +78,23 @@ function printer(obj) {
     return "error: " + printer(obj.errortype) + ", " + printer(obj.message) + ", trace: [" + printer(obj.trace) + "]";
   }
   
-  if( obj.type === 'userdefined' ) {
-    return "user-defined type: " + obj.usertype;
+  if( obj.type === 'application' ) {
+    return "application: " + printer(obj.operator) + ", " + obj.args.map(printer);
   }
   
-  if( obj.type !== 'list' ) {
+  if( obj.type === 'list' ) {
+    return obj.value.map(printer);
+  }
+  
+  if( obj.type === 'char' ) {
+    return "'" + obj.value + "'";
+  }
+  
+  if( obj.type === 'boolean' ) {
     return obj.value;
   }
 
-  var q = [];
-  for(var i = 0; i < obj.value.length; i++) {
-    q.push(printer(obj.value[i]));
-  }
-
-  return q;
+  return obj;
 }
 
 

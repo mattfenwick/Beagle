@@ -147,8 +147,51 @@ function testFunctions(funcs, data, testHelper) {
     });
     
     
-    test("datum, type, and value", function() {
-    	ok(false, "not public yet");
+    test("datum", function() {
+        var dt = funcs.datum,
+            Dat = data.Datum;
+        
+        deepEqual(
+            Dat('string', str('matt')), 
+            dt.fapply([str('string'), str('matt')]), 
+            "'datum' takes two arguments:  a string (list of chars) and a value"
+        );
+        
+        expectException(function() {
+            dt.fapply([num(4), str('matt')]);
+        }, 'TypeError', "'datum' requires a *list* of chars as first argument");
+
+        expectException(function() {
+            dt.fapply([list([ch('a'), num(4)]), num(3)]);
+        }, 'TypeError', "'datum' requires a list of *chars* as first argument");
+        
+        expectException(function() {
+            dt.fapply([str(''), num(64)]);
+        }, 'ValueError', "a *non-empty* list of chars");
+        
+        expectException(function() {
+            dt.fapply([str('list'), num(32)]);
+        }, 'ValueError', "built-in type names may not be used, because of the potential for confusion");
+    });
+    
+    
+    test("type", function() {
+    	var type = funcs.type;
+
+    	deepEqual(str("number"), type.fapply([num(3)]), "'type' takes one argument, and returns the type as a list of chars");
+    	
+    	deepEqual(str("blargh"), type.fapply([data.Datum('blargh', num(18))]), 'it works on built-ins as well as user-defined types');
+    });
+    
+    
+    test("value", function() {
+        var val = funcs.value;
+        
+        deepEqual(num(3), val.fapply([data.Datum('something', num(3))]), "'value' gets the value of an object of a user-defined type");
+        
+        expectException(function() {
+        	val.fapply([num(13)]);
+        }, 'TypeError', "it doesn't work on built-ins, because the value is an implementation detail");
     });
     
     
@@ -196,6 +239,9 @@ function testFunctions(funcs, data, testHelper) {
                 'neg'      : [num(3)],
                 'number-<' : [num(3), num(21)],
                 'eq?'      : [num(3), num(21)],
+                'datum'    : [str('abc'), num(8)],
+                'type'     : [data.Datum('abc', num(8))],
+                'value'    : [data.Datum('abc', num(8))]
             },
             types = {
                 'number' : Data.Char('c'),
