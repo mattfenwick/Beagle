@@ -1,168 +1,166 @@
 
 (define test-ok
-  (lambda (form message)
-   (cond (form "ok")
-         (true message))))
+  (lambda [form message]
+   (cond [form "ok"]
+         [true message])))
 
 (define test-not-ok
-  (lambda (form message)
-   (cond (form message)
-         (true "ok"))))
+  (lambda [form message]
+   (cond [form message]
+         [true "ok"])))
 
 
 (define not
-  (lambda (x)
-   (cond (x false)
-         (true true))))
+  (lambda [x]
+   (cond [x false]
+         [true true])))
 
 (define not-test
-  (lambda ()
+  (lambda []
    (test-ok
-    (and (equals? (not false)
-            true)
-         (equals? (not true)
-            false)))))
+    (and (equals? (not false) true)
+         (equals? (not true)  false)))))
 
 
 (define and
-  (lambda (x y)
-    (cond (x y)
-          (true false))))
+  (lambda [x y]
+    (cond [x y]
+          [true false])))
 
 (define and-test
-  (lambda ()
+  (lambda []
    (test-ok
-    (all (list (and true true)
-               (not (and true false))
-               (not (and false true))
-               (not (and false false))))
+    (all [(and true true)
+          (not (and true false))
+          (not (and false true))
+          (not (and false false))])
     "and-tests")))
 
 
 (define or 
-  (lambda (x y)
-    (cond (x true)
-          (true y))))
+  (lambda [x y]
+    (cond [x true]
+          [true y])))
        
 (define or-test
-  (lambda ()
+  (lambda []
    (test-ok
-    (all (list (or true true)
-               (or true false)
-               (or false true)
-               (not (and false false))))
+    (all [(or true true)
+          (or true false)
+          (or false true)
+          (not (and false false))])
     "or-tests")))
 
 
 (define compose
-  (lambda (f g)
-   (lambda (x)
+  (lambda [f g]
+   (lambda [x]
     (f (g x)))))
 
 (define compose-list 
-  (lambda (fs) 
+  (lambda [fs] 
    (reduce compose id fs)))
 
 
 ;; not written using `reduce` (for now)
 ;; because that would reverse it
 (define map
-  (lambda (f xs)
-    (cond ((null? xs) (list))
-          (true (cons (f (car xs))
-                  (map f (cdr xs)))))))
+  (lambda [f xs]
+    (cond [(null? xs) []]
+          [true (cons (f (car xs))
+                  (map f (cdr xs)))])))
 
 (define map-test
-  (lambda ()
+  (lambda []
    (test-ok
     (all 
-     (list (eq? (map id (list)) (list))
-           (eq? (map id (list 1 2 3)) (list 1 2 3))
-           (eq? (map (lambda (x) (cons 4 x))
-                   (list (list 1) (list) (list 3 4)))
-              (list (list 4 1) (list 4) (list 4 3 4)))))
+     [(eq? (map id []) [])
+      (eq? (map id [1 2 3]) [1 2 3])
+      (eq? (map (lambda [x] (cons 4 x))
+             [[1] [] [3 4]])
+           [[4 1] [4] [4 3 4]])])
     "map-tests")))
 
 
 (define filter
-  (lambda (f xs)
-    (cond ((null? xs) (list))
-          ((f (car xs))
-            (cons (car xs) (filter f (cdr xs))))
-          (true (filter f (cdr xs))))))
+  (lambda [f xs]
+    (cond [(null? xs) []]
+          [(f (car xs))
+            (cons (car xs) (filter f (cdr xs)))]
+          [true (filter f (cdr xs))])))
 
 
 (define id 
-  (lambda (x) x))
+  (lambda [x] x))
 
 
 (define reduce
-  (lambda (f b xs)
-    (cond ((null? xs) b)
-          (true (reduce f 
+  (lambda [f b xs]
+    (cond [(null? xs) b]
+          [true (reduce f 
                   (f b (car xs)) 
-                  (cdr xs))))))
+                  (cdr xs))])))
                 
 
 (define any 
-  (lambda (vals) 
+  (lambda [vals] 
 	(reduce or false vals)))
 
 
 (define all 
-  (lambda (vals) 
+  (lambda [vals] 
 	(reduce and true vals)))
 
 
 (define zip
-  (lambda (l1 l2)
-    (cond ((null? l1) (list))
-          ((null? l2) (list)) 
-          (true (cons (list (car l1) (car l2))
+  (lambda [l1 l2]
+    (cond [(null? l1) []]
+          [(null? l2) []] 
+          [true (cons [(car l1) (car l2)]
                   (zip (cdr l1)
-                       (cdr l2)))))))
+                       (cdr l2)))])))
 
 
 (define zip-map
-  (lambda (f l1 l2)
-    (map (lambda (p)
+  (lambda [f l1 l2]
+    (map (lambda [p]
            (f (car p) (car (cdr p))))
          (zip l1 l2))))
        
        
 (define count
-  (lambda (l)
+  (lambda [l]
    (reduce 
-    (lambda (b n) (+ b 1))
+    (lambda [b n] (+ b 1))
     0 
     l)))
 
 
 (define flip
-  (lambda (f)
-   (lambda (a b)
+  (lambda [f]
+   (lambda [a b]
     (f b a))))
     
     
 (define reverse
-  (lambda (ls)
-   (reduce (flip cons) (quote ()) ls)))
+  (lambda [ls]
+   (reduce (flip cons) [] ls)))
 
 
 (define ++
-  (lambda (l1 l2)
+  (lambda [l1 l2]
    (reduce (flip cons) l2 (reverse l1))))
 
 
 (define join-lists
-  (lambda (x y)
-   (reduce ++ (quote ())
-           (map (lambda (e)
-                 (map (lambda (f) (cons e f)) y)) 
+  (lambda [x y]
+   (reduce ++ []
+           (map (lambda [e]
+                 (map (lambda [f] (cons e f)) y)) 
                 x))))
                 
                 
 (define join-many-lists
-  (lambda (ls)
-   (reduce (flip join-lists) (list (list)) ls)))
+  (lambda [ls]
+   (reduce (flip join-lists) [[]] ls)))
    

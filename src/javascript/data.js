@@ -100,7 +100,7 @@ var Data = (function () {
     function Application(operator, args) {
         this.type = 'application';
         if(!operator) {
-            throw new FunctionError('ValueError', 'function', 'nothing', 'Application constructor', '1st argument');
+            throw new FunctionError('ValueError', 'function', operator, 'Application constructor', '1st argument');
         }
         this.operator = operator;
         this.args = args;
