@@ -16,7 +16,7 @@ function testEvaluate(evaluate, funcs, data, envir, testHelper) {
     test("default environment", function() {
         var env = ev.getDefaultEnv();
         var names = [
-            'define', 'lambda', 'if', 'quote', 'eval', 'true', 'false',
+            'define', 'lambda', 'quote', 'eval', 'true', 'false',
             'cons', 'car', 'cdr', 'eq?', '+', 'neg', 'set!',
             'cond', 'null?', 'number-<'
         ];
@@ -30,8 +30,8 @@ function testEvaluate(evaluate, funcs, data, envir, testHelper) {
             bindings++;
         }
 
-        equal(17, bindings, 'there are 17 built-in special forms and functions');
-        equal(17, names.length, 'and we need to test for all of them');
+        equal(16, bindings, 'there are 16 built-in special forms and functions');
+        equal(16, names.length, 'and we need to test for all of them');
     });
 
 
@@ -120,43 +120,6 @@ function testEvaluate(evaluate, funcs, data, envir, testHelper) {
         expectExc(function() {
             set(env, [num(11), num(12)]);
         }, 'TypeError', 'and that the first argument must be a Beagle symbol');
-    });
-    
-    
-    test("if", function() {
-      var if_ = ev['if'],
-          env = ev.getDefaultEnv(),
-          t = Data.Boolean(true),
-          f = Data.Boolean(false);
-      
-      env.addBinding('fsym', f);
-      
-      deepEqual(
-          num(4),
-          if_(env, [t, num(4), str("huh?")]), 
-          "'if' evaluates its 1st argument, and if that's true, evaluates and returns its second argument"
-      );
-      
-      deepEqual(
-          str("huh?"), 
-          if_(env, [sym('fsym'), num(4), str("huh?")]), 
-          'otherwise, it evaluates and returns its third argument'
-      );
-
-      expectExc(function() {
-          if_(env, [t]);
-      }, 'NumArgsError', 'too few arguments throws an exception ...');
-
-      expectExc(function() {
-          if_(env, [f, empty, empty, empty]);
-      }, 'NumArgsError', 'too many arguments is also a problem');
-
-      expectExc(function() {
-          if_(env, [num(11), num(12), num(13)]);
-      }, 'TypeError', 'the first argument must be evaluate to a Beagle boolean');
-
-      deepEqual(num(64), if_(env, [t, num(64), sym('was_not_defined')]), 
-              "watch out: 'if' is not strict in its evaluation");
     });
     
     
@@ -330,7 +293,10 @@ function testEvaluate(evaluate, funcs, data, envir, testHelper) {
 
       deepEqual(
           t,
-          ev.eval(app(sym('if'), [t, t, sym('shouldblowup')]), env),
+          ev.eval(app(sym('cond'), 
+        		      [lis([t, t]), 
+        		       lis([t, sym('shouldblowup')])]), 
+        		  env),
           " ... but might not do so for special forms that don't always evaluate all their arguments"
       );
           

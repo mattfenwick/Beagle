@@ -73,24 +73,6 @@ var Evaluate = (function (Data, Functions, Environment) {
         env.setBinding(name.value, value);
         return Data.Null();
     }
-
-
-    function myif(env, args) {
-        argsCheck(3, args.length, 'if');
-        
-        var condition = args[0], 
-            ifTrue = args[1],
-            ifFalse = args[2],
-            cond = evaluate(condition, env);
-
-        typeCheck('boolean', cond.type, 'if', "first argument");
-
-        if (cond.value) {
-            return evaluate(ifTrue, env);
-        }
-
-        return evaluate(ifFalse, env);
-    }
     
     
     function cond(env, args) {
@@ -204,7 +186,6 @@ var Evaluate = (function (Data, Functions, Environment) {
         // the special forms
         bindings['define'] = Data.SpecialForm(define);
         bindings['set!']   = Data.SpecialForm(setBang);
-        bindings['if']     = Data.SpecialForm(myif);
         bindings['cond']   = Data.SpecialForm(cond);
         bindings['lambda'] = Data.SpecialForm(lambda);
         bindings['quote']  = Data.SpecialForm(quote);
@@ -319,7 +300,6 @@ var Evaluate = (function (Data, Functions, Environment) {
         'getDefaultEnv':  getDefaultEnv,
         'define'       :  define,
         'set!'         :  setBang,
-        'if'           :  myif,
         'lambda'       :  lambda,
         'quote'        :  quote,
         'beagleEval'   :  beagleEval,
