@@ -5,34 +5,26 @@ Loosely using [BNF](http://en.wikipedia.org/wiki/Backus%E2%80%93Naur_Form):
 
     BeagleCode:     SExpression(+)
 
-    SExpression:    Atom  |  List
+    SExpression:    Atom  |  List  |  Application
 
-    Atom:           String  |  Symbol
+    Atom:           STRING  |  SYMBOL  |  INTEGER  |  FLOAT
 
-    String:         "[^\"]*"
+    STRING:         "[^\"]*"
 
-    Symbol:         [^;\"\(\)\s]+
+    SYMBOL:         [a-zA-Z\!\@\#\$\%\^\&\*\-\_\=\+\?\/\!\<\>][a-zA-Z0-9\!\@\#\$\%\^\&\*\-\_\=\+\?\/\!\<\>]*
 
-    List:           OPEN  SExpression(*)  CLOSE
+    INTEGER:        \d+
 
-    OPEN:           '('
+    FLOAT:          \d*\.\d+  |  \d+\.\d*
 
-    CLOSE:          ')'
+    List:           '['  SExpression(*)  ']'
+
+    Application:    '('  SExpression(+)  ')'
 
 Also, comments are indicated by `;` (when not in a string) and extend to the end of the line.
 
 
 ## Tokens ##
-
- - open 
-
-   - `(`
-   - single open parentheses
-
- - close
-
-   - `)`
-   - single close parentheses
 
  - string  
 
@@ -46,31 +38,46 @@ Also, comments are indicated by `;` (when not in a string) and extend to the end
 
  - symbol
 
-   - `[^;\"\(\)\s]+`
-   - any positive number of chars that are not whitespace, or `(` or `)` or `"` or `;`
+   - see above for precise definition
+   - one of `!@#$%^&*-_=+?/!<>` or a letter, followed by any number of `!@#$%^&*-_=+?/!<>`
+     characters or letters or numbers
 
  - whitespace
 
    - `\s+`
    - any positive number of whitespace chars
 
+ - integer
+
+   - `\d+`
+   - any positive number of digits
+
+ - float
+
+   - `\d*\.\d+` or `\d+\.\d*`
+   - either any number of digits, a decimal point, and at least one digit, or
+     at least one digit, a decimal point, and any number of digits (so there's
+     always at least one digit)
+
+ - punctuation tokens
+
+   - `(`:  OPEN-PAREN
+   - `)`:  CLOSE-PAREN
+   - `[`:  OPEN-SQUARE
+   - `]`:  CLOSE-SQUARE
 
 
 ## Whitespace requirements ##
 
- - required between these pairs of token:
+ - required between any two of the atom tokens:
 
-   - string and symbol
+   - string
  
-   - string and string
+   - symbol
 
-   - symbol and symbol
+   - integer
 
-   - symbol and string
-
-   - string and comment
-
-   - symbol and comment
+   - float
 
  - optional between all other pairs of non-whitespace tokens
 
@@ -95,88 +102,62 @@ Also, comments are indicated by `;` (when not in a string) and extend to the end
    - there cannot be two or more consecutive whitespace tokens because
      the the first token begins at a ws char and ends at the next non-ws char
 
+ - newlines only matter to comments:  comment tokens are ended by newlines. 
+   otherwise they count as whitespace, same as any other whitespace character
+
 
 
 ## Parsing stages ##
 
  1. tokenization
- 2. discarding of whitespace and comment tokens
- 3. assembly of tokens to form the AST (s-expressions composed of lists and atoms)
- 4. AST analysis:  nodes are converted to Beagle values
+    - breaking text into tokens
+    - checking whitespace separation
 
-
-
-## Data types ##
-
- - Token
-
-   - type:  see Section A for a complete list of recognized types
-   - value: the string from the original input stream
-
- - SExpression
-
-   - type:  'list', 'string', or 'symbol'
-   - value: a list of SExpressions (if a list), or a string (if a string or symbol)
-
- - ParseError
-
-   - message:  describes what happened and why
-   - value:  optional context of the error
-
-
-
-## Failure modes ##
-
- - total functions (none)
-
- - functions that fail softly -- returning false
-  
-  - `nextToken`:  if the input is empty
-  - `getAtom`:  if the input is empty or the first element is not an atom
-  - `getList`:  if the input is empty or the first element is an atom
-  - `getSExpression`:  if the input is empty
-
- - functions that fail hard -- throwing ParseErrors
-
-  - `nextToken`:  if a string is opened but not closed
-  - `tokenize`:  if nextToken fails hard
-  - `getList`:  if a list is opened but not closed, or closed but not opened
-  - `getSExpression`:  if getList fails hard
-  - `parse`:  if nextToken or getSExpression fails hard (this covers the case where some but not all of the input is consumed, right?)
-   
- - all other failures are programmer errors -- they are believed to be impossible
-
-  - `nextToken`:  if none of the cases match
-  - `getSExpression`:  if neither an atom nor a list can be found, but the token stream is not empty
-
+ 2. assembly of tokens to form the AST (Abstract Syntax Tree)
+    - AST assembly
+    - reification -- AST holds Beagle objects
 
 
 ## Interface ##
 
+### Tokens ###
+
  - helper functions
 
-   - getAtom 
+   - `nextToken :: String -> Maybe (Token, String)`
 
-   - getList
-
-   - getSExpression
-
-   - nextToken
-
- - the data types
+ - data types
   
-   - Token
+   - `Token`
 
-   - SExpression
+   - `TokenError`
 
-   - ParseError
+ - core functions
 
- - core, public functions
+   - `tokenize :: String -> Maybe [Token]`
+      extract a list of tokens from a string
 
-   - tokenize:  extract a list of tokens from a string
-
-   - stripTokens:  remove comment and whitespace tokens from a list of tokens
+   - `stripTokens :: [Token] -> [Token]`
+      remove comment and whitespace tokens from a list of tokens
    
-   - makeSExpressions:  assemble a list of tokens into s-expressions
 
+### Parser ###
+
+ - helper functions
+  
+   - `getAtom :: [Token] -> Maybe (LispAtom, [Token])`
+
+   - `getApplication :: [Token] -> Maybe (LispApplication, [Token])`
+ 
+   - `getList :: [Token] -> Maybe (LispList, [Token])`
+
+   - `getNextForm :: [Token] -> Maybe (LispObject, [Token])`
+
+ - data types
+
+   - `ParseError`
+
+ - core functions
+
+   - `makeAst :: [Token] -> Maybe [LispObject]`
 

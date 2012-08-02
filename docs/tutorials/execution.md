@@ -10,102 +10,81 @@ does just this.
 We'll divide the process into two major stages:
 
  - parsing or string interpretation, which involves creating Beagle
-   data structures from a string
+   data structures from a string (AST construction)
 
  - evaluation, which involves transforming Beagle data structures
-   into reduced Beagle data structures
+   into reduced Beagle data structures (AST reduction)
 
-Throughout the article, we'll follow the progress of this input string,
-assuming that `(define x "new")` has already been executed:
+Throughout the article, we'll follow the progress of this input string:
 
-    (cons x ; a comment
-     (list   1 "hi there" 3))
+    (cons 4 ; a comment
+      [   1 "hi there" 3])
 
 
 ## Parsing ##
 
  - step 1: tokenization
 
-        OPEN       : '('
-        symbol     : 'cons'
-        whitespace : ' '
-        symbol     : 'x'
-        whitespace : ' '
-        comment    : ' a comment'
-        whitespace : '\n '
-        OPEN       : '('
-        symbol     : 'list'
-        whitespace : '   '
-        symbol     : 1
-        whitespace : ' '
-        string     : 'hi there'
-        whitespace : ' '
-        symbol     : '3'
-        CLOSE      : ')'
-        CLOSE      : ')'
+        OPEN-PAREN   : '('
+        symbol       : 'cons'
+        whitespace   : ' '
+        integer      : '4'
+        whitespace   : ' '
+        comment      : ' a comment'
+        whitespace   : '\n '
+        OPEN-SQUARE  : '['
+        whitespace   : '   '
+        integer      : '1'
+        whitespace   : ' '
+        string       : 'hi there'
+        whitespace   : ' '
+        integer      : '3'
+        CLOSE-SQUARE : ']'
+        CLOSE-PAREN  : ')'
 
- - step 2:  whitespace check. passes
+ - step 1.5:  whitespace check while tokenizing:  checking that two
+   of symbol/string/integer/float occur without interspersed 
+   whitespace or punctuation
 
- - step 3:  strip whitespace and comment tokens
+ - step 2:  strip whitespace and comment tokens
 
-        OPEN       : '('
-        symbol     : 'cons'
-        symbol     : 'x'
-        OPEN       : '('
-        symbol     : 'list'
-        symbol     : 1
-        string     : 'hi there'
-        symbol     : '3'
-        CLOSE      : ')'
-        CLOSE      : ')'
+        OPEN-PAREN   : '('
+        symbol       : 'cons'
+        integer      : '4'
+        OPEN-SQUARE  : '['
+        integer      : '1'
+        string       : 'hi there'
+        integer      : '3'
+        CLOSE-SQUARE : ']'
+        CLOSE-PAREN  : ')'
 
- - step 4:  build s-expressions
+ - step 3:  AST construction
 
-        SList:
-          - SSymbol: 'cons'
-          - SSymbol: 'x'
-          - SList:
-            - SSymbol: 'list'
-            - SSymbol: '1'
-            - SString: 'hi there'
-            - SSymbol: '3'
-
- - step 5:  create Beagle objects
-
-        BList:
-          - BSymbol: 'cons'
-          - BSymbol: 'x'
-          - BList:
-            - BSymbol: 'list'
-            - BNumber: 1
-            - BString: 'hi there'
-            - BNumber: 3
+        Application:
+          - Function: 'cons'
+          - arguments:
+            - Number: 4
+            - List:
+              - Number: 1
+              - String: 'hi there'
+              - Number: 3
 
 ## Evaluation ##
 
- - step 6:  macro expansion.  There are currently **no** macros in
+ - step 4:  macro expansion.  There are currently **no** macros in
    Beagle, and this may never change.
 
- - step 7:  evaluate/reduce data structure.  The evaluation rule is
-   that if it's a list, we evaluate each of the elements, and then 
+ - step 5:  evaluate/reduce data structure.  The evaluation rule is
+   that if it's a application, we evaluate each of the elements, and then 
    apply the first element as a function with the rest of the list
-   as its arguments:
+   as its arguments, so we'll need to apply `cons` to the number `4` and
+   the list `[1, 'hi there', 3]`, which results in:
 
-        BList:
-          - primitive function 'cons'
-          - BString: "new"
-          - BList:
-            - BNumber: 1
-            - BString: 'hi there'
-            - BNumber: 3
-
-  final evaluated value:
-
-        BList:
-          - BString: "new"
-          - BNumber: 1
-          - BString: 'hi there'
-          - BNumber: 3
+        List:
+          - Number: 4
+          - Number: 1
+          - String: 'hi there'
+          - Number: 3
 
 
 ## Wrap up ##

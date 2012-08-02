@@ -30,8 +30,6 @@ For more information about the evaluation rules for these forms, see [here](eval
 
    - `cdr :: [BeagleValue] -> Error BeagleValue`
  
-   - `list :: (variadic) BeagleValue(s) -> [BeagleValue]`
- 
    - `null? :: [BeagleValue] -> Boolean`
    
  - for numbers:
@@ -43,8 +41,6 @@ For more information about the evaluation rules for these forms, see [here](eval
    - `number-< :: Number -> Number -> Boolean`
  
  - general
- 
-   - `prim-type :: BeagleValue -> String`
    
    - `eq? :: a -> a -> Boolean` (where `a` is one of String, Boolean, Number, Symbol)
    
