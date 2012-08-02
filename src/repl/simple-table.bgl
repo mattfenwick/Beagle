@@ -85,7 +85,7 @@
      (lambda [table key]
        (define pair (get-pair table key))
        (cond [(null? pair) 
-              (error "ValueError" (++ "table doesn't have key" key) [])]
+              (error "ValueError" (++ "table doesn't have key " key) [])]
              [true (car (cdr pair))])))
             
 

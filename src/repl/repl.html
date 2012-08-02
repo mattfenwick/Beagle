@@ -56,8 +56,19 @@
 
  <script type="text/javascript">
 
+function isString(obj) {
+  if(obj.type !== 'list') {
+    return false;
+  }
+  return obj.value.every(function(c) {return c.type === 'char';});
+}
+ 
 
 function printer(obj) {
+  if(isString(obj)) {
+    return '"' + obj.value.map(function(c) {return c.value;}).join('') + '"';
+  }
+  
   if( obj.type === 'function' ) {
     return '<function>';
   }
@@ -75,7 +86,7 @@ function printer(obj) {
   }
   
   if( obj.type === 'error' ) {
-    return "error: " + printer(obj.errortype) + ", " + printer(obj.message) + ", trace: [" + printer(obj.trace) + "]";
+    return "error: [" + printer(obj.value) + "]";
   }
   
   if( obj.type === 'application' ) {
