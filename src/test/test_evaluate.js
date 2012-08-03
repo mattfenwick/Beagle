@@ -6,6 +6,7 @@ function testEvaluate(evaluate, funcs, data, envir, testHelper) {
         sym = data.Symbol,
         num = data.Number,
         lis = data.List,
+        ll = data.ListLiteral,
         empty = lis([]),
         str = data.makeCharList,
         app = data.Application;
@@ -88,26 +89,26 @@ function testEvaluate(evaluate, funcs, data, envir, testHelper) {
     
     
     test("set!", function() {
-    	var set = ev['set!'],
-    	    par = envir.Environment(false, {'a': 3}),
-    	    env = envir.Environment(par, {'b': 4});
-    	
-    	set(env, [sym('b'), num(12)]);
-    	deepEqual(num(12), env.getBinding('b'), "set! takes two arguments, a symbol and a value");
-    	
-    	set(par, [sym('a'), num(32)]);
-    	deepEqual(num(32), par.getBinding('a'), "and sets binding for the symbol to the value");
-    	
-    	set(env, [sym('a'), num(64)]);
-    	deepEqual(
-    	    [num(64), num(64)], 
-    	    [par.getBinding('a'), env.getBinding('a')], 
-    	    "the first binding found for that symbol will be changed"
-    	);
-    	
-    	expectExc(function() {
-    		set(env, [sym('e'), num(88)]);
-    	}, 'ValueError', "set! may not be used on undefined symbols");
+        var set = ev['set!'],
+            par = envir.Environment(false, {'a': 3}),
+            env = envir.Environment(par, {'b': 4});
+        
+        set(env, [sym('b'), num(12)]);
+        deepEqual(num(12), env.getBinding('b'), "set! takes two arguments, a symbol and a value");
+        
+        set(par, [sym('a'), num(32)]);
+        deepEqual(num(32), par.getBinding('a'), "and sets binding for the symbol to the value");
+        
+        set(env, [sym('a'), num(64)]);
+        deepEqual(
+            [num(64), num(64)], 
+            [par.getBinding('a'), env.getBinding('a')], 
+            "the first binding found for that symbol will be changed"
+        );
+        
+        expectExc(function() {
+            set(env, [sym('e'), num(88)]);
+        }, 'ValueError', "set! may not be used on undefined symbols");
 
         expectExc(function() {
             set(env, [sym('abc')]);
@@ -133,26 +134,26 @@ function testEvaluate(evaluate, funcs, data, envir, testHelper) {
       
       deepEqual(
           num(4),
-          cond(env, [lis([t, num(4)]), lis([t, str("huh?")])]), 
+          cond(env, [ll([t, num(4)]), ll([t, str("huh?")])]), 
           "'cond' looks through its arguments for a list whose first element evaluates to true"
       );
       
       deepEqual(
           str("huh?"), 
-          cond(env, [lis([sym('fsym'), sym('fsym')]), lis([t, str("huh?")])]), 
+          cond(env, [ll([sym('fsym'), sym('fsym')]), ll([t, str("huh?")])]), 
           'and evaluates and returns the second element of that list'
       );
 
       expectExc(function() {
-          cond(env, [lis([t])]);
+          cond(env, [ll([t])]);
       }, 'NumArgsError', 'lists with fewer than 2 elements are a no-no');
 
       expectExc(function() {
-          cond(env, [lis([t, t, t])]);
+          cond(env, [ll([t, t, t])]);
       }, 'NumArgsError', 'as are lists with more than 2 elements');
 
       expectExc(function() {
-          cond(env, [lis([f, num(11)])]);
+          cond(env, [ll([f, num(11)])]);
       }, 'ValueError', "watch out: 'cond' is unhappy if nothing's true");
 
     });
@@ -161,11 +162,11 @@ function testEvaluate(evaluate, funcs, data, envir, testHelper) {
     test("lambda", function() {
         var lam = ev.lambda,
             env = ev.getDefaultEnv(),
-            args1 = lis([]),
+            args1 = ll([]),
             body1 = num(4),
-            args2 = lis([sym('abc')]),
+            args2 = ll([sym('abc')]),
             body2 = sym('abc'),
-            args3 = lis([sym('q'), sym('r')]),
+            args3 = ll([sym('q'), sym('r')]),
             body3 = app(sym('+'), [sym('q'), num(4)]);
         
         var a = lam(env, [args1, body1]);
@@ -175,21 +176,21 @@ function testEvaluate(evaluate, funcs, data, envir, testHelper) {
             'lambda takes a list of symbols and a body, and returns a closure'
         );
         deepEqual(
-        	num(4),
-        	a.fapply([]),
-        	'the closure can be evaluated -- it expects a list of arguments'
+            num(4),
+            a.fapply([]),
+            'the closure can be evaluated -- it expects a list of arguments'
         );
         
         deepEqual(
-        	str('me!!'),
-        	lam(env, [args2, body2]).fapply([str('me!!')]),
-        	'the closure is evaluated in an environment with the parameters bound to its arguments'
+            str('me!!'),
+            lam(env, [args2, body2]).fapply([str('me!!')]),
+            'the closure is evaluated in an environment with the parameters bound to its arguments'
         );
         
         deepEqual(
-        	num(89),
-        	lam(env, [args3, body3]).fapply([num(85), str('unused')]),
-        	'the body can be an atom or a list'
+            num(89),
+            lam(env, [args3, body3]).fapply([num(85), str('unused')]),
+            'the body can be an atom or a list'
         );
 
         expectExc(function() {
@@ -208,7 +209,7 @@ function testEvaluate(evaluate, funcs, data, envir, testHelper) {
         }, 'TypeError', '... and every element in that list must be a symbol');
         
         expectExc(function() {
-        	lam(env, [args1, body1]).fapply([num(1)]);
+            lam(env, [args1, body1]).fapply([num(1)]);
         }, 'NumArgsError', 'the number of arguments to the closure must also be correct');
     
     });
@@ -252,7 +253,7 @@ function testEvaluate(evaluate, funcs, data, envir, testHelper) {
               [str('what?'), lis([])]
           ),
           l3 = app(sym('neg'), [num(4)]),
-          l4 = lis([num(13), str('duh')]),
+          l4 = lis([num(13), str('duh'), sym('blech')]),
           t = data.Boolean(true),
           cons = funcs.cons,
           myif = data.SpecialForm(ev['if']);
@@ -294,9 +295,9 @@ function testEvaluate(evaluate, funcs, data, envir, testHelper) {
       deepEqual(
           t,
           ev.eval(app(sym('cond'), 
-        		      [lis([t, t]), 
-        		       lis([t, sym('shouldblowup')])]), 
-        		  env),
+                      [ll([t, t]), 
+                       ll([t, sym('shouldblowup')])]), 
+                  env),
           " ... but might not do so for special forms that don't always evaluate all their arguments"
       );
           

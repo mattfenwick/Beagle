@@ -126,6 +126,7 @@ var Functions = (function (Data) {
         'boolean'     : 1,
         'symbol'      : 1,
         'list'        : 1,
+        'listliteral' : 1,
         'function'    : 1,
         'specialform' : 1,
         'application' : 1,
@@ -151,7 +152,7 @@ var Functions = (function (Data) {
             }
             
             if(type in BUILT_INS) {
-            	throw Data.FunctionError("ValueError", 'non built-in type', type, 'datum', "1st arg");
+                throw Data.FunctionError("ValueError", 'non built-in type', type, 'datum', "1st arg");
             }
             
             return Data.Datum(type, value);

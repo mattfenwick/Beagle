@@ -53,6 +53,12 @@ var Data = (function () {
         this.value = value;
         this.type = 'list';
     }
+    
+    
+    function ListLiteral(elems) {
+        this.value = elems;
+        this.type = 'listliteral';
+    }
 
 
     function MyFunction(argTypes, name, code) {
@@ -138,6 +144,9 @@ var Data = (function () {
         },
         
         // 'syntax'
+        'ListLiteral': function(elems) {
+            return new ListLiteral(elems);
+        },
         'Application': function(op, args) {
             return new Application(op, args);
         },

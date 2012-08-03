@@ -100,7 +100,8 @@ function testParser(reify, data, tokens, testHelper) {
             t6 = [os, abc, os, abc, cs, abc, cs, os, abc],
             t7 = [os, abc, os, abc, cs, abc],
             t8 = [os, os, os, os, cs, cs, cs, cs, abc],
-            t9 = [os, os, os, os, cs, cs, cs];
+            t9 = [os, os, os, os, cs, cs, cs],
+            ll = Data.ListLiteral;
 
 
         var t = reify.getList([]);
@@ -116,7 +117,7 @@ function testParser(reify, data, tokens, testHelper) {
 
         var p = reify.getList([os, cs]);
         deepEqual({
-            result: list([]),
+            result: ll([]),
             rest: []
         }, p, "[] is parsed as an empty list");
 
@@ -127,15 +128,15 @@ function testParser(reify, data, tokens, testHelper) {
 
         var q = reify.getList([os, abc, cs, abc]);
         deepEqual({
-            'result': list([sym('abc')]), 
+            'result': ll([sym('abc')]), 
             'rest':  [abc]
         }, q, "a list extends from the opening '[' to the next ']', unless ...");
 
         var r = reify.getList(t6);
         deepEqual({
-            'result': list([
+            'result': ll([
                 sym('abc'),
-                list([sym('abc')]),
+                ll([sym('abc')]),
                 sym('abc')
             ]),
             'rest': t6.slice(7)
@@ -147,10 +148,10 @@ function testParser(reify, data, tokens, testHelper) {
       
         var v = reify.getList(t8);
         deepEqual({
-            'result': list([
-                list([
-                    list([
-                        list([])])])]),
+            'result': ll([
+                ll([
+                    ll([
+                        ll([])])])]),
             'rest': t8.slice(8)
         }, v, "lists may be arbitrarily deeply nested ...");
       

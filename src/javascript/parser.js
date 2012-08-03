@@ -104,7 +104,7 @@ var Parser = (function(Data) {
     
     function getList(tokens) {
         function callback(objs) {
-            return Data.List(objs);
+            return Data.ListLiteral(objs);
         }
         return getDelimited('open-square', 'close-square', tokens, callback);
     }

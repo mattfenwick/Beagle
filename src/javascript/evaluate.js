@@ -80,8 +80,8 @@ var Evaluate = (function (Data, Functions, Environment) {
             test;
         
         for(i = 0; i < args.length; i++) {
-            typeCheck('list', args[i].type, 'cond', "argument " + (i + 1));
-            argsCheck(2, args[i].value.length, 'arguments to cond must be lists of length 2');
+            typeCheck('listliteral', args[i].type, 'cond', "argument " + (i + 1));
+            argsCheck(2, args[i].value.length, 'arguments to cond must be list literals of length 2');
             
             test = evaluate(args[i].value[0], env);
             typeCheck('boolean', test.type, 'cond', "condition of argument " + (i + 1));
@@ -97,7 +97,7 @@ var Evaluate = (function (Data, Functions, Environment) {
     
     
     function extractArgNames(args) {
-        typeCheck('list', args.type, 'lambda/special', 'first argument');
+        typeCheck('listliteral', args.type, 'lambda/special', 'first argument');
 
         var names = [],
             i = 1;
@@ -124,7 +124,7 @@ var Evaluate = (function (Data, Functions, Environment) {
 
     function lambda(env, lam_args) {
         if( lam_args.length < 2 ) {
-            throw new SpecialFormError("NumArgsError", "list of arguments and at least 1 body form",
+            throw new SpecialFormError("NumArgsError", "list literal of arguments and at least 1 body form",
                       "missing one or both", "lambda/special", "body may not be empty");
         }
         
@@ -238,12 +238,12 @@ var Evaluate = (function (Data, Functions, Environment) {
     }
     
     
-    function evaluateList(sexpr, env) {
-    	var elems = sexpr.value.map(function(e) {
-    		return evaluate(e, env);
-    	});
-    	
-    	return Data.List(elems);
+    function evaluateListLiteral(sexpr, env) {
+        var elems = sexpr.value.map(function(e) {
+            return evaluate(e, env);
+        });
+        
+        return Data.List(elems);
     }
 
 
@@ -252,7 +252,8 @@ var Evaluate = (function (Data, Functions, Environment) {
         'char'         :  1,
         'boolean'      :  1,
         'function'     :  1,
-        'specialform'  :  1
+        'specialform'  :  1,
+        'list'         :  1
     };
 
 
@@ -286,8 +287,8 @@ var Evaluate = (function (Data, Functions, Environment) {
             return evaluateApplication(sexpr, env);
         }
         
-        if (sexpr.type === 'list') {
-        	return evaluateList(sexpr, env);
+        if (sexpr.type === 'listliteral') {
+            return evaluateListLiteral(sexpr, env);
         }
 
         return evaluateAtom(sexpr, env);
