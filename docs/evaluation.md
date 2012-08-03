@@ -1,14 +1,39 @@
 # Evaluation #
 --------------
 
-Beagle has a small number of special forms that each has its own evaluation 
-rule.  Other than these, evaluation proceeds "normally".
+## Abstract syntax ## 
 
-The typical Beagle evaluation scheme is a mutually recursive cycle of 
-evaluation and function application.
+    Beagle     :  Expression(+)
+    
+    Expression :  Application  |  ListLiteral  |  Symbol
+    
+    Application:  Expression Expression(*) 
+    
+    ListLiteral:  Expression(*)
+    
+    Symbol     :  -- this is an atom --
 
-We'll use a function called `beval` (for *B*eagle *eval*) that performs 
-evaluation, mapping Beagle objects to Beagle objects.
+
+
+## Informal semantics ##
+
+ - Beagle[[Expression]]: evaluates each expression, in order, and returns ... what?  the last one?
+   to start off, an environment is passed in ... each expression may change the environment, which
+   is then passed to the next one ... should probably add in concept of statements here
+   
+ - Expression[[E E(*)]]: this is called application.  The first expression must evaluate to either
+   a function or a special form; otherwise it's a type error.  If it's a special form, the arguments
+   are passed unevaluated and it is responsible for evaluating them and coming up with a result.
+   If it's a function, the arguments are evaluated in order (possibly changing the environment, 
+   which is passed sequentially), and then the function is applied to the arguments.  The return
+   value is then the return value of the application of the function/special form.
+   
+ - Expression[[ListLiteral]]: each of the elements of the list literal are evaluate in order (possibly
+   changing the environment, which is threaded through them), and the output elements returned
+   in a list.
+   
+ - Expression[[Symbol]]: the symbol is looked up in its enclosing lexical environments and its bound
+   value returned.  If no binding is found, that's an error (compile/runtime?)
 
 
 ## Special forms ##
@@ -51,43 +76,6 @@ evaluation, mapping Beagle objects to Beagle objects.
            
            
            
-## Normal evaluation ##
+## Evaluation of values##
 
-Some Beagle objects are self-evaluating.  This means that `beval x = x`.
-Here are the self-evaluating objects:
-
- - strings
- 
- - numbers
- 
- - boolean
-
- - functions
- 
- - special forms
- 
- 
-However, symbols are not self-evaluating.  To evaluate a symbol, the name
-is looked up in the current lexical environment.  If a binding for the symbol
-is found in the innermost scope, the value is returned.  Otherwise, the 
-procedure repeats itself with the next enclosing scope.  If no binding for
-the symbol is found anywhere, an error is **returned??/thrown??/signaled??**.
-
-
- 
-Other: how are instances of user-defined types evaluated???
- 
- 
- 
-So that covers single objects.  Beagle also evaluates lists.  To evaluate a list,
-the first element of the list is evaluated.  (Note that the empty list can not
-be evaluated -- doing so is an error).  There are two valid possibilities for
-the first element:
-
- - it's a special form:  the appropriate evaluation rules are found and used
- 
- - it's a function:  all arguments to the function are evaluated and the function
-   is applied to its arguments
-   
-Thus, the first element *must* evaluate to a function or a special form.
-
+Is this necessary?  This may not be possible in future versions.

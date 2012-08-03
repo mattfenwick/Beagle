@@ -11,8 +11,6 @@ For more information about the evaluation rules for these forms, see [here](eval
  
  - `cond` 
  
- - `if` (*slated for removal; use `cond` instead)
- 
  - `eval`
  
  - `lambda`
