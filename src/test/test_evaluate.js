@@ -17,7 +17,7 @@ function testEvaluate(evaluate, funcs, data, envir, testHelper) {
     test("default environment", function() {
         var env = ev.getDefaultEnv();
         var names = [
-            'define', 'lambda', 'quote', 'eval', 'true', 'false',
+            'define', 'lambda', 'true', 'false',
             'cons', 'car', 'cdr', 'eq?', '+', 'neg', 'set!',
             'cond', 'null?', 'number-<', 'datum', 'type', 'value'
         ];
@@ -31,25 +31,8 @@ function testEvaluate(evaluate, funcs, data, envir, testHelper) {
             bindings++;
         }
 
-        equal(19, bindings, 'there are 19 built-in special forms and functions');
-        equal(19, names.length, 'and we need to test for all of them');
-    });
-
-
-    test("quote", function() {
-        var q = ev.quote,
-            env = ev.getDefaultEnv();
-
-        deepEqual(sym('ghi'), q(env, [sym('ghi')]), "'quote' takes one argument and returns it unevaluated");
-
-        expectExc(function() {
-            q(env, []);
-        }, 'NumArgsError', 'too few args: error');
-
-        expectExc(function() {
-            q(env, [sym('def'), num(32)]);
-        }, 'NumArgsError', 'too many: error');
-
+        equal(17, bindings, 'there are 17 built-in special forms, constants, and functions');
+        equal(17, names.length, 'and we need to test for all of them');
     });
     
     
@@ -220,22 +203,6 @@ function testEvaluate(evaluate, funcs, data, envir, testHelper) {
         
         deepEqual(data.Boolean(true), env.getBinding('true'), 'booleans are predefined as symbols:  both true ...');
         deepEqual(data.Boolean(false), env.getBinding('false'), '... and false');
-    });
-        
-
-    test("Beagle eval primitive", function() {
-        var bev = ev.beagleEval,
-            env = ev.getDefaultEnv();
-
-        ok(false, "this should be a function, not a special form");
-
-        expectExc(function() {
-            bev(env, []);
-        }, 'NumArgsError', 'eval expects exactly 1 argument: ');
-
-        expectExc(function() {
-            bev(env, [num(3), num(2)]);
-        }, 'NumArgsError', 'no more, no less');
     });
     
     

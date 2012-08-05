@@ -157,24 +157,6 @@ var Evaluate = (function (Data, Functions, Environment) {
 
         return Data.Function(makeArray(names.length, null), 'closure', closure);
     }
-    
-    
-    function quote(env, args) {
-        argsCheck(1, args.length, 'quote');
-
-        return args[0];
-    }
-
-    
-    /////////// core functions
-    
-    function beagleEval(env, args) {
-        argsCheck(1, args.length, 'eval');
-        
-        var sexpr = evaluate(args[0], env);
-
-        return evaluate(sexpr, env);
-    }
 
 
     ///////////
@@ -188,10 +170,6 @@ var Evaluate = (function (Data, Functions, Environment) {
         bindings['set!']   = Data.SpecialForm(setBang);
         bindings['cond']   = Data.SpecialForm(cond);
         bindings['lambda'] = Data.SpecialForm(lambda);
-        bindings['quote']  = Data.SpecialForm(quote);
-
-        // the special form that should be a function
-        bindings['eval']   = Data.SpecialForm(beagleEval);
         
         // the boolean constants
         bindings['true']   = Data.Boolean(true);
@@ -302,8 +280,6 @@ var Evaluate = (function (Data, Functions, Environment) {
         'define'       :  define,
         'set!'         :  setBang,
         'lambda'       :  lambda,
-        'quote'        :  quote,
-        'beagleEval'   :  beagleEval,
         'cond'         :  cond
     };
 
