@@ -46,7 +46,7 @@ This is often broken down into 3 main steps:
 For the rest of this article, we'll use this simple example to demonstrate
 import concepts:
 
-    (define x "hi")
+    (define x 14)
 
 
 
@@ -54,17 +54,25 @@ import concepts:
 
 Here are Beagle's token definitions:
 
-    STRING:         "[^\"]*"
+    STRING       :  "[^\"]*"
 
-    SYMBOL:         [^;\"\(\)\s]+
+    SYMBOL       :  [a-zA-Z\!\@\#\$\%\^\&\*\-\_\=\+\?\/\!\<\>][a-zA-Z0-9\!\@\#\$\%\^\&\*\-\_\=\+\?\/\!\<\>]*
 
-    OPEN:           (
+    OPEN-PAREN   :  (
 
-    CLOSE:          )
+    CLOSE-PAREN  :  )
+    
+    OPEN-SQUARE  :  [
+    
+    CLOSE-SQUARE :  ]
 
-    WHITESPACE:     /^\s+/
+    WHITESPACE   :  \s+
 
-    COMMENT:        /^;+(.*)/
+    COMMENT      :  ;+(.*)
+    
+    FLOAT        :  (?:\d*\.\d+|\d+\.\d*)
+    
+    INTEGER      :  \d+
 
 *(We'll write token names in all caps to distinguish them).*
 
@@ -74,7 +82,7 @@ of tokens.  So, using the above token definitions, we'll go through the string
 
 As it happens, there are 7 tokens:
 
-    ['(', 'define', ' ', 'x', ' ', '"hi"', ')']
+    ['(', 'define', ' ', 'x', ' ', '14', ')']
 
 But how do we get that answer?
 
@@ -89,7 +97,7 @@ But how do we get that answer?
 
 5. `WHITESPACE` (see 3.)
 
-6. if it starts with a `"` mark, it must be a `STRING` token
+6. if it's all digits, it's an Integer
 
 7. a `)` is a CLOSE
 
@@ -105,7 +113,7 @@ We don't need the comments or the whitespace for syntac analysis (although they 
 useful to a tool that generates web-based documentation from a source code file, for
 instance), so let's get rid of them, leaving us with these tokens:
 
-    ["(", "define", "x", "4", ")"]
+    ["(", "define", "x", "14", ")"]
 
 
 
@@ -113,54 +121,26 @@ instance), so let's get rid of them, leaving us with these tokens:
 
 In this step, we assemble the tokens according to our grammar, which is:
 
-    BeagleCode:     SExpression(+)
+    Beagle     :  Expression(+)
+    
+    Expression :  Application  |  List  |  SYMBOL  |  NUMBER  |  CHAR
+    
+    Application:  '('  Expression Expression(*)  ')'
+    
+    List       :  '['  Expression(*)  ']'
+    
 
-    SExpression:    Atom  |  List
+*(Note that strings are expanded into lists of chars during syntactic analysis).*
 
-    List:           OPEN  SExpression(*)  CLOSE
-
-    Atom:           STRING  |  SYMBOL
-
-*(Remember that tokens are in all caps -- these productions have only leading caps).*
-
-Basically, the grammar says that Beagle code is a bunch of s-expressions,
-and that s-expressions can be atoms or lists.  An atom is either a string or a 
-symbol, and a list is an open-paren and a close-paren surrounding any number
-of s-expressions (so the grammar is recursive).
+Basically, the grammar says that Beagle code is a bunch of expressions,
+and that expressions can be atoms, applications or lists.  An atom is either a 
+symbol, number or char, an application is delimited by parentheses, and a list 
+is delimited by square brackets.  Since Applications and Lists can contain 
+Expressions, the grammar is recursive.
 
 We can match this grammar to our tokens using a strategy called "recursive descent".
-Let's try it ourselves:
 
-    1. try BeagleCode
-     2. try SExpression
-      3. try Atom
-       4. try STRING ... failed
-       5. try SYMBOL ... failed
-      6. try List
-       7. try OPEN ... succeeded (matched `(`)
-       8. try SExpression
-        9. try Atom
-         10. try STRING ... failed
-         11. try SYMBOL ... succeeded (matched `define`)
-       12. try SExpression
-        13. try ATOM
-         14. try STRING ... failed
-         15. try SYMBOL ... succeeded (matched `x`)
-       16. try SExpression
-        17. try ATOM
-         18. try STRING ... succeeded (matched `hi`)
-       19. try SExpression
-        20. try ATOM
-         21. try STRING ... failed
-         22. try SYMBOL ... failed
-        21. try LIST
-         23. try OPEN ... failed
-       24. try CLOSE ... succeeded (matched `)`)
-      <matched List>
-     <matched SExpression>
-    <matched BeagleCode> 
-
-Cool, it worked!  Our parse tree now looks like: 
+It worked!  Our parse tree now looks like: 
 
     list: 
       symbol: define 

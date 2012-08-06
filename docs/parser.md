@@ -20,6 +20,7 @@ Loosely using [BNF](http://en.wikipedia.org/wiki/Backus%E2%80%93Naur_Form):
     List:           '['  SExpression(*)  ']'
 
     Application:    '('  SExpression(+)  ')'
+    
 
 Also, comments are indicated by `;` (when not in a string) and extend to the end of the line.
 
@@ -128,8 +129,6 @@ Also, comments are indicated by `;` (when not in a string) and extend to the end
   
    - `Token`
 
-   - `TokenError`
-
  - core functions
 
    - `tokenize :: String -> Maybe [Token]`
@@ -142,20 +141,30 @@ Also, comments are indicated by `;` (when not in a string) and extend to the end
 ### Parser ###
 
  - helper functions
-  
-   - `getAtom :: [Token] -> Maybe (LispAtom, [Token])`
-
-   - `getApplication :: [Token] -> Maybe (LispApplication, [Token])`
  
-   - `getList :: [Token] -> Maybe (LispList, [Token])`
+   - `expandString :: String -> ASTList ASTChar`
+  
+   - `getAtom :: [Token] -> Maybe (ASTAtom, [Token])`
 
-   - `getNextForm :: [Token] -> Maybe (LispObject, [Token])`
+   - `getApplication :: [Token] -> Maybe (Application, [Token])`
+ 
+   - `getList :: [Token] -> Maybe (ASTList, [Token])`
+
+   - `getNextForm :: [Token] -> Maybe (ASTObject, [Token])`
 
  - data types
 
    - `ParseError`
    
-   - `ASTNode`
+   - `ASTChar`
+   
+   - `ASTList`
+   
+   - `ASTNumber`
+   
+   - `Symbol`
+   
+   - `Application`
 
  - core functions
 
