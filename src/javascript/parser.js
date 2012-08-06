@@ -16,40 +16,67 @@ var Parser = (function() {
     };
     
     
-    var AST_TYPES = {
-        'number'     : 1,
-        'symbol'     : 1,
-        'char'       : 1,
-        'list'       : 1,
-        'application': 1
-    };
+    function ASTNumber(value) {
+        this.asttype = 'number';
+        this.value = Number(value);
+    }
     
-    function ASTNode(asttype, value) {
-        if(!(asttype in AST_TYPES)) {
-            throw new ParseError('invalid ASTNode type', asttype);
-        }
-        this.asttype = asttype;
+    function Symbol(value) {
+        if(typeof(value) !== 'string') {
+            throw new ParseError("Symbol needs a string", value);
+        };
+        this.asttype = 'symbol';
         this.value = value;
+    }
+    
+    function ASTChar(value) {
+        if(typeof(value) !== 'string') {
+            throw new ParseError("Symbol needs a string", value);
+        };
+        this.asttype = 'char';
+        this.value = value;
+    }
+    
+    function ASTList(elems) {
+        if(elems.length === undefined) {
+            throw new ParseError("ASTList needs an array", elems);
+        }
+        this.asttype = 'list';
+        this.elements = elems;
+    }
+    
+    function Application(op, args) {
+        if(!op) {
+            throw new ParseError("an application needs an operator (got nothing)", [op, args]);
+        }
+        if(args.length === undefined) {
+            throw new ParseError("Application needs an array of arguments (2nd arg)", args);
+        }
+        this.asttype = 'application';
+        this.operator = op;
+        this.arguments = args;
     }
     
     
 /////////////////////// functions
     
-    // String -> [ASTNode Char]
+    // String -> ASTList ASTChar
     function expandString(str) {
         // this assumes that 'abcd'.split('') returns
         //   an array of length 4
-        return str.split('').map(function (x) {
-            return new ASTNode('char', x);
+        var chars = str.split('').map(function (x) {
+            return new ASTChar(x);
         });
+        
+        return new ASTList(chars);
     }
     
 
     var TOKEN_OPS = {
-        'integer' : function(x) {return new ASTNode('number', Number(x));},
-        'float'   : function(x) {return new ASTNode('number', Number(x));},
-        'string'  : function(x) {return new ASTNode('list', expandString(x));},
-        'symbol'  : function(x) {return new ASTNode('symbol', x);}
+        'integer' : function(x) {return new ASTNumber(x);},
+        'float'   : function(x) {return new ASTNumber(x);},
+        'string'  : function(x) {return expandString(x);},
+        'symbol'  : function(x) {return new Symbol(x);}
     };
 
     // [Token] -> Maybe (ASTNode, [Token])
@@ -122,10 +149,7 @@ var Parser = (function() {
     
     function getApplication(tokens) {
         function callback(objs) {
-            if(!objs[0]) {
-                throw new ParseError("an application needs an operator (got nothing)", objs);
-            }
-            return new ASTNode('application', {'operator': objs[0], 'arguments': objs.slice(1)});
+            return new Application(objs[0], objs.slice(1));
         }
         return getDelimited('open-paren', 'close-paren', tokens, callback);
     }
@@ -133,7 +157,7 @@ var Parser = (function() {
     
     function getList(tokens) {
         function callback(objs) {
-            return new ASTNode('list', objs);
+            return new ASTList(objs);
         }
         return getDelimited('open-square', 'close-square', tokens, callback);
     }
@@ -192,12 +216,24 @@ var Parser = (function() {
 
 
     return {
+        // data
         'ParseError': function (m, v) {
             return new ParseError(m, v);
         },
-        
-        'ASTNode': function(asttype, value) {
-            return new ASTNode(asttype, value);
+        'ASTNumber': function(x) {
+            return new ASTNumber(x);
+        },
+        'ASTChar': function(x) {
+            return new ASTChar(x);
+        },
+        'ASTList': function(xs) {
+            return new ASTList(xs);
+        },
+        'Symbol': function(x) {
+            return new Symbol(x);
+        },
+        'Application': function(op, args) {
+            return new Application(op, args);
         },
         
         // helper functions

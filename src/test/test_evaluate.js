@@ -7,7 +7,11 @@ function testEvaluate(evaluate, parser, data, envir, testHelper) {
         lis = data.List,
         empty = lis([]),
         str = data.makeCharList,
-        astn = parser.ASTNode;
+        anum = parser.ASTNumber,
+        sym = parser.Symbol,
+        alist = parser.ASTList,
+        app = parser.Application,
+        astr = parser.expandString;
     
     module("Evaluate");
     
@@ -40,31 +44,31 @@ function testEvaluate(evaluate, parser, data, envir, testHelper) {
             env = envir.Environment(par, {'b': 4});
 
         ok(!env.hasBinding('e'), 'define takes two arguments, a symbol and a string,');
-        def(env, [astn('symbol', 'e'), astn('number', 14)]);
+        def(env, [sym('e'), anum('14')]);
         deepEqual(env.getBinding('e'), num(14), 'and creates a binding for that symbol');
       
         expectExc(function() {
-            def(env, [astn('symbol', 'b'), astn('number', 13)]);
+            def(env, [sym('b'), anum('13')]);
         }, 'ValueError', "once created, bindings cannot be changed");
         equal(4, env.getBinding('b'), 'the previous value is still visible');
         
         equal(3, env.getBinding('a'), 'bindings are visible in nested scopes');
 
-        def(env, [astn('symbol', 'a'), astn('list', parser.expandString("derr"))]);
+        def(env, [sym('a'), astr("derr")]);
         deepEqual(str("derr"), env.getBinding('a'), "unless they're shadowed:");
         ok(env.hasOwnBinding('a'), 'shadowing occurs when both the nested scope ...');
         ok(par.hasOwnBinding('a'), '*and* the parent scope have bindings for the same symbol');
 
         expectExc(function() {
-            def(env, [astn('symbol', 'abc')]);
+            def(env, [sym('abc')]);
         }, 'NumArgsError', 'too few arguments throws an exception ...');
 
         expectExc(function() {
-            def(env, [astn('symbol', 'def'), empty, empty]);
+            def(env, [sym('def'), alist([]), alist([])]);
         }, 'NumArgsError', 'too many arguments is also a problem');
 
         expectExc(function() {
-            def(env, [astn('number', 11), num(12)]);
+            def(env, [anum('11'), num(12)]);
         }, 'TypeError', 'the first argument must be a Beagle symbol');
     });
     
@@ -74,13 +78,13 @@ function testEvaluate(evaluate, parser, data, envir, testHelper) {
             par = envir.Environment(false, {'a': 3}),
             env = envir.Environment(par, {'b': 4});
         
-        set(env, [astn('symbol', 'b'), astn('number', 12)]);
+        set(env, [sym('b'), anum(12)]);
         deepEqual(num(12), env.getBinding('b'), "set! takes two arguments, a symbol and a value");
         
-        set(par, [astn('symbol', 'a'), astn('number', 32)]);
+        set(par, [sym('a'), anum(32)]);
         deepEqual(num(32), par.getBinding('a'), "and sets binding for the symbol to the value");
         
-        set(env, [astn('symbol', 'a'), astn('number', 64)]);
+        set(env, [sym('a'), anum(64)]);
         deepEqual(
             [num(64), num(64)], 
             [par.getBinding('a'), env.getBinding('a')], 
@@ -88,19 +92,19 @@ function testEvaluate(evaluate, parser, data, envir, testHelper) {
         );
         
         expectExc(function() {
-            set(env, [astn('symbol', 'e'), astn('number', 88)]);
+            set(env, [sym('e'), anum(88)]);
         }, 'ValueError', "set! may not be used on undefined symbols");
 
         expectExc(function() {
-            set(env, [astn('symbol', 'abc')]);
+            set(env, [sym('abc')]);
         }, 'NumArgsError', 'remember that it takes two arguments');
 
         expectExc(function() {
-            set(env, [astn('symbol', 'def'), empty, empty]);
+            set(env, [sym('def'), empty, empty]);
         }, 'NumArgsError', '... no more, no less');
 
         expectExc(function() {
-            set(env, [astn('number', 11), astn('number', 12)]);
+            set(env, [anum(11), anum(12)]);
         }, 'TypeError', 'and that the first argument must be a Beagle symbol');
     });
     
@@ -108,8 +112,8 @@ function testEvaluate(evaluate, parser, data, envir, testHelper) {
     test("cond", function() {
       var cond = ev['cond'],
           env = ev.getDefaultEnv(),
-          ts = astn('symbol', 'true'),
-          fs = astn('symbol', 'false'),
+          ts = sym('true'),
+          fs = sym('false'),
           t = Data.Boolean(true),
           f = Data.Boolean(false);
       
@@ -117,26 +121,26 @@ function testEvaluate(evaluate, parser, data, envir, testHelper) {
       
       deepEqual(
           num(4),
-          cond(env, [astn('list', [ts, astn('number', 4)]), astn('list', [ts, str("huh?")])]), 
+          cond(env, [alist([ts, anum(4)]), alist([ts, astr("huh?")])]), 
           "'cond' looks through its arguments for a list whose first element evaluates to true"
       );
       
       deepEqual(
           str("huh?"), 
-          cond(env, [astn('list', [astn('symbol', 'fsym'), astn('symbol', 'fsym')]), astn('list', [ts, astn('list', parser.expandString("huh?"))])]), 
+          cond(env, [alist([sym('fsym'), sym('fsym')]), alist([ts, astr("huh?")])]), 
           'and evaluates and returns the second element of that list'
       );
 
       expectExc(function() {
-          cond(env, [astn('list', [t])]);
+          cond(env, [alist([t])]);
       }, 'NumArgsError', 'lists with fewer than 2 elements are a no-no');
 
       expectExc(function() {
-          cond(env, [astn('list', [t, t, t])]);
+          cond(env, [alist([t, t, t])]);
       }, 'NumArgsError', 'as are lists with more than 2 elements');
 
       expectExc(function() {
-          cond(env, [astn('list', [fs, astn('number', 11)])]);
+          cond(env, [alist([fs, anum(11)])]);
       }, 'ValueError', "watch out: 'cond' is unhappy if nothing's true");
 
     });
@@ -145,12 +149,12 @@ function testEvaluate(evaluate, parser, data, envir, testHelper) {
     test("lambda", function() {
         var lam = ev.lambda,
             env = ev.getDefaultEnv(),
-            args1 = astn('list', []),
-            body1 = astn('number', 4),
-            args2 = astn('list', [astn('symbol', 'abc')]),
-            body2 = astn('symbol', 'abc'),
-            args3 = astn('list', [astn('symbol', 'q'), astn('symbol', 'r')]),
-            body3 = astn('application', {'operator': astn('symbol', '+'), 'arguments': [astn('symbol', 'q'), astn('number', 4)]});
+            args1 = alist([]),
+            body1 = anum(4),
+            args2 = alist([sym('abc')]),
+            body2 = sym('abc'),
+            args3 = alist([sym('q'), sym('r')]),
+            body3 = app(sym('+'), [sym('q'), anum(4)]);
         
         var a = lam(env, [args1, body1]);
         deepEqual(
@@ -184,11 +188,11 @@ function testEvaluate(evaluate, parser, data, envir, testHelper) {
             'but it may have multiple body forms (but at least 1)');
 
         expectExc(function() {
-            lam(env, [astn('number', '11'), body1]);
+            lam(env, [anum('11'), body1]);
         }, 'TypeError', 'the first argument must be a list');
 
         expectExc(function() {
-            lam(env, [astn('list', [astn('number', '13')]), body1])
+            lam(env, [alist([anum('13')]), body1])
         }, 'TypeError', '... and every element in that list must be a symbol');
         
         expectExc(function() {
@@ -208,19 +212,16 @@ function testEvaluate(evaluate, parser, data, envir, testHelper) {
     
     test("js evaluate", function() {
       var env = ev.getDefaultEnv(),
-          int_ = astn('number', 31),
-          str1 = astn('list', parser.expandString("abcde")),
-          sym1 = astn('symbol', 'cons'),
-          l1 = astn('application', 
-              {'operator': astn('symbol', 'car'),
-               'arguments': [astn('list', [astn('number', 87)])]}),
-          l2 = astn('application',
-              {'operator': astn('symbol', 'cons'), 'argumments': [astn('number', 32), astn('list', [])]}),
-          l3 = astn('application', {'operator': astn('symbol', 'neg'), 'arguments': [astn('number', 4)]}),
-          l4 = astn('list', [astn('number', 13), astn('list', parser.expandString('duh')), astn('symbol', 'lambda')]),
-          ts = astn('symbol', 'true'),
-          appSf = astn('application', {'operator': astn('symbol', 'cond'), 'arguments': [astn('list', [ts, ts])]}),
-          ts = astn('symbol', 'true'),
+          int_ = anum(31),
+          str1 = astr("abcde"),
+          sym1 = sym('cons'),
+          l1 = app(sym('car'), [alist([anum(87)])]),
+          l2 = app(sym('cons'), [anum(32), alist([])]),
+          l3 = app(sym('neg'), [anum(4)]),
+          l4 = alist([anum(13), astr('duh'), sym('lambda')]),
+          ts = sym('true'),
+          appSf = app(sym('cond'), [alist([ts, ts])]),
+          ts = sym('true'),
           t = data.Boolean(true);
           
       deepEqual(num(31), ev.eval(int_, env), "AST node types: 1) numbers -> Lisp number,");
@@ -236,30 +237,24 @@ function testEvaluate(evaluate, parser, data, envir, testHelper) {
       deepEqual(t, ev.eval(appSf, env), "6) special form application -> apply special form to *unevaluated* arguments");
 
       expectExc(function() {
-          ev.eval(astn('symbol', 'blarghabag'), env);
+          ev.eval(sym('blarghabag'), env);
       }, 'UndefinedVariableError', 'evaluating a symbol with no binding throws an exception');
     
       deepEqual(num(-4), ev.eval(l3, env), "in an Application, the 1st element is a function/specialform which is applied to the remaining elements");
-
-      expectExc(function() {
-          ev.eval(astn('application', {'operator': false, 'arguments': []}), env);
-      }, 'ValueError', 'trying to create an empty Application throws an exception');
     
       deepEqual(
           t,
-          ev.eval(astn('application', {'operator': astn('symbol', 'null?'), 'arguments': [astn('list', [])]}), env),
+          ev.eval(app(sym('null?'), [alist([])]), env),
           'for function applications, the arguments are evaluated before the function is applied'
       );
 
       expectExc(function() {
-          ev.eval(astn('application', {'operator': astn('symbol', 'cons'), 'arguments': [astn('symbol', 'shouldblowup'), lis([])]}), env);
+          ev.eval(app(sym('cons'), [sym('shouldblowup'), lis([])]), env);
       }, 'UndefinedVariableError', 'thus, passing an unbound symbol to a function throws an exception ...');
 
       deepEqual(
           t,
-          ev.eval(astn('application', {'operator': astn('symbol', 'cond'), 
-                      'arguments': [astn('list', [ts, ts]), astn('list', [ts, astn('symbol', 'couldblowup')])]}), 
-                  env),
+          ev.eval(app(sym('cond'), [alist([ts, ts]), alist([ts, sym('couldblowup')])]), env),
           " ... but might not do so for special forms that don't always evaluate all their arguments"
       );
     });

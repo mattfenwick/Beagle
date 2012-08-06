@@ -3,13 +3,12 @@ function testParser(parse, tokens, testHelper) {
     module("AST construction");
 
     var tok = tokens.Token,
-        astn = parse.ASTNode,
-        app = function(op, args) {return astn('application', {'operator': op, 'arguments': args});},
-        list = function(x) {return astn('list', x);},
-        ch  = function(x) {return astn('char', x);},
-        sym = function(x) {return astn('symbol', x);},
-        num = function(x) {return astn('number', x);},
-        str = function(x) {return astn('list', parse.expandString(x));},
+        app = parse.Application,
+        list = parse.ASTList,
+        ch  = parse.ASTChar,
+        sym = parse.Symbol,
+        num = parse.ASTNumber,
+        str = parse.expandString,
         expExc = testHelper.expectException,
         op = tok('open-paren', '('),
         os = tok('open-square', '['),
@@ -32,7 +31,7 @@ function testParser(parse, tokens, testHelper) {
     
 
     test("applications", function () {
-        expect(4);
+        expect(6);
 
         var list1 = [
                 op,
@@ -71,6 +70,10 @@ function testParser(parse, tokens, testHelper) {
         expExc(function() {
             parse.getNextForm([op, cp]);
         }, 'ParseError', 'Application needs a function or special form -- cannot be empty');
+
+        expExc(function() {
+            app(false, []);
+        }, 'ParseError', 'trying to create an empty Application throws an exception');
     });
 
     
@@ -165,15 +168,15 @@ function testParser(parse, tokens, testHelper) {
     
     
     test("makeAST", function() {
-    	var myTokens = [op, tok('symbol', '+'), os, tok('integer', '14'), tok('float', '23.2'), cs, tok('string', 'yes'), cp],
-    	    myRes = [app(sym('+'), [
-    	                       list([num(14), num(23.2)]),
-    	                       str('yes')])];
-    	
-    	deepEqual(myRes,
-    	    parse.makeAST(myTokens),
-    	    'to sum it up:  the AST contains nodes of applications, lists, numbers, symbols, and chars'
-    	);
+        var myTokens = [op, tok('symbol', '+'), os, tok('integer', '14'), tok('float', '23.2'), cs, tok('string', 'yes'), cp],
+            myRes = [app(sym('+'), [
+                               list([num(14), num(23.2)]),
+                               str('yes')])];
+        
+        deepEqual(myRes,
+            parse.makeAST(myTokens),
+            'to sum it up:  the AST contains nodes of applications, lists, numbers, symbols, and chars'
+        );
     });
 
 }

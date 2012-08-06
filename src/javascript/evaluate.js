@@ -81,13 +81,13 @@ var Evaluate = (function (Data, Functions, Environment) {
         
         for(i = 0; i < args.length; i++) {
             typeCheck('list', args[i].asttype, 'cond', "argument " + (i + 1));
-            argsCheck(2, args[i].value.length, 'arguments to cond must be lists of length 2');
+            argsCheck(2, args[i].elements.length, 'arguments to cond must be lists of length 2');
             
-            test = evaluate(args[i].value[0], env);
+            test = evaluate(args[i].elements[0], env);
             typeCheck('boolean', test.type, 'cond', "condition of argument " + (i + 1));
             
             if(test.value) {
-                return evaluate(args[i].value[1], env);
+                return evaluate(args[i].elements[1], env);
             }
         }
         
@@ -102,7 +102,7 @@ var Evaluate = (function (Data, Functions, Environment) {
         var names = [],
             i = 1;
 
-        args.value.map(function(sym) {
+        args.elements.map(function(sym) {
             typeCheck('symbol', sym.asttype, 'lambda/special parameters', "parameter " + i);
             i++;
 
@@ -201,8 +201,8 @@ var Evaluate = (function (Data, Functions, Environment) {
 
 
     function evaluateApplication(sexpr, env) {
-        var first = evaluate(sexpr.value.operator, env),
-            args = sexpr.value.arguments,
+        var first = evaluate(sexpr.operator, env),
+            args = sexpr.arguments,
             optype = first.type;
 
         if (optype === 'function') {
@@ -218,7 +218,7 @@ var Evaluate = (function (Data, Functions, Environment) {
     
     
     function evaluateList(sexpr, env) {
-        var elems = sexpr.value.map(function(e) {
+        var elems = sexpr.elements.map(function(e) {
             return evaluate(e, env);
         });
         
@@ -252,7 +252,7 @@ var Evaluate = (function (Data, Functions, Environment) {
         }
         
         if (type === 'char') {
-        	return Data.Char(sexpr.value);
+            return Data.Char(sexpr.value);
         }
 
         throw new Error("unrecognized type: " + type + " in " + JSON.stringify(sexpr));
