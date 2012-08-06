@@ -43,21 +43,9 @@ var Data = (function () {
     }
 
 
-    function Symbol(value) {
-        this.value = value;
-        this.type = 'symbol';
-    }
-
-
     function List(value) {
         this.value = value;
         this.type = 'list';
-    }
-    
-    
-    function ListLiteral(elems) {
-        this.value = elems;
-        this.type = 'listliteral';
     }
 
 
@@ -103,16 +91,6 @@ var Data = (function () {
     }
     
     
-    function Application(operator, args) {
-        this.type = 'application';
-        if(!operator) {
-            throw new FunctionError('ValueError', 'function', operator, 'Application constructor', '1st argument');
-        }
-        this.operator = operator;
-        this.args = args;
-    }
-    
-    
     function makeCharList(jsString) {
         var list = [],
             i;
@@ -134,21 +112,10 @@ var Data = (function () {
         'Boolean': function (x) {
             return new MyBoolean(x);
         },
-        'Symbol': function (x) {
-            return new Symbol(x);
-        },
         
         // the way to combine stuff
         'List': function (x) {
             return new List(x);
-        },
-        
-        // 'syntax'
-        'ListLiteral': function(elems) {
-            return new ListLiteral(elems);
-        },
-        'Application': function(op, args) {
-            return new Application(op, args);
         },
         
         // functions + special forms

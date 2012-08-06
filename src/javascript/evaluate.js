@@ -40,7 +40,7 @@ var Evaluate = (function (Data, Functions, Environment) {
             sexpr = args[1],
             value;
         
-        typeCheck('symbol', name.type, 'define', 'first argument');
+        typeCheck('symbol', name.asttype, 'define', 'first argument');
         
         value = evaluate(sexpr, env);
         
@@ -61,7 +61,7 @@ var Evaluate = (function (Data, Functions, Environment) {
             sexpr = args[1],
             value;
         
-        typeCheck('symbol', name.type, 'set!', 'first argument');
+        typeCheck('symbol', name.asttype, 'set!', 'first argument');
         
         value = evaluate(sexpr, env);
         
@@ -80,8 +80,8 @@ var Evaluate = (function (Data, Functions, Environment) {
             test;
         
         for(i = 0; i < args.length; i++) {
-            typeCheck('listliteral', args[i].type, 'cond', "argument " + (i + 1));
-            argsCheck(2, args[i].value.length, 'arguments to cond must be list literals of length 2');
+            typeCheck('list', args[i].asttype, 'cond', "argument " + (i + 1));
+            argsCheck(2, args[i].value.length, 'arguments to cond must be lists of length 2');
             
             test = evaluate(args[i].value[0], env);
             typeCheck('boolean', test.type, 'cond', "condition of argument " + (i + 1));
@@ -97,13 +97,13 @@ var Evaluate = (function (Data, Functions, Environment) {
     
     
     function extractArgNames(args) {
-        typeCheck('listliteral', args.type, 'lambda/special', 'first argument');
+        typeCheck('list', args.asttype, 'lambda/special', 'first argument');
 
         var names = [],
             i = 1;
 
         args.value.map(function(sym) {
-            typeCheck('symbol', sym.type, 'lambda/special parameters', "parameter " + i);
+            typeCheck('symbol', sym.asttype, 'lambda/special parameters', "parameter " + i);
             i++;
 
             names.push(sym);
@@ -124,7 +124,7 @@ var Evaluate = (function (Data, Functions, Environment) {
 
     function lambda(env, lam_args) {
         if( lam_args.length < 2 ) {
-            throw new SpecialFormError("NumArgsError", "list literal of arguments and at least 1 body form",
+            throw new SpecialFormError("NumArgsError", "list of arguments and at least 1 body form",
                       "missing one or both", "lambda/special", "body may not be empty");
         }
         
@@ -201,22 +201,23 @@ var Evaluate = (function (Data, Functions, Environment) {
 
 
     function evaluateApplication(sexpr, env) {
-        var first = evaluate(sexpr.operator, env),
-            args = sexpr.args;
+        var first = evaluate(sexpr.value.operator, env),
+            args = sexpr.value.arguments,
+            optype = first.type;
 
-        if (first.type === 'function') {
+        if (optype === 'function') {
             return applyFunction(first, env, args);
         }
 
-        if (first.type === 'specialform') {
+        if (optype === 'specialform') {
             return applySpecial(first, env, args);
         }
 
-        throw new Error("first element in Application must be function or special form (was " + first.type + ")");
+        throw new Error("first element in Application must be function or special form (was " + optype + ")");
     }
     
     
-    function evaluateListLiteral(sexpr, env) {
+    function evaluateList(sexpr, env) {
         var elems = sexpr.value.map(function(e) {
             return evaluate(e, env);
         });
@@ -236,7 +237,7 @@ var Evaluate = (function (Data, Functions, Environment) {
 
 
     function evaluateAtom(sexpr, env) {
-        var type = sexpr.type;
+        var type = sexpr.asttype;
         
         if (type === 'symbol') {
             if(env.hasBinding(sexpr.value)) {
@@ -246,8 +247,12 @@ var Evaluate = (function (Data, Functions, Environment) {
             }
         }
 
-        if (type in SELF_EVALUATING_TYPES) {
-            return sexpr;
+        if (type === 'number') {
+            return Data.Number(sexpr.value);
+        }
+        
+        if (type === 'char') {
+        	return Data.Char(sexpr.value);
         }
 
         throw new Error("unrecognized type: " + type + " in " + JSON.stringify(sexpr));
@@ -261,12 +266,12 @@ var Evaluate = (function (Data, Functions, Environment) {
             throw new Error("evaluate missing sexpr or environment");
         }
 
-        if (sexpr.type === 'application') {
+        if (sexpr.asttype === 'application') {
             return evaluateApplication(sexpr, env);
         }
         
-        if (sexpr.type === 'listliteral') {
-            return evaluateListLiteral(sexpr, env);
+        if (sexpr.asttype === 'list') {
+            return evaluateList(sexpr, env);
         }
 
         return evaluateAtom(sexpr, env);

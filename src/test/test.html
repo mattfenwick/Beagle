@@ -35,11 +35,11 @@
 
     testEnvironment(Environment);
 
-    testParser(Parser, Data, Tokens, TestHelper);
+    testParser(Parser, Tokens, TestHelper);
 	
     testFunctions(Functions, Data, TestHelper);
 	
-    testEvaluate(Evaluate, Functions, Data, Environment, TestHelper);
+    testEvaluate(Evaluate, Parser, Data, Environment, TestHelper);
     
     testBeagle(Beagle, Data, Tokens, Parser);
     

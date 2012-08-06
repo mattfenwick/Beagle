@@ -1,5 +1,4 @@
-var Parser = (function(Data) {
-    
+var Parser = (function() {
     
     function ParseError(message, value) {
         this.type = 'ParseError';
@@ -17,16 +16,43 @@ var Parser = (function(Data) {
     };
     
     
-/////////////////////// new stuff
+    var AST_TYPES = {
+        'number'     : 1,
+        'symbol'     : 1,
+        'char'       : 1,
+        'list'       : 1,
+        'application': 1
+    };
+    
+    function ASTNode(asttype, value) {
+        if(!(asttype in AST_TYPES)) {
+            throw new ParseError('invalid ASTNode type', asttype);
+        }
+        this.asttype = asttype;
+        this.value = value;
+    }
+    
+    
+/////////////////////// functions
+    
+    // String -> [ASTNode Char]
+    function expandString(str) {
+        // this assumes that 'abcd'.split('') returns
+        //   an array of length 4
+        return str.split('').map(function (x) {
+            return new ASTNode('char', x);
+        });
+    }
+    
 
     var TOKEN_OPS = {
-        'integer' : function(str) {return Data.Number(Number(str));},
-        'float'   : function(str) {return Data.Number(Number(str));},
-        'string'  : Data.makeCharList,
-        'symbol'  : Data.Symbol
+        'integer' : function(x) {return new ASTNode('number', Number(x));},
+        'float'   : function(x) {return new ASTNode('number', Number(x));},
+        'string'  : function(x) {return new ASTNode('list', expandString(x));},
+        'symbol'  : function(x) {return new ASTNode('symbol', x);}
     };
 
-    // [Token] -> Maybe (LispObject, [Token])
+    // [Token] -> Maybe (ASTNode, [Token])
     //   returns false if token stream is empty or first token is NOT a symbol/string/integer/float
     function getAtom(tokens) {
         if (tokens.length === 0) {
@@ -47,10 +73,10 @@ var Parser = (function(Data) {
     }
 
 
-    // tokentype -> tokentype -> [Token] -> ([LispObject] -> LispObject) -> Maybe LispObject
+    // tokentype -> tokentype -> [Token] -> ([ASTNode] -> ASTNode) -> Maybe ASTNode
     //   returns false if tokens is empty or doesn't start with token of type start
     //   throws an error if first token is of type stop
-    //   throws an error if a properly 'balanced' LispObject can't be found
+    //   throws an error if a properly 'balanced' object can't be found
     function getDelimited(start, stop, tokens, success) {
         var sexpr, elems = [],
             inputTokens = tokens;
@@ -84,7 +110,7 @@ var Parser = (function(Data) {
         // must end with a stop token
         if (tokens[0] && tokens[0].type === stop) {
             return {
-                result: success(elems), // Data.Application(elems[0], elems.slice(1)), // what if 'elems' is empty?
+                result: success(elems),
                 rest: tokens.slice(1)
             };
         }
@@ -96,7 +122,10 @@ var Parser = (function(Data) {
     
     function getApplication(tokens) {
         function callback(objs) {
-            return Data.Application(objs[0], objs.slice(1));
+            if(!objs[0]) {
+                throw new ParseError("an application needs an operator (got nothing)", objs);
+            }
+            return new ASTNode('application', {'operator': objs[0], 'arguments': objs.slice(1)});
         }
         return getDelimited('open-paren', 'close-paren', tokens, callback);
     }
@@ -104,7 +133,7 @@ var Parser = (function(Data) {
     
     function getList(tokens) {
         function callback(objs) {
-            return Data.ListLiteral(objs);
+            return new ASTNode('list', objs);
         }
         return getDelimited('open-square', 'close-square', tokens, callback);
     }
@@ -143,7 +172,7 @@ var Parser = (function(Data) {
     // assumes the tokens are of type 'string', 'symbol', 'integer', 'float',
     //   'open-paren', 'close-paren', 'open-square', and 'close-square'
     //   anything else should throw an exception
-    // [Token] -> Maybe [LispObject]
+    // [Token] -> Maybe [AST]
     function makeAST(tokens) {
         var sexprs = [],
             sexpr;
@@ -167,7 +196,12 @@ var Parser = (function(Data) {
             return new ParseError(m, v);
         },
         
+        'ASTNode': function(asttype, value) {
+            return new ASTNode(asttype, value);
+        },
+        
         // helper functions
+        'expandString'   : expandString,
         'getAtom'        : getAtom,
         'getApplication' : getApplication,
         'getList'        : getList,
@@ -177,4 +211,4 @@ var Parser = (function(Data) {
         'makeAST'        : makeAST,        
     };
 
-})(Data);
+})();

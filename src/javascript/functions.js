@@ -63,7 +63,6 @@ var Functions = (function (Data) {
     var COMPARABLE = {
         'number' : 1,
         'char'   : 1,
-        'symbol' : 1,
         'boolean': 1
     };
 
@@ -80,11 +79,11 @@ var Functions = (function (Data) {
                 throw Data.FunctionError('TypeError', ltype, rtype, "eq?", "arguments must have identical types");
             }
             if(!(ltype in COMPARABLE)) {
-                throw Data.FunctionError('TypeError', 'number/char/symbol/boolean', 
+                throw Data.FunctionError('TypeError', 'number/char/boolean', 
                       ltype, "eq?", "can't compare type");
             }
             if(!(rtype in COMPARABLE)) {
-                throw Data.FunctionError('TypeError', 'number/char/symbol/boolean', 
+                throw Data.FunctionError('TypeError', 'number/char/boolean', 
                       rtype, "eq?", "can't compare type");
             }
             return Data.Boolean(args[0].value === args[1].value);
@@ -124,12 +123,9 @@ var Functions = (function (Data) {
         'number'      : 1,
         'char'        : 1,
         'boolean'     : 1,
-        'symbol'      : 1,
         'list'        : 1,
-        'listliteral' : 1,
         'function'    : 1,
         'specialform' : 1,
-        'application' : 1,
         'null'        : 1  // not sure if I need this
     };
     

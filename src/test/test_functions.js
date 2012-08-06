@@ -133,9 +133,6 @@ function testFunctions(funcs, data, testHelper) {
       deepEqual(t, eq.fapply([ch1, ch1]), 'chars');
       deepEqual(f, eq.fapply([ch1, ch2]), 'chars');
       
-      deepEqual(t, eq.fapply([sym('abc'), sym('abc')]), 'symbols');
-      deepEqual(f, eq.fapply([sym('abc'), sym('def')]), 'symbols');
-      
       expectException(function() {
           eq.fapply([num(16), db(true)]);
       }, 'TypeError', "'eq?' arguments must be of the same type");
@@ -246,8 +243,7 @@ function testFunctions(funcs, data, testHelper) {
             types = {
                 'number' : Data.Char('c'),
                 'char'   : Data.Boolean(true),
-                'boolean': Data.Symbol('sy'),
-                'symbol' : Data.List([]),
+                'boolean': Data.List([]),
                 'list'   : Data.Number(14)
             },
             i, j, f, newArgs, fname, tempArgs;
