@@ -5,4 +5,14 @@
 
 ## Abstract syntax tree ##
 
- - only has s-expressions composed of lists, numbers, symbols, and string
+ - only has ASTNodes whose types are:
+ 
+    - char
+    
+    - number
+    
+    - list
+    
+    - application
+    
+    - symbol

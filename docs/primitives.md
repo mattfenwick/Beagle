@@ -11,11 +11,7 @@ For more information about the evaluation rules for these forms, see [here](eval
  
  - `cond` 
  
- - `eval`
- 
  - `lambda`
- 
- - `quote`
   
   
 ### Functions ###

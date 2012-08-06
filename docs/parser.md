@@ -114,8 +114,6 @@ Also, comments are indicated by `;` (when not in a string) and extend to the end
     - checking whitespace separation
 
  2. assembly of tokens to form the AST (Abstract Syntax Tree)
-    - AST assembly
-    - reification -- AST holds Beagle objects
 
 
 ## Interface ##
@@ -156,6 +154,8 @@ Also, comments are indicated by `;` (when not in a string) and extend to the end
  - data types
 
    - `ParseError`
+   
+   - `ASTNode`
 
  - core functions
 

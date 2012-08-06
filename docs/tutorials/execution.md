@@ -61,7 +61,7 @@ Throughout the article, we'll follow the progress of this input string:
  - step 3:  AST construction
 
         Application:
-          - Function: 'cons'
+          - operator: symbol 'cons'
           - arguments:
             - Number: 4
             - List:
