@@ -21,8 +21,7 @@ very difficult syntax.
 
 My goal in writing this article is to give a clear, practical, and useful
 explanation for how to build a parser.  Using a Lisp as an example language
-helps keep the discussion simple without creating a need to resort to 
-hand-waving.
+helps keep the discussion simple and focused.
 
 Thus, in this article, we'll see the basic steps for how to transform a string
 of characters into an abstract, executable representation of code.

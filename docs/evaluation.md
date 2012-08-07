@@ -53,9 +53,9 @@
 
    - variadic
  
-   - a list of symbols (see 1. for `define`)
+   - a list of symbols
    
-   - one or more bodies
+   - one or more body expressions
  
  - `cond`
  
@@ -68,12 +68,12 @@
  
  - `define`
    
-   1. symbol (not something that evaluates to a symbol -- an actual symbol!)
+   1. symbol
    
    2. BeagleValue
  
  - `set!`
  
-   1. symbol (see 1. for `define`) that has already been `define`d
+   1. symbol that has already been `define`d in an enclosing lexical scope
    
    2. BeagleValue
