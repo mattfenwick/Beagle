@@ -10,7 +10,7 @@ var Tokens = (function () {
         'comment'      : /^;+(.*)/,        /* because: 1) * is greedy; 2) . doesn't match \n */
         'float'        : /^(?:\d*\.\d+|\d+\.\d*)/,
         'integer'      : /^\d+/,
-        'symbol'       : /^[a-zA-Z\!\@\#\$\%\^\&\*\-\_\=\+\?\/\!\<\>][a-zA-Z0-9\!\@\#\$\%\^\&\*\-\_\=\+\?\/\!\<\>]*/,
+        'symbol'       : /^[a-zA-Z\!\@\#\$\%\^\&\*\-\_\=\+\?\/\<\>][a-zA-Z0-9\!\@\#\$\%\^\&\*\-\_\=\+\?\/\<\>]*/,
         'string'       : /^"([^"]*)"/,
     }
     
@@ -42,7 +42,7 @@ var Tokens = (function () {
 
     TokenError.prototype.toString = function () {
         return this.message + " (from " + this.value + ")";
-    }
+    };
 
 
     function nextPunctuation(string) {
