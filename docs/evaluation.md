@@ -1,7 +1,7 @@
 # Evaluation #
 --------------
 
-## Abstract syntax ## 
+## Abstract syntax ##
 
     Beagle     :  Expression(+)
     
@@ -21,11 +21,11 @@
 
 ## Informal semantics ##
 
- - Beagle[[Expression]]: evaluates each expression, in order, and returns ... what?  the last one?
+ - `Beagle[[Expression]]`: evaluates each expression, in order, and returns ... what?  the last one?
    to start off, an environment is passed in ... each expression may change the environment, which
    is then passed to the next one ... should probably add in concept of statements here
    
- - Expression[[E E(*)]]: this is called an *application*.  The first expression must evaluate to either
+ - `Expression[[E E(*)]]`: this is called an *application*.  The first expression must evaluate to either
    a function or a special form; otherwise it's a type error.  For the first element:
    
      - case 1: special form -- the arguments are passed unevaluated and it is responsible for evaluating 
@@ -35,16 +35,16 @@
        which is passed sequentially), and then the function is applied to the arguments.  The return
        value is then the return value of the application of the function/special form.
    
- - Expression[[List]]: each of the elements of the list literal are evaluated in order (possibly
+ - `Expression[[List]]`: each of the elements of the list literal are evaluated in order (possibly
    changing the environment, which is threaded through them), and the output elements returned
    in a list.
    
- - Expression[[Symbol]]: the symbol is looked up in its enclosing lexical environments and its bound
+ - `Expression[[Symbol]]`: the symbol is looked up in its enclosing lexical environments and its bound
    value returned.  If no binding is found, that's an error (compile/runtime?)
    
- - Expression[[Number]]: a number object is constructed with the value of the number node
+ - `Expression[[Number]]`: a number object is constructed with the value of the number node
  
- - Expression[[Char]]: a character object is constructed with the value of the char node
+ - `Expression[[Char]]`: a character object is constructed with the value of the char node
 
 
 ## Special forms ##
@@ -68,12 +68,12 @@
  
  - `define`
    
-   1. symbol
+   - symbol
    
-   2. BeagleValue
+   - BeagleValue
  
  - `set!`
  
-   1. symbol that has already been `define`d in an enclosing lexical scope
+   - symbol that has already been `define`d in an enclosing lexical scope
    
-   2. BeagleValue
+   - BeagleValue
