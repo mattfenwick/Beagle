@@ -1,101 +1,102 @@
 module Evaluate (
 
+    LispVal (..)
+
+  , evaluator
+
 ) where
 
-import Parser (ASTNode(..), full) -- as Parser
+
 import qualified Data.Map as Map
 import Control.Monad (foldM, liftM)
+
+-- local imports
+import MyData (LispVal(..))
+import Functions (cons, car, cdr, plus)
+import Parser (ASTNode(..), full) -- as Parser
+import Environment (Environment(Env), addBinding, getBinding, setBinding)
 
 
 -- --------------------------------------------------------
 -- the evaluator
-
-type Environment = Map.Map String LispVal
-
-data LispVal
-  = LNumber Float
-  | LList [LispVal]
-  | LChar Char
-  | LBoolean Bool
-  | LNull
-  | LFunc ([LispVal] -> Either String LispVal)
-  | LSpecial (Environment -> [ASTNode] -> Either String (Environment, LispVal))
+  
+define :: Environment LispVal -> [ASTNode] -> Either String (Environment LispVal, LispVal)
+define e [ASymbol key, node] = eval e node >>=
+  (\(e1, val) -> addBinding key val e1 >>= 
+  (\e2 -> return (e2, LNull)))
   
   
-instance Show LispVal where
-  show (LNumber f)  = show f
-  show (LList fs)   = show $ map show fs
-  show (LChar c)    = show c
-  show (LFunc f)    = "function"
-  show (LBoolean b) = show b
-  show LNull        = "<nil>"
-  show (LSpecial s) = "special form"
+setbang :: Environment LispVal -> [ASTNode] -> Either String (Environment LispVal, LispVal)
+setbang e [ASymbol key, node] = eval e node >>=
+  (\(e1, val) -> setBinding key val e1 >>=
+  (\e2 -> return (e2, LNull)))
+  
+  
+myIf :: LispVal -> Either String Bool
+myIf (LBoolean x) = Right x
+myIf _ = Left "expected boolean, got ... something else ..."
+  
+  
+cond :: Environment LispVal -> [ASTNode] -> Either String (Environment LispVal, LispVal)
+cond e ((AList [p, r]) : forms) = eval e p >>=
+  (\(e1, v1) -> myIf v1 >>=
+  (\bool -> if bool then (eval e1 r) 
+                    else (cond e1 forms)))
+cond _ ((AList _):forms) = Left "value error in 'cond': expected two-element list"
+cond _ (_:forms) = Left "type error in 'cond': expected list"
+cond _ [] = Left "value error in cond: no true condition found"
 
-
-applySpecial :: Environment 
-  -> (Environment -> [ASTNode] -> Either String (Environment, LispVal)) 
-  -> [ASTNode] 
-  -> Either String (Environment, LispVal)
-applySpecial e s form = s e form
-
-{- -- needs Eq instance or something ... odd
-define :: Environment -> [ASTNode] -> Either String (Environment, LispVal)
-define e [ASymbol sym, val]
-  | Map.lookup sym e == Nothing = eval e val >>=
-                                  (\(e1, v) -> let e2 = Map.insert sym v
-                                               in return (e2, LNull))
-  | otherwise = Left ("symbol " ++ sym ++ " cannot be rebound")
-  -}
-
-cons :: [LispVal] -> Either String LispVal
-cons [e, LList es] = Right $ LList (e:es)
-cons [_, x] = Left ("type error in 'cons': expected list, got " ++ (show x))
-cons _ = Left "NumArgsError in 'cons'"
 
   
-applyFunction :: Environment
+applyFunction :: Environment LispVal
   -> ([LispVal] -> Either String LispVal)
   -> [ASTNode]
-  -> Either String (Environment, LispVal)
+  -> Either String (Environment LispVal, LispVal)
 applyFunction e f forms = evalForms e forms >>= 
   (\(e1, vals) -> f vals >>=
-  (\result -> return (e1, result)))
+  (\result -> return (e1, result)))  
 
 
-apply :: Environment -> LispVal -> [ASTNode] -> Either String (Environment, LispVal)
-apply e (LFunc f) args = applyFunction e f args -- Right (e, f args)
+apply :: Environment LispVal -> LispVal -> [ASTNode] -> Either String (Environment LispVal, LispVal)
+apply e (LFunction f) args = applyFunction e f args
 apply e (LSpecial s) forms = s e forms
-apply _ _ _ = Left "hey, you didn't give me a function or special form!"
+apply _ _ _ = Left "'apply' needs a function or special form"
 
 
-evalForm :: (Environment, [LispVal]) -> ASTNode -> Either String (Environment, [LispVal])
+evalForm :: (Environment LispVal, [LispVal]) -> ASTNode -> Either String (Environment LispVal, [LispVal])
 evalForm (e0, vals) form = eval e0 form >>=
   (\(e1, val) -> return (e1, val : vals))
 
 
-evalForms :: Environment -> [ASTNode] -> Either String (Environment, [LispVal])
-evalForms e fs = foldM evalForm (e, []) fs
+evalForms :: Environment LispVal -> [ASTNode] -> Either String (Environment LispVal, [LispVal])
+evalForms e fs = foldM evalForm (e, []) fs >>=
+  (\(e, vals) -> return (e, reverse vals))
   
   
-eval :: Environment -> ASTNode -> Either String (Environment, LispVal)
+eval :: Environment LispVal -> ASTNode -> Either String (Environment LispVal, LispVal)
 eval e (ANumber f)  = Right (e, LNumber f)
 eval e (AChar c)    = Right (e, LChar c)
-eval e (ASymbol s)  = (fromMaybe $ Map.lookup s e) >>= (\v -> return (e, v))
-  where fromMaybe Nothing = Left ("unbound variable: " ++ s)
-        fromMaybe (Just x) = Right x
-eval e (AList fs)   = liftM (\(a, b) -> (a, LList $ reverse b)) $ evalForms e fs
-eval e (Application op args) = eval e op >>=
-  (\(e1, f) -> apply e1 f args)
+eval e (ASymbol s)  = getBinding s e >>= \v -> return (e, v)
+eval e (AList fs)   = evalForms e fs >>= \(e, vals) -> return (e, LList vals)
+eval e (Application op args) = eval e op >>= \(e1, f) -> apply e1 f args
 
   
-defaultEnv = Map.fromList [("true", LBoolean True), ("false", LBoolean False)]
+defaultEnv = Env (Map.fromList [
+    ("true",    LBoolean True), 
+    ("false",   LBoolean False),
+    ("cons",    LFunction cons),
+    ("car",     LFunction car),
+    ("cdr",     LFunction cdr),
+    ("plus",    LFunction plus),
+    ("define",  LSpecial define),
+    ("setbang", LSpecial setbang),
+    ("cond",    LSpecial cond)]) Nothing
 
 
       
-evaluator :: String -> Either String [LispVal]
+evaluator :: String -> Either String [(Environment LispVal, LispVal)]
 evaluator str = full str >>= 
-  mapM (eval defaultEnv) >>= 
-  (return . (Prelude.map snd))
+  mapM (eval defaultEnv)
   
 
 

@@ -1,5 +1,5 @@
 module Parser (
-    ASTNode (ANumber, AChar, ASymbol, AList, Application)
+    ASTNode (..)
   , Token
   , scanner
   , beagle
