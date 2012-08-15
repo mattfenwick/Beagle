@@ -7,6 +7,8 @@ var Tokens = (function () {
         'close-paren'  : /^\)/,
         'open-square'  : /^\[/,
         'close-square' : /^\]/,
+        'open-curly'   : /^\{/,
+        'close-curly'  : /^\}/,
         'comment'      : /^;+(.*)/,        /* because: 1) * is greedy; 2) . doesn't match \n */
         'float'        : /^(?:\d*\.\d+|\d+\.\d*)/,
         'integer'      : /^\d+/,
@@ -15,13 +17,13 @@ var Tokens = (function () {
     }
     
     // comment needs special handling
-    var PUNCTUATION = ['whitespace', 'open-paren', 'open-square', 'close-paren', 'close-square'];
+    var PUNCTUATION = ['whitespace', 'open-paren', 'open-square', 'close-paren', 'close-square', 'open-curly', 'close-curly'],
     
-    // float needs to go before integer -- otherwise integer matches only a part of what float would
-    //   'string' requires special handling
-    var ATOMS = ['float', 'integer', 'symbol'];
+        // float needs to go before integer -- otherwise integer matches only a part of what float would
+        //   'string' requires special handling
+        ATOMS = ['float', 'integer', 'symbol'],
     
-    var PUNC_OR_WS = /^[\(\)\[\];\s]/; // one of '()[];' or whitespace
+        PUNC_OR_WS = /^[\(\)\[\]\{\};\s]/; // an atom needs to be followed by one of '()[];' or whitespace (or by the empty string)
     
 
     function Token(type, value) {
@@ -117,7 +119,7 @@ var Tokens = (function () {
             if(res.rest === "" || res.rest.match(PUNC_OR_WS)) {
                 return res;
             } else {
-                throw new TokenError("atom must be followed by whitespace or punctuation", res);
+                throw new TokenError("atom must be followed by whitespace or punctuation (got " + res.rest[0] + ")", res);
             }
         }
 

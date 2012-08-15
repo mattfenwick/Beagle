@@ -57,6 +57,18 @@ var Parser = (function() {
         this.arguments = args;
     }
     
+    function Special(name, args) {
+        if(!name) {
+            throw new ParseError("Special needs a symbol (got nothing)", [name, args]);
+        }
+        if(args.length === undefined) {
+            throw new ParseError("Special needs an array of arguments (2nd arg)", args);
+        }
+        this.asttype = 'special';
+        this.name = name;
+        this.arguments = args;
+    }
+    
     
 /////////////////////// functions
     
@@ -161,6 +173,14 @@ var Parser = (function() {
         }
         return getDelimited('open-square', 'close-square', tokens, callback);
     }
+    
+    
+    function getSpecial(tokens) {
+        function callback(objs) {
+            return new Special(objs[0], objs.slice(1));
+        }
+        return getDelimited('open-curly', 'close-curly', tokens, callback);
+    }
 
 
     function getNextForm(tokens) {
@@ -172,6 +192,12 @@ var Parser = (function() {
 
         // an s-expression is either an atom
         sexpr = getAtom(tokens);
+        if (sexpr) {
+            return sexpr;
+        }
+        
+        // a special form application
+        sexpr = getSpecial(tokens);
         if (sexpr) {
             return sexpr;
         }
@@ -235,11 +261,15 @@ var Parser = (function() {
         'Application': function(op, args) {
             return new Application(op, args);
         },
+        'Special': function(name, args) {
+            return new Special(name, args);
+        },
         
         // helper functions
         'expandString'   : expandString,
         'getAtom'        : getAtom,
         'getApplication' : getApplication,
+        'getSpecial'     : getSpecial,
         'getList'        : getList,
         'getNextForm'    : getNextForm,
 
