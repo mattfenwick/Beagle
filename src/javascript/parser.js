@@ -1,7 +1,8 @@
 var Parser = (function() {
     
-    function ParseError(message, value) {
+    function ParseError(errortype, message, value) {
         this.type = 'ParseError';
+        this.errortype = errortype;
         this.message = message;
         this.value = value;
     }
@@ -12,7 +13,7 @@ var Parser = (function() {
 
 
     ParseError.prototype.toString = function() {
-        return this.type + " during AST construction: " + this.message;
+        return this.type + " during AST construction: " + this.message + JSON.stringify(this.value);
     };
     
     
@@ -23,7 +24,7 @@ var Parser = (function() {
     
     function Symbol(value) {
         if(typeof(value) !== 'string') {
-            throw new ParseError("Symbol needs a string", value);
+            throw new ParseError("TypeError", "Symbol needs a string", value);
         };
         this.asttype = 'symbol';
         this.value = value;
@@ -31,7 +32,7 @@ var Parser = (function() {
     
     function ASTChar(value) {
         if(typeof(value) !== 'string') {
-            throw new ParseError("Symbol needs a string", value);
+            throw new ParseError("TypeError", "Char needs a string", value);
         };
         this.asttype = 'char';
         this.value = value;
@@ -39,24 +40,15 @@ var Parser = (function() {
     
     function ASTList(elems) {
         if(elems.length === undefined) {
-            throw new ParseError("ASTList needs an array", elems);
+            throw new ParseError("TypeError", "ASTList needs an array", elems);
         }
+        elems.map(function(arg, ix) {
+            if(!isExpression(arg)) {
+                throw new ParseError("TypeError", "all arguments to application must be expressions", [arg, ix + 1]);
+            }
+        });
         this.asttype = 'list';
         this.elements = elems;
-    }
-    
-    function Application(op, args) {
-        var opTypes = {'application': 1, 'cond': 1, 
-            'lambda': 1, 'symbol': 1};
-        if(!opTypes[op.asttype]) {
-            throw new ParseError("app needs app/cond/lambda/symbol for operator", [op, args]);
-        }
-        if(args.length === undefined) {
-            throw new ParseError("Application needs an array of arguments (2nd arg)", args);
-        }
-        this.asttype = 'application';
-        this.operator = op;
-        this.arguments = args;
     }
 
     function isExpression(astnode) {
@@ -72,20 +64,38 @@ var Parser = (function() {
         
         return EXPRESSIONS[astnode.asttype];
     }
+    
+    function Application(args) {
+        var opTypes = {'application': 1, 'cond': 1, 
+                'lambda': 1, 'symbol': 1};
+        if(!args[0]) {
+            throw new ParseError("ValueError", "application needs operator", args);            
+        } else if(!opTypes[args[0].asttype]) {
+            throw new ParseError("TypeError", "application needs app/cond/lambda/symbol for operator", args);
+        }
+        args.slice(1).map(function(arg, ix) {
+            if(!isExpression(arg)) {
+                throw new ParseError("TypeError", "all arguments to application must be expressions", [arg, ix + 1]);
+            }
+        });
+        this.asttype = 'application';
+        this.operator = args[0];
+        this.arguments = args.slice(1);
+    }
 
     function Define(args) {
         if(args.length !== 2) {
-            throw new ParseError("'define' needs two args", args);
+            throw new ParseError("NumArgsError", "'define' needs two args", args);
         }
         var symbol = args[0],
             astnode = args[1];
 
         if(symbol.asttype !== 'symbol') {
-            throw new ParseError("'define' needs a symbol as 1st argument", symbol);
+            throw new ParseError("TypeError", "'define' needs a symbol as 1st argument", symbol);
         }
 
         if(!isExpression(astnode)) {
-            throw new ParseError("2nd arg to 'define' must be an expression", astnode);
+            throw new ParseError("TypeError", "2nd arg to 'define' must be an expression", astnode);
         }
 
         this.asttype = 'define';
@@ -95,17 +105,17 @@ var Parser = (function() {
 
     function SetBang(args) {
         if(args.length !== 2) {
-            throw new ParseError("'set!' needs two args", args);
+            throw new ParseError("NumArgsError", "'set!' needs two args", args);
         }
         var symbol = args[0],
             astnode = args[1];
 
         if(symbol.asttype !== 'symbol') {
-            throw new ParseError("'set!' needs a symbol as 1st argument", symbol);
+            throw new ParseError("TypeError", "'set!' needs a symbol as 1st argument", symbol);
         }
 
         if(!isExpression(astnode)) {
-            throw new ParseError("2nd arg to 'set!' must be an expression", astnode);
+            throw new ParseError("TypeError", "2nd arg to 'set!' must be an expression", astnode);
         }
 
         this.asttype = 'set!';
@@ -113,30 +123,53 @@ var Parser = (function() {
         this.astnode = astnode;
     }
 
-    // (ASTList:ASTNode:[]) -> Cond
-    function Cond(pairs, elseValue) {
-        pairs.map(function(p, ix) {
+    function Cond(args) {
+        if(args.length !== 2) {
+            throw new ParseError('NumArgsError', "'cond' needs two args " + args.length, args);
+        }
+        var pairs = args[0],
+            elseValue = args[1];
+        if(pairs.asttype !== 'list') {
+            throw new ParseError('TypeError', '1st arg to cond must be a list', args);
+        }
+        pairs.elements.map(function(p, ix) {
             if(p.asttype !== 'list') {
-                throw new ParseError("'cond' needs lists", ix + 1);
+                throw new ParseError("TypeError", "'cond' needs lists", ix + 1);
             } else if(p.elements.length !== 2) {
-                throw new ParseError("'cond' lists must be of length 2", ix + 1);
+                throw new ParseError("ValueError", "'cond' lists must be of length 2", ix + 1);
             }
         });
+        if(!isExpression(elseValue)) {
+            throw new ParseError("TypeError", "cond else-value must be an expression", elseValue);
+        }
         this.asttype = 'cond';
         this.pairs = pairs;
         this.elseValue = elseValue;
     }
 
-    // (ASTList Symbol:[ASTNode]:) -> Lambda
-    function Lambda(params, bodies) {
+    function Lambda(args) {
+        if(args.length < 2) {
+            throw new ParseError("NumArgsError", "'lambda' needs at least two args", args);
+        }
+        var params = args[0],
+            bodies = args.slice(1),
+            names = {};
         if(params.asttype !== 'list') {
-            throw new ParseError('lambda needs a list as 1st arg', params.asttype);
+            throw new ParseError("TypeError", 'lambda needs a list as 1st arg', params.asttype);
         }
         params.elements.map(function(s, ix) {
             if(s.asttype !== 'symbol') {
-                throw new ParseError('lambda needs symbols in its parameter list', ix + 1);
-            } 
+                throw new ParseError("TypeError", 'lambda needs symbols in its parameter list', ix + 1);
+            }
+            if(s.value in names) {
+                throw new ParseError("ValueError", "duplicate parameter name in 'lambda'", args);
+            }
+            names[s.value] = 1;
         });
+        this.lastForm = bodies.pop();
+        if(!isExpression(this.lastForm)) {
+            throw new ParseError("TypeError", "last 'lambda' body form must be an expression", args);
+        }
         this.asttype = 'lambda';
         this.parameters = params;
         this.bodyForms = bodies;
@@ -198,7 +231,7 @@ var Parser = (function() {
         }
 
         if (tokens[0].type === stop) {
-            throw new ParseError(stop + " token found without matching " + start, inputTokens);
+            throw new ParseError("DelimiterError", stop + " token found without matching " + start, inputTokens);
         }
 
         // must begin with a start token
@@ -228,13 +261,13 @@ var Parser = (function() {
         }
 
         // uh-oh!  we didn't find a stop token
-        throw new ParseError(start + " token found without matching " + stop, inputTokens);
+        throw new ParseError("DelimiterError", start + " token found without matching " + stop, inputTokens);
     }
     
     
     function getApplication(tokens) {
         function callback(objs) {
-            return new Application(objs[0], objs.slice(1));
+            return new Application(objs);
         }
         return getDelimited('open-paren', 'close-paren', tokens, callback);
     }
@@ -258,14 +291,17 @@ var Parser = (function() {
     
     function getSpecial(tokens) {
         function callback(objs) {
+            if(!objs[0]) {
+                throw new ParseError("ValueError", "special form cannot be empty", objs);
+            }
             if(objs[0].asttype !== 'symbol') {
-                throw new ParseError('special needs symbol as first arg', objs[0]);
+                throw new ParseError("TypeError", 'special needs symbol as first arg', objs[0]);
             }
             var specForm = SPECIAL_FORMS[objs[0].value];
             if(specForm) {
                 return new specForm(objs.slice(1));
             } else {
-                throw new ParseError("invalid special form name " + objs[0], objs[0]);
+                throw new ParseError("ValueError", "invalid special form name " + objs[0], objs[0]);
             }
         }
         return getDelimited('open-curly', 'close-curly', tokens, callback);
@@ -304,7 +340,7 @@ var Parser = (function() {
         }
 
         // no other possibilities
-        throw new ParseError("unexpected error:  couldn't find s-expression and token stream was not empty", tokens);
+        throw new ParseError("UnexpectedError", "couldn't parse form, but token stream was not empty", tokens);
     }
 
 
@@ -322,7 +358,7 @@ var Parser = (function() {
         }
 
         if (tokens.length !== 0) {
-            throw new ParseError('unconsumed tokens remaining after parse', tokens);
+            throw new ParseError("ValueError", 'unconsumed tokens remaining after parse', tokens);
         }
 
         return sexprs;
