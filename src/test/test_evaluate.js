@@ -19,9 +19,8 @@ function testEvaluate(evaluate, parser, data, envir, testHelper) {
     test("default environment", function() {
         var env = ev.getDefaultEnv();
         var names = [
-            'define', 'lambda', 'true', 'false',
-            'cons', 'car', 'cdr', 'eq?', '+', 'neg', 'set!',
-            'cond', 'null?', 'number-<', 'datum', 'type', 'value'
+            'true', 'false', 'cons', 'car', 'cdr', 'eq?', '+', 
+            'neg', 'null?', 'number-<', 'datum', 'type', 'value'
         ];
 
         names.map(function(n) {
@@ -33,58 +32,48 @@ function testEvaluate(evaluate, parser, data, envir, testHelper) {
             bindings++;
         }
 
-        equal(17, bindings, 'there are 17 built-in special forms, constants, and functions');
-        equal(17, names.length, 'and we need to test for all of them');
+        equal(13, bindings, 'there are 13 built-in constants and functions');
+        equal(13, names.length, 'and we need to test for all of them');
     });
     
     
     test("define", function() {
         var def = ev.define,
+            d = parser.Define,
             par = envir.Environment(false, {'a': 3}),
             env = envir.Environment(par, {'b': 4});
 
         ok(!env.hasBinding('e'), 'define takes two arguments, a symbol and a string,');
-        def(env, [sym('e'), anum('14')]);
+        def(d([sym('e'), anum('14')]), env);
         deepEqual(env.getBinding('e'), num(14), 'and creates a binding for that symbol');
       
         expectExc(function() {
-            def(env, [sym('b'), anum('13')]);
+            def(d([sym('b'), anum('13')]), env);
         }, 'ValueError', "once created, bindings cannot be changed");
         equal(4, env.getBinding('b'), 'the previous value is still visible');
         
         equal(3, env.getBinding('a'), 'bindings are visible in nested scopes');
 
-        def(env, [sym('a'), astr("derr")]);
+        def(d([sym('a'), astr("derr")]), env);
         deepEqual(str("derr"), env.getBinding('a'), "unless they're shadowed:");
         ok(env.hasOwnBinding('a'), 'shadowing occurs when both the nested scope ...');
         ok(par.hasOwnBinding('a'), '*and* the parent scope have bindings for the same symbol');
-
-        expectExc(function() {
-            def(env, [sym('abc')]);
-        }, 'NumArgsError', 'too few arguments throws an exception ...');
-
-        expectExc(function() {
-            def(env, [sym('def'), alist([]), alist([])]);
-        }, 'NumArgsError', 'too many arguments is also a problem');
-
-        expectExc(function() {
-            def(env, [anum('11'), num(12)]);
-        }, 'TypeError', 'the first argument must be a Beagle symbol');
     });
     
     
     test("set!", function() {
         var set = ev['set!'],
+            s = parser.SetBang,
             par = envir.Environment(false, {'a': 3}),
             env = envir.Environment(par, {'b': 4});
         
-        set(env, [sym('b'), anum(12)]);
+        set(s([sym('b'), anum(12)]), env);
         deepEqual(num(12), env.getBinding('b'), "set! takes two arguments, a symbol and a value");
         
-        set(par, [sym('a'), anum(32)]);
+        set(s([sym('a'), anum(32)]), par);
         deepEqual(num(32), par.getBinding('a'), "and sets binding for the symbol to the value");
         
-        set(env, [sym('a'), anum(64)]);
+        set(s([sym('a'), anum(64)]), env);
         deepEqual(
             [num(64), num(64)], 
             [par.getBinding('a'), env.getBinding('a')], 
@@ -92,13 +81,14 @@ function testEvaluate(evaluate, parser, data, envir, testHelper) {
         );
         
         expectExc(function() {
-            set(env, [sym('e'), anum(88)]);
+            set(s([sym('e'), anum(88)]), env);
         }, 'ValueError', "set! may not be used on undefined symbols");
     });
     
     
     test("cond", function() {
       var cond = ev['cond'],
+          c = parser.Cond,
           env = ev.getDefaultEnv(),
           ts = sym('true'),
           fs = sym('false'),
@@ -108,43 +98,45 @@ function testEvaluate(evaluate, parser, data, envir, testHelper) {
       env.addBinding('fsym', f);
       
       deepEqual(
-          num(4),
-          cond(env, [alist([ts, anum(4)]), alist([ts, astr("huh?")])]), 
+          num(4), // {cond [[true 4] [true "huh?"]] 2}
+          cond(c([alist([alist([ts, anum(4)]), 
+                         alist([ts, astr("huh?")])]), 
+                  anum(2)]), env), 
           "'cond' looks through its arguments for a list whose first element evaluates to true"
       );
       
       deepEqual(
-          str("huh?"), 
-          cond(env, [alist([sym('fsym'), sym('fsym')]), alist([ts, astr("huh?")])]), 
+          num(5), // {cond [[false false][true 5]] "huh?"}
+          cond(c([alist([alist([sym('fsym'), sym('fsym')]),
+                         alist([ts, anum('5')])]), 
+                  astr("huh?")]), env), 
           'and evaluates and returns the second element of that list'
       );
-
+      
+      deepEqual(
+          num(16),  // {cond [] 16} => 16
+          cond(c([alist([]), anum('16')]), env),
+          'an empty list of pairs is okay -- it will always evaluate to the else value'
+      );
+      
       expectExc(function() {
-          cond(env, [alist([t])]);
-      }, 'NumArgsError', 'lists with fewer than 2 elements are a no-no');
-
-      expectExc(function() {
-          cond(env, [alist([t, t, t])]);
-      }, 'NumArgsError', 'as are lists with more than 2 elements');
-
-      expectExc(function() {
-          cond(env, [alist([fs, anum(11)])]);
-      }, 'ValueError', "watch out: 'cond' is unhappy if nothing's true");
-
+          cond(c([alist([alist([anum('13'), anum('8')])]), anum('1')]), env);
+      }, 'TypeError', 'the conditions *must* evaluate to a boolean');
     });
     
     
     test("lambda", function() {
         var lam = ev.lambda,
+            l = parser.Lambda,
             env = ev.getDefaultEnv(),
             args1 = alist([]),
             body1 = anum(4),
             args2 = alist([sym('abc')]),
             body2 = sym('abc'),
             args3 = alist([sym('q'), sym('r')]),
-            body3 = app(sym('+'), [sym('q'), anum(4)]);
+            body3 = app([sym('+'), sym('q'), anum(4)]);
         
-        var a = lam(env, [args1, body1]);
+        var a = lam(l([args1, body1]), env);
         deepEqual(
             'function',
             a.type,
@@ -158,35 +150,19 @@ function testEvaluate(evaluate, parser, data, envir, testHelper) {
         
         deepEqual(
             str('me!!'),
-            lam(env, [args2, body2]).fapply([str('me!!')]),
+            lam(l([args2, body2]), env).fapply([str('me!!')]),
             'the closure is evaluated in an environment with the parameters bound to its arguments'
         );
         
         deepEqual(
             num(89),
-            lam(env, [args3, body3]).fapply([num(85), str('unused')]),
+            lam(l([args3, body3]), env).fapply([num(85), str('unused')]),
             'the body can be an atom or a list'
         );
-
-        expectExc(function() {
-            lam(env, [args1]);
-        }, 'NumArgsError', 'too few args: exception');
-
-        ok(lam(env, [args1, body1, body1]), 
-            'but it may have multiple body forms (but at least 1)');
-
-        expectExc(function() {
-            lam(env, [anum('11'), body1]);
-        }, 'TypeError', 'the first argument must be a list');
-
-        expectExc(function() {
-            lam(env, [alist([anum('13')]), body1])
-        }, 'TypeError', '... and every element in that list must be a symbol');
         
         expectExc(function() {
-            lam(env, [args1, body1]).fapply([num(1)]);
+            lam(l([args1, body1]), env).fapply([num(1)]);
         }, 'NumArgsError', 'the number of arguments to the closure must also be correct');
-    
     });
     
     

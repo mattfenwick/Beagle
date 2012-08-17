@@ -134,7 +134,7 @@ var Parser = (function() {
         }
         pairs.elements.map(function(p, ix) {
             if(p.asttype !== 'list') {
-                throw new ParseError("TypeError", "'cond' needs lists", ix + 1);
+                throw new ParseError("TypeError", "in 1st arg: 'cond' needs lists", ix + 1);
             } else if(p.elements.length !== 2) {
                 throw new ParseError("ValueError", "'cond' lists must be of length 2", ix + 1);
             }
