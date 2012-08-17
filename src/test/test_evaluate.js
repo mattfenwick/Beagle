@@ -67,13 +67,13 @@ function testEvaluate(evaluate, parser, data, envir, testHelper) {
             par = envir.Environment(false, {'a': 3}),
             env = envir.Environment(par, {'b': 4});
         
-        set(s([sym('b'), anum(12)]), env);
+        set(s([sym('b'), anum('12')]), env);
         deepEqual(num(12), env.getBinding('b'), "set! takes two arguments, a symbol and a value");
         
-        set(s([sym('a'), anum(32)]), par);
+        set(s([sym('a'), anum('32')]), par);
         deepEqual(num(32), par.getBinding('a'), "and sets binding for the symbol to the value");
         
-        set(s([sym('a'), anum(64)]), env);
+        set(s([sym('a'), anum('64')]), env);
         deepEqual(
             [num(64), num(64)], 
             [par.getBinding('a'), env.getBinding('a')], 
@@ -81,7 +81,7 @@ function testEvaluate(evaluate, parser, data, envir, testHelper) {
         );
         
         expectExc(function() {
-            set(s([sym('e'), anum(88)]), env);
+            set(s([sym('e'), anum('88')]), env);
         }, 'ValueError', "set! may not be used on undefined symbols");
     });
     
@@ -99,9 +99,9 @@ function testEvaluate(evaluate, parser, data, envir, testHelper) {
       
       deepEqual(
           num(4), // {cond [[true 4] [true "huh?"]] 2}
-          cond(c([alist([alist([ts, anum(4)]), 
+          cond(c([alist([alist([ts, anum('4')]), 
                          alist([ts, astr("huh?")])]), 
-                  anum(2)]), env), 
+                  anum('2')]), env), 
           "'cond' looks through its arguments for a list whose first element evaluates to true"
       );
       
@@ -130,11 +130,11 @@ function testEvaluate(evaluate, parser, data, envir, testHelper) {
             l = parser.Lambda,
             env = ev.getDefaultEnv(),
             args1 = alist([]),
-            body1 = anum(4),
+            body1 = anum('4'),
             args2 = alist([sym('abc')]),
             body2 = sym('abc'),
             args3 = alist([sym('q'), sym('r')]),
-            body3 = app([sym('+'), sym('q'), anum(4)]);
+            body3 = app([sym('+'), sym('q'), anum('4')]);
         
         var a = lam(l([args1, body1]), env);
         deepEqual(
@@ -176,15 +176,15 @@ function testEvaluate(evaluate, parser, data, envir, testHelper) {
     
     test("js evaluate", function() {
       var env = ev.getDefaultEnv(),
-          int_ = anum(31),
+          int_ = anum('31'),
           str1 = astr("abcde"),
           sym1 = sym('cons'),
-          l1 = app(sym('car'), [alist([anum(87)])]),
-          l2 = app(sym('cons'), [anum(32), alist([])]),
-          l3 = app(sym('neg'), [anum(4)]),
-          l4 = alist([anum(13), astr('duh'), sym('lambda')]),
+          l1 = app([sym('car'),  alist([anum('87')])]),
+          l2 = app([sym('cons'), anum('32'), alist([])]),
+          l3 = app([sym('neg'),  anum('4')]),
+          l4 = alist([anum('13'), astr('duh'), sym('true')]),
           ts = sym('true'),
-          appSf = app(sym('cond'), [alist([ts, ts])]),
+          appSf = parser.Cond([alist([alist([ts, ts])]), int_]),
           ts = sym('true'),
           t = data.Boolean(true);
           
@@ -194,7 +194,7 @@ function testEvaluate(evaluate, parser, data, envir, testHelper) {
 
       deepEqual(t, ev.eval(ts, env), "3) symbol -> lookup value in current environment,");
       
-      deepEqual(lis([num(13), str('duh'), data.SpecialForm(ev['lambda'])]), ev.eval(l4, env), "4) list -> Lisp list with all elements evaluated");
+      deepEqual(lis([num(13), str('duh'), data.Boolean(true)]), ev.eval(l4, env), "4) list -> Lisp list with all elements evaluated");
       
       deepEqual(num(87), ev.eval(l1, env), "5) function application -> evaluate arguments, apply function to arguments");
       
@@ -208,17 +208,17 @@ function testEvaluate(evaluate, parser, data, envir, testHelper) {
     
       deepEqual(
           t,
-          ev.eval(app(sym('null?'), [alist([])]), env),
+          ev.eval(app([sym('null?'), alist([])]), env),
           'for function applications, the arguments are evaluated before the function is applied'
       );
 
       expectExc(function() {
-          ev.eval(app(sym('cons'), [sym('shouldblowup'), lis([])]), env);
+          ev.eval(app([sym('cons'), sym('shouldblowup'), alist([])]), env);
       }, 'UndefinedVariableError', 'thus, passing an unbound symbol to a function throws an exception ...');
 
       deepEqual(
           t,
-          ev.eval(app(sym('cond'), [alist([ts, ts]), alist([ts, sym('couldblowup')])]), env),
+          ev.eval(parser.Cond([alist([alist([ts, ts]), alist([ts, sym('couldblowup')])]), sym('xyz')]), env),
           " ... but might not do so for special forms that don't always evaluate all their arguments"
       );
     });

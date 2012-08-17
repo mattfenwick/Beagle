@@ -69,7 +69,7 @@ function testParser(parse, tokens, testHelper) {
 
 
         deepEqual(
-            {'rest': [], 'result': app([sym('+'), str('str1'), num(345)])},
+            {'rest': [], 'result': app([sym('+'), str('str1'), num('345')])},
             parse.getNextForm(list1), 
             "an 'Application' is delimited by parentheses ..."
         );
@@ -133,10 +133,10 @@ function testParser(parse, tokens, testHelper) {
                 [" ... nor is ')' ...",       [close, barf, op],            false],
                 [" ... nor is a comment ...", [tok('comment', 'blargh')],   false],
                 [" ... nor is whitespace",    [tok('whitespace', '\n \t')], false],
-                ["symbols ARE atoms ...",     [barf, op, barf],             {'result': sym("barf"), 'rest': [tok('open-paren', '('), barf]}],
-                ["... as are strings",        [tok('string', 'me!')],       {'result': str('me!'),  'rest': []}],
-                ["... and integers",          [tok('integer', '145')],      {'result': num(145),    'rest': []}],
-                ["... and floats",            [tok('float', '7.23')],       {'result': num(7.23),   'rest': []}],
+                ["symbols ARE atoms ...",     [barf, op, barf],             {'result': sym("barf"),  'rest': [tok('open-paren', '('), barf]}],
+                ["... as are strings",        [tok('string', 'me!')],       {'result': str('me!'),   'rest': []}],
+                ["... and integers",          [tok('integer', '145')],      {'result': num('145'),   'rest': []}],
+                ["... and floats",            [tok('float', '7.23')],       {'result': num('7.23'),  'rest': []}],
                 ["no atoms in empty list of tokens", [],                    false]
             ];
         
@@ -415,7 +415,7 @@ function testParser(parse, tokens, testHelper) {
     test("makeAST", function() {
         var myTokens = [op, tok('symbol', '+'), os, tok('integer', '14'), tok('float', '23.2'), cs, tok('string', 'yes'), cp],
             myRes = [app([sym('+'), 
-                          list([num(14), num(23.2)]),
+                          list([num('14'), num('23.2')]),
                           str('yes')])];
         
         deepEqual(myRes,

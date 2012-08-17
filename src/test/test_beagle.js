@@ -39,10 +39,10 @@ function testBeagle(beagle, data, tokens, parser) {
     });
     
     
-    test("multiple expressions", function() {
+    test("multiple forms", function() {
         expect(2);
 
-        var e1 = "(define x 3) (cons x [])"
+        var e1 = "{define x 3} (cons x [])"
             ;
 
         var r = beagle.exec(e1);

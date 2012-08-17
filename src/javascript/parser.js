@@ -18,6 +18,9 @@ var Parser = (function() {
     
     
     function ASTNumber(value) {
+        if(typeof(value) !== 'string') {
+            throw new ParseError("TypeError", "ASTNumber needs a string", value);
+        };
         this.asttype = 'number';
         this.value = Number(value);
     }
@@ -32,7 +35,7 @@ var Parser = (function() {
     
     function ASTChar(value) {
         if(typeof(value) !== 'string') {
-            throw new ParseError("TypeError", "Char needs a string", value);
+            throw new ParseError("TypeError", "ASTChar needs a string", value);
         };
         this.asttype = 'char';
         this.value = value;
