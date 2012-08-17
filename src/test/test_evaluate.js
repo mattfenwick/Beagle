@@ -94,18 +94,6 @@ function testEvaluate(evaluate, parser, data, envir, testHelper) {
         expectExc(function() {
             set(env, [sym('e'), anum(88)]);
         }, 'ValueError', "set! may not be used on undefined symbols");
-
-        expectExc(function() {
-            set(env, [sym('abc')]);
-        }, 'NumArgsError', 'remember that it takes two arguments');
-
-        expectExc(function() {
-            set(env, [sym('def'), empty, empty]);
-        }, 'NumArgsError', '... no more, no less');
-
-        expectExc(function() {
-            set(env, [anum(11), anum(12)]);
-        }, 'TypeError', 'and that the first argument must be a Beagle symbol');
     });
     
     

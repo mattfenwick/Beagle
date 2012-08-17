@@ -8,15 +8,32 @@ function testParser(parse, tokens, testHelper) {
         ch  = parse.ASTChar,
         sym = parse.Symbol,
         num = parse.ASTNumber,
+        spec = parse.Special,
         str = parse.expandString,
         expExc = testHelper.expectException,
         op = tok('open-paren', '('),
         os = tok('open-square', '['),
         cp = tok('close-paren', ')'),
-        cs = tok('close-square', ']');
+        cs = tok('close-square', ']'),
+        oc = tok('open-curly', '['),
+        cc = tok('close-curly', ']'),
+        tokSym = tok('symbol', "+"),
+        tokStr = tok('string', 'str1'),
+        tokInt = tok('integer', '345');
 
     
     test("strings", function() {
+        // examples:
+        //   ""         => the empty string
+        //   "abc'def"  => a string of 7 characters
+        //
+        // explanation:
+        //   strings become lists of chars in the AST
+        //
+        // incorrect usages:
+        //   "abc"def"  -- can't put double-quotes in strings
+        //   "xyz       -- must have ending double-quote
+
         var str1 = tok('string', "yes"),
             emp = tok('string', "");
     
@@ -33,23 +50,24 @@ function testParser(parse, tokens, testHelper) {
     test("applications", function () {
         expect(6);
 
-        var list1 = [
-                op,
-                tok('symbol', "+"),
-                tok('string', 'str1'),
-                tok('integer', "345"),
-                cp
-            ],
-            list2 = [
-                op,
-                tok('symbol', "+"),
-                op,
-                tok('symbol', "-"),
-                tok('string', ""),
-                cp,
-                tok('symbol', '>>>'),
-                cp
-            ];
+        // examples:
+        //   (+ 3 2)                    => 5
+        //   (g)                        => evaluates a function of 0 arguments
+        //   ({lambda [x] (+ x x)} 13)  => 26
+        //   ({cond [true -] +} 37 9)   => 28
+        //   ((f x) y)                  => applies f to x, applies result to y
+        //
+        // explanation:
+        //   '(', symbol/lambda/cond/application, 0 or more expressions, ')'
+        //
+        // incorrect usages:
+        //   (13 15), ([1 2] 4), ("abc") -- need symbol/lambda/cond/application in 1st position
+        //   ()                -- can't have empty application
+        //   (x y z            -- need balanced parentheses
+        //   (f {define x 3})  -- arguments must be expressions, not statements
+
+        var list1 = [ op,    tokSym,  tokStr,   tokInt,  cp ],
+            list2 = [ op, tokSym, op, tokSym,  tokStr, cp, tokSym, cp  ];
 
 
         deepEqual(
@@ -60,24 +78,65 @@ function testParser(parse, tokens, testHelper) {
 
         deepEqual(
             {'rest': [], result: app(sym('+'), 
-                                     [app(sym('-'), 
-                                          [str("")]),
-                                      sym('>>>')])},
+                                     [app(sym('+'), [str("str1")]), sym('+')] ) },
             parse.getNextForm(list2),
             '... and may be nested'
         );
+
+        expExc(function() {
+            parse.getApplication([op, tokInt, cp, tokInt]);
+        }, 'ParseError', 'the operator must be an application, cond, lambda, or symbol');
+
+        var d = parse.Define([sym('x'), num('3')]);
+        expExc(function() {
+            app(sym('y'), d); 
+        }, 'ParseError', 'the arguments must be expressions (i.e. not defines or set!s)');
         
         expExc(function() {
             parse.getNextForm([op, cp]);
-        }, 'ParseError', 'Application needs a function or special form -- cannot be empty');
+        }, 'ParseError', 'Application needs a function/symbol -- cannot be empty');
 
         expExc(function() {
             app(false, []);
         }, 'ParseError', 'trying to create an empty Application throws an exception');
     });
 
+
+    test("getSpecial", function() {
+        var lam = tok('symbol', 'lambda'),
+            num1 = tok('integer', '34');
+
+        deepEqual(
+            {'rest': [lam], 'result':  spec(sym('lambda'), [num('34')])},
+            parse.getNextForm([oc, lam, num1, cc, lam]),
+            'special forms are delimited by matching curly braces -- {}'
+        );
+
+        expExc(function() {
+            parse.getNextForm([oc, lam, oc, lam, cc]);
+        }, 'ParseError', 'braces must match');
+        
+        expExc(function() {
+            parse.getNextForm([oc, cc]);
+        }, 'ParseError', 'Special needs a symbol -- cannot be empty');
+
+        expExc(function() {
+            spec(false, []);
+        }, 'ParseError', 'trying to create an empty Special throws an exception');
+
+    });
+
     
     test("getAtom", function() {
+        // examples:
+        //   abc    => a symbol
+        //   145    => a number
+        //   7.23   => also a number
+        //   "xyz"  => a string
+        //
+        // explanation:
+        //   a one-token syntactic unit
+
         var barf = tok('symbol', 'barf'),
             testCases = [
                 ["'(' is not an atom",        [op, barf],                   false],
@@ -100,6 +159,18 @@ function testParser(parse, tokens, testHelper) {
 
     test("getList", function() {
         expect(15);
+
+        // examples:
+        //   []            => the empty list
+        //   [1 a "" (a)]  => a list with a number, symbol, string, and application
+        //   [[]]          => a nested list
+        //
+        // explanation:
+        //   '[', 0 or more expressions, ']'
+        //
+        // incorrect usages:
+        //   [1 2 3             -- needs balanced brackets
+        //   [{define x 3} 14]  -- can only contain expressions, not statements
 
         var abc = tok('symbol', 'abc'),
             bleh = tok('string', 'bleh'),
@@ -164,6 +235,110 @@ function testParser(parse, tokens, testHelper) {
         expExc(function() {
             parse.getList(t9);
         }, 'ParseError', "... as long as the parentheses match");
+    });
+
+
+    test("define", function() {
+        // examples:
+        //   {define x 3}
+        //   {define abc {lambda [x] (cons x [1 2])}}
+        //
+        // explanation:
+        //   symbol *must not* be bound in current lexical environment
+        //   '{', 'define', symbol, expression, '}'   
+        //
+        // incorrect usages:
+        //   {define 3 []}                -- need symbol as 1st arg
+        //   {define x {set! y 3})        -- need expression as 2nd arg
+        //   {define z}, {define a 1 2}   -- need two args
+        //   {define b "four"             -- need closing '}'
+        var def = tok('symbol', 'define');
+
+        deepEqual(
+            {'rest': [], 'token': parse.Define([sym('+'), num('3')])},
+            parse.getSpecial([oc, def, tokSym, tokInt, cc]),
+            'define ...'
+        );
+
+        expExc(function() {
+            parse.getSpecial([oc, def, tokSym, cc]);
+        }, 'ParseError', 'it takes two arguments');
+
+        expExc(function() {
+            parse.getSpecial([oc, def, tokSym, tokStr, tokInt, cc]);
+        }, 'ParseError', '... no more, no less');
+
+        expExc(function() {
+            parse.getSpecial([oc, def, tokInt, tokStr, cc]); // did it throw for the *right* reason?
+        }, 'ParseError', 'the first argument must be a Beagle symbol');
+
+        expExc(function() {
+            parse.getSpecial([oc, def, tokSym, oc, def, tokSym, tokInt, cc, cc]); 
+        }, 'ParseError', 'the 2nd arg must be an expression -- not a statement');
+
+    });
+
+
+    test("set!", function() {
+        // exact same spec as 'define', except:
+        //   symbol *must already* be bound in any lexically enclosing environment  
+        var set = tok('symbol', 'set!');
+
+        expExc(function() {
+            parse.getSpecial([oc, set, tokSym, cc]);
+        }, 'ParseError', 'it takes two arguments');
+
+        expExc(function() {
+            parse.getSpecial([oc, set, tokSym, tokStr, tokInt, cc]);
+        }, 'ParseError', '... no more, no less');
+
+        expExc(function() {
+            parse.getSpecial([oc, set, tokInt, tokStr, cc]); // did it throw for the *right* reason?
+        }, 'ParseError', 'the first argument must be a Beagle symbol');
+
+        expExc(function() {
+            parse.getSpecial([oc, set, tokSym, oc, set, tokSym, tokInt, cc, cc]); 
+        }, 'ParseError', 'the 2nd arg must be an expression -- not a statement');
+    });
+
+
+    test("cond", function() {
+        // examples:
+        //   {cond [[true y]] z}             => evaluates to y
+        //   {cond [[false b] [true d]] e}   => evaluates to d
+        //   {cond [] f}                     => evaluates to f
+        //
+        // explanation:
+        //   '{', 'cond', list of (two-element lists where both are expressions), expression, '}'
+        //
+        // incorrect usages:
+        //   {cond [[a b] [c d]]}    -- no 'else' value
+        //   {cond x y}              -- 1st arg must be list
+        //   {cond [x [y z]] a}      -- all elements of 1st arg must be lists ...
+        //   {cond [[x] [y z]] a}    -- with 2 elements
+        //   {cond [[{define x 3} 4]] y}  -- can only have expressions ...
+        //   {cond [] {set! z 14}}   -- ... anywhere in cond
+
+    });
+
+
+    test("lambda", function() {
+        // examples:
+        //   {lambda [] false}      -- function of zero args
+        //   {lambda [x] (+ x 3)}   -- function of 1 arg
+        //   {lambda [x] {define y x} [x y]}  -- function with internal define/set!'s
+        //
+        // explanation:
+        //   '{', 'lambda', list of symbols, 0 or more statements, expression, '}'
+        //
+        // incorrect usages:
+        //   {lambda x 3}        -- 1st arg must be list ...
+        //   {lambda [3] "f"}    -- ... of symbols
+        //   {lambda [x x] x}    -- no repeated symbols
+        //   {lambda [] {define x 3})  -- last arg must be an expression
+        //   {lambda [] (+ 3 2) 4}     -- 2nd to (last - 1)th arg must be statements
+        //   {lambda [x] (+ x 2)       -- need balanced }
+
     });
     
     
