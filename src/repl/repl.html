@@ -73,10 +73,6 @@ function printer(obj) {
     return '<function>';
   }
   
-  if( obj.type === 'specialform' ) {
-    return '<specialform>';
-  }
-  
   if( obj.type === 'null' ) {
     return '<null>';
   }
@@ -89,10 +85,6 @@ function printer(obj) {
     return "error: [" + printer(obj.value) + "]";
   }
   
-  if( obj.type === 'application' ) {
-    return "application: " + printer(obj.operator) + ", " + obj.args.map(printer);
-  }
-  
   if( obj.type === 'list' ) {
     return obj.value.map(printer);
   }
@@ -102,6 +94,10 @@ function printer(obj) {
   }
   
   if( obj.type === 'boolean' ) {
+    return obj.value;
+  }
+  
+  if( obj.type === 'number' ) {
     return obj.value;
   }
 
