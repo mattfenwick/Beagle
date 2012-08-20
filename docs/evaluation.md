@@ -3,77 +3,71 @@
 
 ## Abstract syntax ##
 
-    Beagle     :  Expression(+)
+    Beagle        :=  Form(+)
     
-    Expression :  Application  |  List  |  Symbol  |  Number  |  Char
+    Form          :=  Statement  |  Expr 
     
-    Application:  '('  Expression Expression(*)  ')'
+    Statement     :=  Define  |  Set!
     
-    List       :  '['  Expression(*)  ']'
+    Define        :=  Symbol  Expr
     
-    Symbol     :  /^[a-zA-Z\!\@\#\$\%\^\&\*\-\_\=\+\?\/\!\<\>][a-zA-Z0-9\!\@\#\$\%\^\&\*\-\_\=\+\?\/\!\<\>]*/
+    Set!          :=  Symbol  Expr
     
-    Number     :  /^(?:\d*\.\d+|\d+\.\d*)/   |   /^\d+/
+    Expr          :=  Application  |  Cond  |  Lambda  |  List(Expr)(*)  |  Symbol  |  Number  |  Char
     
-    Char       :  (no literal form -- but can be extracted from strings)
+    Application   :=  Expr(+) 
+    
+    Cond          :=  List(Pair)(*)  Expr
+    
+    Pair          :=  List(Expr)(2)
+    
+    Lambda        :=  List(Symbol)(*)  Form(*)  Expr
+    
+    List(Type)(n) :=  Type(n)
 
 
 
 ## Informal semantics ##
 
- - `Beagle[[Expression]]`: evaluates each expression, in order, and returns ... what?  the last one?
+ - `Beagle[[Expr(+)]]`: evaluates each expression, in order, and returns ... what?  the last one? ...
+   along with the environment, which may have been augmented or modified during evaluation
    to start off, an environment is passed in ... each expression may change the environment, which
    is then passed to the next one ... should probably add in concept of statements here
    
- - `Expression[[E E(*)]]`: this is called an *application*.  The first expression must evaluate to either
-   a function or a special form; otherwise it's a type error.  For the first element:
+ - `Application[[Expr(+)]]`: The first expression must evaluate to a function; otherwise it's a type error.  
+   The arguments are evaluated in order (possibly changing the environment, 
+   which is passed sequentially), and then the function is applied to the arguments.  The return
+   value is then the return value of the function.
    
-     - case 1: special form -- the arguments are passed unevaluated and it is responsible for evaluating 
-       them and coming up with a result.
+ - `Cond[[Pair(*) Expr]]`: for each of the pairs, the first element is evaluated to a boolean.  If it
+   doesn't evaluate to a boolean, it's a type error.  If the boolean is true, the second element is evaluated
+   and returned.  If it's false, evaluation continues with the next pair.  If no true first element is found,
+   the the last expression is evaluated and its result returned.  Evaluation may change the environment, thus the pairs 
+   are evaluated in order and the environment is threaded through them.
    
-     - case 2: function, the arguments are evaluated in order (possibly changing the environment, 
-       which is passed sequentially), and then the function is applied to the arguments.  The return
-       value is then the return value of the application of the function/special form.
+ - `Lambda[[List(Symbol)(*) Form(*) Expr]]`: this constructs and returns a function which is a closure over
+   its lexical environment.  When evaluated, the closure creates local bindings for its symbols, evaluates
+   its body forms in order, possibly modifying the local environment and any lexically enclosing environments,
+   and evaluates and returns the last expression.
    
- - `Expression[[List]]`: each of the elements of the list literal are evaluated in order (possibly
-   changing the environment, which is threaded through them), and the output elements returned
-   in a list.
+ - `List[[Expr(*)]]`:  this constructs a list by evaluating each element in order and placing the results
+   in a new list.
    
- - `Expression[[Symbol]]`: the symbol is looked up in its enclosing lexical environments and its bound
+ - `Expr[[Symbol]]`: the symbol is looked up in its enclosing lexical environments and its bound
    value returned.  If no binding is found, that's an error (compile/runtime?)
    
- - `Expression[[Number]]`: a number object is constructed with the value of the number node
+ - `Expr[[Number]]`: a number object is constructed with the value of the number node
  
- - `Expression[[Char]]`: a character object is constructed with the value of the char node
-
-
-## Special forms ##
-
- - `lambda`
-
-   - variadic
+ - `Expr[[Char]]`: a character object is constructed with the value of the char node
  
-   - a list of symbols
+ - `Statement[[Define | Set!]](env)`:  statements are solely for modifying the lexically enclosing
+   environments.  They have no return values, and are not expressions.
    
-   - one or more body expressions
- 
- - `cond`
- 
-   - variadic
+ - `Define[[Symbol Expr]]`:  if the symbol is not bound in the current environment, the expression is 
+   evaluated and a new binding created for the symbol.  If it is bound, this is an error.  Bindings
+   can shadow bindings of identical names in lexically enclosing environments; this enables safe and
+   easy to understand alpha-substitution of lambda expressions.
    
-   - each argument must be a list of length 2; the first element is evaluated
-     to a `Boolean`, and if true, the second element is evaluated and returned.
-     This process continues through the arguments until a true condition is 
-     found.  If no true condition is found, an error is (?) signaled (?).
- 
- - `define`
-   
-   - symbol
-   
-   - BeagleValue
- 
- - `set!`
- 
-   - symbol that has already been `define`d in an enclosing lexical scope
-   
-   - BeagleValue
+ - `Set![[Symbol Expr]]`:  if the symbol is bound in **any** lexically enclosing environment (including
+   the current one), the expression is evaluated and the 'closest' enclosing binding is modified to
+   that new value.  If it's not bound, that is an error.

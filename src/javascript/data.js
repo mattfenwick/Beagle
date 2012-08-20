@@ -73,12 +73,6 @@ var Data = (function () {
     }
 
 
-    function SpecialForm(value) {
-        this.value = value;
-        this.type = 'specialform';
-    }
-
-
     function MyBoolean(value) {
         this.value = value;
         this.type = 'boolean';
@@ -118,12 +112,9 @@ var Data = (function () {
             return new List(x);
         },
         
-        // functions + special forms
+        // functions
         'Function': function (types, name, body) {
             return new MyFunction(types, name, body);
-        },
-        'SpecialForm': function (x) {
-            return new SpecialForm(x);
         },
         
         // like () in Haskell??

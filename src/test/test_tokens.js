@@ -6,7 +6,7 @@ function testTokens(lang, testHelper) {
         tok = lang.Token;
     
     test("nextToken", function() {
-        expect(15);
+        expect(17);
         
         var testCases = [
                 ['empty string', "",          false                                                 ],
@@ -32,6 +32,10 @@ function testTokens(lang, testHelper) {
                 
                 ['close-square', "][][",      {'rest': '[][',    'token': tok('close-square', ']') }],
                 
+                ['open-curly',   "{me ; h",   {'rest': 'me ; h', 'token': tok('open-curly', '{')  }],
+                
+                ['close-curly',  "} 11[][",   {'rest': ' 11[][', 'token': tok('close-curly', '}')  }],
+                
                 ['string with whitespace',
                                  '"ab cd" f', {'rest': ' f',     'token': tok('string', 'ab cd')   }],
                                  
@@ -52,7 +56,7 @@ function testTokens(lang, testHelper) {
     test("symbols", function() {        
         var starts = ['!', '@', '#', '$', '%', '^', '&', '*', '_', '-', '+', '=', '<', '>', '?', '/', 'a', 'z', 'A', 'Z'],
             // this is not an exhaustive list ... should it be?
-            nonos = [',', '"', "'", '{', '}', '|', '\\'];
+            nonos = [',', '"', "'", '|', '\\'];
         
         starts.map(function(c) {
             deepEqual(

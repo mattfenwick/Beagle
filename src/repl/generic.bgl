@@ -2,29 +2,30 @@
 ;; depends on 'simple-table'
 ;; depends on 'equal?'
 
-(define eq-funcs
-  ((lambda []
+{define eq-funcs
+  ({lambda []
    
-   (define method-table (st-new []))
+   {define method-table (st-new [])}
    
-   (define add-method
-     (lambda [fname types f]
-      (set! method-table 
-            (cond [(not (st-has? method-table fname))
-                   (st-add method-table 
-                           fname
-                           (st-add (st-new []) types f))]
-                  [true (st-set method-table 
-                                fname
-                                (st-add (st-get method-table fname) types f)))]))))
+   {define add-method
+     {lambda [fname types f]
+      {set! method-table 
+            {cond [[(not (st-has? method-table fname))
+                    (st-add method-table 
+                            fname
+                            (st-add (st-new []) types f))]]
+                  (st-set method-table 
+                          fname
+                          (st-add (st-get method-table fname) types f))}}
+      1}} ;; ugly hack b/c it has to be an expr
       
-   (define get-method
-     (lambda [fname types]
-      (st-get (st-get method-table fname) types)))
+   {define get-method
+     {lambda [fname types]
+      (st-get (st-get method-table fname) types)}}
       
-   (define has-method?
-     (lambda [fname types]
-      (st-has? (st-get method-table fname) types)))
+   {define has-method?
+     {lambda [fname types]
+      (st-has? (st-get method-table fname) types)}}
 
    (add-method "=" "string" equal?)
       
@@ -39,12 +40,12 @@
    ;;   so that this can work on user-defined types
    ;;   as well as the built-in ones
    ;; suggestion:  change name to 'prim-type' for built-in types
-   (define =
-     (lambda [l r]
-       (cond [(not (equal? (type l) (type r))) false]
-             [(has-method? "=" (type l))
-              ((get-method "=" (type l)) l r)]
-             [true (error "GenericError" "no method found for this function and type" [])])))
+   {define =
+     {lambda [l r]
+       {cond [[(not (equal? (type l) (type r))) false]
+              [(has-method? "=" (type l))
+               ((get-method "=" (type l)) l r)]]
+             (error "GenericError" "no method found for this function and type" [])}}}
    
    ;; wrong -- needs to use '=', not 'equal?' inside of 'eqlist?'
    ;;   anyway, 'eqlist?' is in a different module now, 
@@ -54,20 +55,20 @@
    (add-method "<" "number" number-<)
    
    (add-method "<" "boolean" 
-     (lambda [l r]
-       (cond [r (not l)]
-             [true false])))
+     {lambda [l r]
+       {cond [[r (not l)]]
+             false}})
           
    
-   (define <
-     (lambda [l r]
-       (cond [(not (equal? (type l) (type r)))
-              (error "GenericError" "really need to figure this out" [])]
-             [(has-method? "<" (type l))
-              ((get-method "<" (type l)) l r)]
-             [true (error "GenericError" "no method found" [])))))
+   {define <
+     {lambda [l r]
+       {cond [[(not (equal? (type l) (type r)))
+               (error "GenericError" "really need to figure this out" [])]
+              [(has-method? "<" (type l))
+               ((get-method "<" (type l)) l r)]]
+             (error "GenericError" "no method found" [])}}}
 
-    [= <])))
+    [= <]})}
    ;; this is the end of the 'module':
    ;;    1 ) to end the lambda,
    ;;    2 ) to execute it,
@@ -75,27 +76,29 @@
 
 
 
-(define = (car eq-funcs))
+{define = 
+  (car eq-funcs)}
 
-(define < (car (cdr eq-funcs)))
+{define < 
+  (car (cdr eq-funcs))}
        
        
-(define <=
-  (lambda [l r]
+{define <=
+  {lambda [l r]
    (or (< l r)
-       (= l r))))
+       (= l r))}}
 
 
-(define >
-  (lambda [l r]
-   (not (<= l r))))
+{define >
+  {lambda [l r]
+   (not (<= l r))}}
    
    
-(define >=
-  (lambda [l r]
-   (not (< l r))))
+{define >=
+  {lambda [l r]
+   (not (< l r))}}
    
    
-(define !=
-  (lambda [l r]
-   (not (= l r))))
+{define !=
+  {lambda [l r]
+   (not (= l r))}}

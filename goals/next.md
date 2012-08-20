@@ -1,12 +1,12 @@
 ## Implementation Code ##
 -----
 
- - improve js error message:  include all relevant information, such as the arguments that
+ - improve js error messages:  include all relevant information, such as the arguments that
    caused the problem
 
  - test primitive data types (and error-check in their constructors)
 
- - requite whitespace before comment?
+ - require whitespace before comment?
 
  - `tokenization` postcondition:  never consecutive comments or whitespace tokens
 

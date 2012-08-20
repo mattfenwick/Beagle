@@ -33,83 +33,55 @@ var Evaluate = (function (Data, Functions, Environment) {
 
     //////// Special forms
 
-    function define(env, args) {
-        argsCheck(2, args.length, 'define');
-
-        var name = args[0], 
-            sexpr = args[1],
-            value;
+    function define(form, env) {
+        var value = evaluate(form.astnode, env);
         
-        typeCheck('symbol', name.asttype, 'define', 'first argument');
-        
-        value = evaluate(sexpr, env);
-        
-        if( env.hasOwnBinding(name.value) ) {
+        if( env.hasOwnBinding(form.symbol.value) ) {
             throw new SpecialFormError('ValueError', 'unbound symbol', 
-                    'bound symbol ' + name.value, 'define', 'cannot redefine symbol');
+                    'bound symbol ' + form.symbol.value, 'define', 'cannot redefine symbol');
         }
         
-        env.addBinding(name.value, value);
+        env.addBinding(form.symbol.value, value);
         return Data.Null();
     }
     
     
-    function setBang(env, args) {
-        argsCheck(2, args.length, 'set!');
+    function setBang(form, env) {
+        var value = evaluate(form.astnode, env);
         
-        var name = args[0],
-            sexpr = args[1],
-            value;
-        
-        typeCheck('symbol', name.asttype, 'set!', 'first argument');
-        
-        value = evaluate(sexpr, env);
-        
-        if( !env.hasBinding(name.value) ) {
+        if( !env.hasBinding(form.symbol.value) ) {
             throw new SpecialFormError('ValueError', 'bound symbol', 
-                    'unbound symbol ' + name.value, 'set!', 'cannot set! undefined symbol');
+                    'unbound symbol ' + form.symbol.value, 'set!', 'cannot set! undefined symbol');
         }
         
-        env.setBinding(name.value, value);
+        env.setBinding(form.symbol.value, value);
         return Data.Null();
     }
     
     
-    function cond(env, args) {
-        var i,
-            test;
+    function cond(form, env) {
+        var pairs = form.pairs.elements,
+            test, i;
         
-        for(i = 0; i < args.length; i++) {
-            typeCheck('list', args[i].asttype, 'cond', "argument " + (i + 1));
-            argsCheck(2, args[i].elements.length, 'arguments to cond must be lists of length 2');
-            
-            test = evaluate(args[i].elements[0], env);
+        for(i = 0; i < pairs.length; i++) {
+            test = evaluate(pairs[i].elements[0], env);
             typeCheck('boolean', test.type, 'cond', "condition of argument " + (i + 1));
             
             if(test.value) {
-                return evaluate(args[i].elements[1], env);
+                return evaluate(pairs[i].elements[1], env);
             }
         }
         
-        throw new SpecialFormError('ValueError', 'a true condition',
-                  'no true condition', 'cond', "a true condition is required");
+        // if we didn't find a true condition
+        return evaluate(form.elseValue, env);
     }
     
     
+    // ASTList Symbol -> [Symbol]
     function extractArgNames(args) {
-        typeCheck('list', args.asttype, 'lambda/special', 'first argument');
-
-        var names = [],
-            i = 1;
-
-        args.elements.map(function(sym) {
-            typeCheck('symbol', sym.asttype, 'lambda/special parameters', "parameter " + i);
-            i++;
-
-            names.push(sym);
+        return args.elements.map(function(sym) {
+            return sym;
         });
-        
-        return names;
     }
     
     
@@ -122,14 +94,10 @@ var Evaluate = (function (Data, Functions, Environment) {
     }
 
 
-    function lambda(env, lam_args) {
-        if( lam_args.length < 2 ) {
-            throw new SpecialFormError("NumArgsError", "list of arguments and at least 1 body form",
-                      "missing one or both", "lambda/special", "body may not be empty");
-        }
-        
-        var args = lam_args[0],
-            bodies = lam_args.slice(1),
+    function lambda(form, env) {
+        var args = form.parameters,
+            bodies = form.bodyForms,
+            last   = form.lastForm,
             names = extractArgNames(args);
 
         // create the closure,
@@ -141,18 +109,18 @@ var Evaluate = (function (Data, Functions, Environment) {
             var newEnv = Environment.Environment(env, {}),
                 j, k;
 
+            // put parameter bindings into local environment
             for (j = 0; j < names.length; j++) {
-                // arguments don't need to be evaluated here
                 newEnv.addBinding(names[j].value, c_args[j]);
             }
 
-            // evaluate all the body forms except for the last ...
-            for(k = 0; k < bodies.length - 1; k++) {
+            // evaluate all the body forms ...
+            for(k = 0; k < bodies.length; k++) {
                 evaluate(bodies[k], newEnv);
             }
 
-            // ... because we want to return its result
-            return evaluate(bodies[k], newEnv);
+            // ... and return the result of the last
+            return evaluate(last, newEnv);
         }
 
         return Data.Function(makeArray(names.length, null), 'closure', closure);
@@ -164,12 +132,6 @@ var Evaluate = (function (Data, Functions, Environment) {
     function getDefaultEnv() {
         var bindings = {},
             name;
-
-        // the special forms
-        bindings['define'] = Data.SpecialForm(define);
-        bindings['set!']   = Data.SpecialForm(setBang);
-        bindings['cond']   = Data.SpecialForm(cond);
-        bindings['lambda'] = Data.SpecialForm(lambda);
         
         // the boolean constants
         bindings['true']   = Data.Boolean(true);
@@ -193,11 +155,6 @@ var Evaluate = (function (Data, Functions, Environment) {
 
         return func.fapply(evaledArgs);
     }
-    
-    
-    function applySpecial(func, env, args) {
-        return func.value(env, args);
-    }
 
 
     function evaluateApplication(sexpr, env) {
@@ -209,11 +166,7 @@ var Evaluate = (function (Data, Functions, Environment) {
             return applyFunction(first, env, args);
         }
 
-        if (optype === 'specialform') {
-            return applySpecial(first, env, args);
-        }
-
-        throw new Error("first element in Application must be function or special form (was " + optype + ")");
+        throw new Error("first element in Application must be function (was " + optype + ")");
     }
     
     
@@ -226,55 +179,40 @@ var Evaluate = (function (Data, Functions, Environment) {
     }
 
 
-    var SELF_EVALUATING_TYPES  = {
-        'number'       :  1,
-        'char'         :  1,
-        'boolean'      :  1,
-        'function'     :  1,
-        'specialform'  :  1,
-        'list'         :  1
-    };
-
-
-    function evaluateAtom(sexpr, env) {
-        var type = sexpr.asttype;
-        
-        if (type === 'symbol') {
-            if(env.hasBinding(sexpr.value)) {
-                return env.getBinding(sexpr.value);
-            } else {
-                throw new SpecialFormError('UndefinedVariableError', '', '', 'evaluateAtom', 'symbol ' + sexpr.value + ' is not defined');
-            }
+    function evaluateSymbol(sexpr, env) {
+        if(env.hasBinding(sexpr.value)) {
+            return env.getBinding(sexpr.value);
+        } else {
+            throw new SpecialFormError('UndefinedVariableError', '', '', 'evaluateAtom', 'symbol ' + sexpr.value + ' is not defined');
         }
-
-        if (type === 'number') {
-            return Data.Number(sexpr.value);
-        }
-        
-        if (type === 'char') {
-            return Data.Char(sexpr.value);
-        }
-
-        throw new Error("unrecognized type: " + type + " in " + JSON.stringify(sexpr));
     }
 
 
-    function evaluate(sexpr, env) {
-        env.logEvaluation(sexpr);
+    function evaluate(form, env) {
+        env.logEvaluation(form);
         
-        if (!env || !sexpr) {
-            throw new Error("evaluate missing sexpr or environment");
-        }
-
-        if (sexpr.asttype === 'application') {
-            return evaluateApplication(sexpr, env);
+        if (!env || !form) {
+            throw new Error("cannot evaluate if missing form or environment");
         }
         
-        if (sexpr.asttype === 'list') {
-            return evaluateList(sexpr, env);
+        var actions = {
+                'application':  evaluateApplication,
+                'list'       :  evaluateList,
+                'define'     :  define,
+                'set!'       :  setBang,
+                'cond'       :  cond,
+                'lambda'     :  lambda,
+                'char'       :  function(form, e) {return Data.Char(form.value);},
+                'number'     :  function(form, e) {return Data.Number(form.value);},
+                'symbol'     :  evaluateSymbol
+            },
+            action = actions[form.asttype];
+        
+        if(action) {
+            return action(form, env);
         }
 
-        return evaluateAtom(sexpr, env);
+        throw new Error("unrecognized syntax type: " + form.asttype + " in " + JSON.stringify(form));
     }
 
 

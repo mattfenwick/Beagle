@@ -1,120 +1,121 @@
 
 ;; the public interface ... yes, global variables are bad
-(define st-new false)
+{define st-new false}
 
-(define st-add false)
+{define st-add false}
 
-(define st-has? false)
+{define st-has? false}
 
-(define st-get false)
+{define st-get false}
 
-(define st-elems false)
+{define st-elems false}
 
-(define st-set false)
+{define st-set false}
 
-(define st-remove false)
+{define st-remove false}
 
 
 ;; the implementation
 ;; IMPORTANT:  still missing 'error' function
-((lambda []
+({lambda []
   
    ;; constructor :: [Pair] -> Simple-Table
    ;;   unsafe (doesn't check input)
-   (define constructor 
-     (lambda [pairs]
-      (datum "simple-table" pairs)))
+   {define constructor 
+     {lambda [pairs]
+      (datum "simple-table" pairs)}}
    
    ;; empty :: Simple-Table
-   (define empty (constructor []))
+   {define empty (constructor [])}
    
    ;; get-pair :: Simple-Table -> key -> Either Pair []
-   (define get-pair
-     (lambda [table key]
-      (define helper
-        (lambda [elems]
-          (cond [(null? elems) []]
-                [(equal? (car (car elems)) key)
-                 (car elems)]
-                [true 
-                 (helper (cdr elems))])))
-      (helper (value table))))
+   {define get-pair
+     {lambda [table key]
+      {define helper
+        {lambda [elems]
+          {cond [[(null? elems) []]
+                 [(equal? (car (car elems)) key)
+                  (car elems)]]
+                (helper (cdr elems))}}}
+      (helper (value table))}}
       
    
    ;; has? :: Simple-Table -> key -> Boolean
-   (define has?
-     (lambda [table key]
-      (not (null? (get-pair table key)))))
+   {define has?
+     {lambda [table key]
+      (not (null? (get-pair table key)))}}
 
    
    ;; add :: Simple-Table -> key -> value -> Error Simple-Table
-   (define add
-     (lambda [table key val]
-       (cond [(has? table key)
-              (error "ValueError" (++ "can't key:  table already has key " key) [])]
-             [true (constructor (cons [key val]
-                                      (value table)))])))
+   {define add
+     {lambda [table key val]
+       {cond [[(has? table key)
+               (error "ValueError" (++ "can't key:  table already has key " key) [])]]
+              (constructor (cons [key val]
+                                 (value table)))}}}
 
 
    ;; remove :: Simple-Table -> key -> Error Simple-Table
-   (define remove
-     (lambda [table key]
-      (define helper
-        (lambda [pairs]
-          (cond [(null? pairs)
-                 (error "ValueError" (++ "can't remove key: not in table " key) [])]
-                [(equal? key (car (car pairs)))
-                 (cdr pairs)]
-                [true (cons (car pairs)
-                            (helper (cdr pairs)))]))) 
-      (constructor (helper (value table)))))
+   {define remove
+     {lambda [table key]
+      {define helper
+        {lambda [pairs]
+          {cond [[(null? pairs)
+                  (error "ValueError" (++ "can't remove key: not in table " key) [])]
+                 [(equal? key (car (car pairs)))
+                  (cdr pairs)]]
+                (cons (car pairs)
+                      (helper (cdr pairs)))}}}
+      (constructor (helper (value table)))}}
 
 
    ;; set :: Simple-Table -> key -> value -> Simple-Table
-   (define set
-     (lambda [table key val]
-      (define new-pairs
-        (value (cond [(has? table key)
-                      (remove table key)]
-                     [true table])))
-      (constructor (cons [key val] new-pairs))))
+   {define set
+     {lambda [table key val]
+      {define new-pairs
+        (value {cond [[(has? table key)
+                       (remove table key)]]
+                     table})}
+      (constructor (cons [key val] new-pairs))}}
       
 
    ;; get :: Simple-Table -> key -> Error Simple-Table                            
-   (define get
-     (lambda [table key]
-       (define pair (get-pair table key))
-       (cond [(null? pair) 
-              (error "ValueError" (++ "table doesn't have key " key) [])]
-             [true (car (cdr pair))])))
+   {define get
+     {lambda [table key]
+       {define pair (get-pair table key)}
+       {cond [[(null? pair) 
+               (error "ValueError" (++ "table doesn't have key " key) [])]]
+             (car (cdr pair))}}}
             
 
    ;; new :: List -> Simple-Table
-   (define new
-     (lambda [pairs]
-      (reduce (lambda [b p]
-                (add b (car p) (car (cdr p))))
+   {define new
+     {lambda [pairs]
+      (reduce {lambda [b p]
+                (add b (car p) (car (cdr p)))}
               empty 
-              pairs)))
+              pairs)}}
               
 
    ;; elems :: Simple-Table -> List
-   (define elems
-     (lambda [table]
-      (value table)))
+   {define elems
+     {lambda [table]
+      (value table)}}
    
 
-   (set! st-new new)
+   {set! st-new new}
    
-   (set! st-add add)
+   {set! st-add add}
    
-   (set! st-has? has?)
+   {set! st-has? has?}
    
-   (set! st-get get)
+   {set! st-get get}
 
-   (set! st-set set)
+   {set! st-set set}
 
-   (set! st-remove remove)
+   {set! st-remove remove}
    
-   (set! st-elems elems)))
+   {set! st-elems elems}
+   
+   1}) ;; lambda hack
    

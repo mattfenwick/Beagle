@@ -1,28 +1,38 @@
 
 ## Grammar ##
 
-Loosely using [BNF](http://en.wikipedia.org/wiki/Backus%E2%80%93Naur_Form):
+Concrete syntax, loosely using [BNF](http://en.wikipedia.org/wiki/Backus%E2%80%93Naur_Form):
 
-    BeagleCode:     SExpression(+)
-
-    SExpression:    Atom  |  List  |  Application
-
-    Atom:           STRING  |  SYMBOL  |  INTEGER  |  FLOAT
-
-    STRING:         "[^\"]*"
-
-    SYMBOL:         [a-zA-Z\!\@\#\$\%\^\&\*\-\_\=\+\?\/\!\<\>][a-zA-Z0-9\!\@\#\$\%\^\&\*\-\_\=\+\?\/\!\<\>]*
-
-    INTEGER:        \d+
-
-    FLOAT:          \d*\.\d+  |  \d+\.\d*
-
-    List:           '['  SExpression(*)  ']'
-
-    Application:    '('  SExpression(+)  ')'
+    Beagle      :=  Form(+)
     
+    Form        :=  Special  |  Application  |  List  |  Symbol  |  Number  |  String
+    
+    Special     :=  '{'  ( Define  |  Set!  |  Lambda  |  Cond )  '}'
+    
+    Define      :=  'define'  Symbol  Form
+    
+    Set!        :=  'set!'  Symbol  Form
+    
+    Application :=  '('  Form(+)  ')' 
+    
+    List(T)(n)  :=  '['  T(n)  ']'
+    
+    Symbol      :=  [a-zA-Z\!\@\#\$\%\^\&\*\-\_\=\+\?\/\!\<\>][a-zA-Z0-9\!\@\#\$\%\^\&\*\-\_\=\+\?\/\!\<\>]*
+    
+    Number      :=  Float  |  Integer
+    
+    Float       :=  \d*\.\d+  |  \d+\.\d*
+    
+    Integer     :=  \d+
+    
+    String      :=  '"'  (not '"')(*)  '"'
+    
+    Lambda      :=  'lambda'  List(Symbol)(*)  Form(+)
+    
+    Pair        :=  List(Form)(2)
+    
+    Cond        :=  'cond'  List(Pair)(*)  Form
 
-Also, comments are indicated by `;` (when not in a string) and extend to the end of the line.
 
 
 ## Tokens ##
@@ -66,6 +76,8 @@ Also, comments are indicated by `;` (when not in a string) and extend to the end
    - `)`:  CLOSE-PAREN
    - `[`:  OPEN-SQUARE
    - `]`:  CLOSE-SQUARE
+   - '{':  OPEN-CURLY
+   - '}':  CLOSE-CURLY
 
 
 ## Whitespace requirements ##
