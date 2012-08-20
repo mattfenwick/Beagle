@@ -73,14 +73,4 @@ For more information about the evaluation rules for these forms, see [here](eval
    - `read :: String -> Error String` read from a file
 
    - `write :: String -> String -> Error ()` write to a file
-   
- - basic string functions
- 
-   - first
-   
-   - rest
-   
-   - toString/fromString ??
-   
-   - comparison (`string-<`)
 
