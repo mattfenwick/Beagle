@@ -16,6 +16,7 @@
   <script type="text/javascript" src="../javascript/functions.js"></script>
   <script type="text/javascript" src="../javascript/evaluate.js"></script>
   <script type="text/javascript" src="../javascript/beagle.js"></script>
+  <script type="text/javascript" src="../javascript/macros.js"></script>
 
   <script type="text/javascript" src="test_unparser.js"></script>
   <script type="text/javascript" src="test_tokens.js"></script>
@@ -25,6 +26,7 @@
   <script type="text/javascript" src="test_functions.js"></script>
   <script type="text/javascript" src="test_evaluate.js"></script>
   <script type="text/javascript" src="test_beagle.js"></script>
+  <script type="text/javascript" src="test_macros.js"></script>
  </head>
 
 
@@ -46,6 +48,8 @@
     testEvaluate(Evaluate, Parser, Data, Environment, TestHelper);
     
     testBeagle(Beagle, Data, Tokens, Parser);
+    
+    testMacros(Macros, Parser);
     
   });
 </script>
