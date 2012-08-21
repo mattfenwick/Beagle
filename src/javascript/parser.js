@@ -47,7 +47,7 @@ var Parser = (function() {
         }
         elems.map(function(arg, ix) {
             if(!isExpression(arg)) {
-                throw new ParseError("TypeError", "all arguments to application must be expressions", [arg, ix + 1]);
+                throw new ParseError("TypeError", "all elements in a list must be expressions", [arg, ix + 1]);
             }
         });
         this.asttype = 'list';
