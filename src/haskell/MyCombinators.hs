@@ -11,6 +11,7 @@ module MyCombinators (
     , pany
     , pall
     , some
+    , pnone
     , pnot
 
     , Parser
@@ -19,12 +20,26 @@ module MyCombinators (
     , integer
     , alpha
     , wschar
+    
+    -- hmmmm
+    , pseq2
+    , pseq3
+    , string
+    , separatedBy0
+    , separatedBy1
+    , separatedByOne
+    , ignoreLeft
+    , ignoreRight
+    , pnpnot
+    , pnpnone
+    , getOne
+    , message
+    
 ) where
 
 import Control.Monad.Error -- do I need this?
 
-          
-      
+
 -- ------------------------------------------------------------------------------
 -- parsing combinators
 
@@ -49,6 +64,12 @@ satisfy _ [] = pfail "empty input to 'satisfy'" []
 satisfy p (x:xs)
   | p x = succeed x xs
   | otherwise = pfail "'satisfy' predicate false" (x:xs)
+  
+  
+-- succeeds, consuming one 'token', as
+--   long as input is not empty
+getOne :: Parser a a
+getOne = satisfy (const True)
 
 
 -- match a token exactly
@@ -67,6 +88,27 @@ pseq :: Parser a b -> Parser a c -> Parser a (b, c)
 pseq l r inp = l inp >>= (\(toks1, res1) ->
   r toks1 >>= (\(toks2, res2) ->
   return (toks2, (res1, res2))))
+  
+
+pseq2 :: (b -> c -> d) -> Parser a b -> Parser a c -> Parser a d
+pseq2 f l r = using (uncurry f) $ pseq l r
+
+
+pseq3 :: (b -> c -> d -> e) -> Parser a b -> Parser a c -> Parser a d -> Parser a e
+pseq3 f l m r = using unpack $ pseq l $ pseq m r
+  where unpack (b, (c, d)) = f b c d
+  
+  
+-- match both parsers in sequence, and return 
+--   the value of the second parser
+ignoreLeft :: Parser a b -> Parser a c -> Parser a c
+ignoreLeft l r = using (uncurry $ flip const) $ pseq l r
+
+
+-- match both parsers in sequence, and return
+--   the value of the first parser
+ignoreRight :: Parser a b -> Parser a c -> Parser a b
+ignoreRight l r = using (uncurry const) $ pseq l r
 
 
 -- match either one of two parsers

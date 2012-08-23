@@ -47,6 +47,7 @@ cond _ (_:forms) = Left "type error in 'cond': expected list"
 cond _ [] = Left "value error in cond: no true condition found"
 
 
+{-
 lambda :: Environment LispVal -> [ASTNode] -> Either String (Environment LispVal, LispVal)
 lambda _ [] = Left "syntax error in 'lambda': too few args"
 lambda _ [_] = Left "syntax error in 'lambda': too few args"
@@ -56,7 +57,7 @@ lambda e (AList syms : bodies) =
         extract (ASymbol name) = Right name
         extract _ = Left "error in lambda parameter list: expected symbol"
 lambda _ (_:_) = Left "syntax error in 'lambda': first arg must be list of symbols"
-  
+  -}
 
 
   
