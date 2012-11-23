@@ -1,13 +1,17 @@
 module Parser (
+
     Token
   , scanner
+
 --  , beagle
 --  , full  -- what a terrible name
 
 ) where
 
-import Control.Monad.Error -- for Monad instance of Either
-import MyCombinators
+import MParse
+import Instances
+import Classes
+import Prelude hiding (foldr, foldl, (>>=), (>>), fmap, fail)
   
 -- -----------------------------------------------------------------
 -- Tokens
@@ -22,7 +26,6 @@ data Token
   | CloseCurly
   | Whitespace String
   | Comment String
-  | Integer Integer -- wow, that looks weird ... is the first one a constructor and the second one a type ???
   | Decimal Float
   | String String -- again, weird
   | Symbol String
@@ -34,25 +37,85 @@ myReader [] = 0
 myReader xs = read xs
 
 
-nextToken :: Parser Char Token
-nextToken = pany [op, cp, os, cs, oc, cc, ws, flt, int, str, com, sym]
-  where
-    op = preturn OpenParen   $ literal '('
-    cp = preturn CloseParen  $ literal ')'
-    os = preturn OpenSquare  $ literal '['
-    cs = preturn CloseSquare $ literal ']'
-    oc = preturn OpenCurly   $ literal '{'
-    cc = preturn CloseCurly  $ literal '}'
-    ws = using Whitespace $ some wschar
-    flt = using (Decimal . read . concat) $ alt (pall [some digit, dot, many digit]) (pall [many digit, dot, some digit])
-    int = using Integer integer
-    str = using (String . concat) $ pall [preturn [] $ literal '"', many $ pnot '"', preturn [] $ literal '"']
-    com = using (Comment . concat) $ pall [preturn [] $ literal ';', many $ pnot '\n']
-    sym = using (Symbol . (uncurry (:))) (firstChar <*> restChars)
-    dot = using (:[]) $ literal '.'
-    firstChar = alt alpha $ pany $ map literal "!@#$%^&*-_=+?/<>"
-    restChars = many (alt firstChar digit)
+separators :: [(Char, Token)]
+separators = 
+    [('(', OpenParen),
+     (')', CloseParen),
+     ('[', OpenSquare),
+     (']', CloseSquare),
+     ('{', OpenCurly),
+     ('}', CloseCurly)]
 
+
+punctuation :: Parser Char Token
+punctuation = mconcat $ map f separators
+  where
+    f (c, v) = literal c *> pure v
+
+
+whitespace :: Parser Char Token
+whitespace =
+    pure Whitespace   <*>
+    some wschar
+  where
+    wschar = satisfy (flip elem " \t\n\r\f")
+
+
+digit :: Parser Char Char
+digit = mconcat $ map literal ['0' .. '9']
+
+
+float :: Parser Char Token
+float =
+    pure (Decimal . read . concat)  <*>
+    (float1 <|> float2)
+  where
+    float1 = commute [some digit, dot, many digit]
+    float2 = commute [many digit, dot, some digit]
+    dot = string "."
+
+
+integer :: Parser Char Token
+integer =
+    pure (Decimal . read)  <*>
+    some digit
+
+
+str :: Parser Char Token
+str =
+    literal '"'       >>
+    many (pnot '"')   >>= \cs ->
+    literal '"'       >>
+    pure (String cs)
+
+
+comment :: Parser Char Token
+comment =
+    some (literal ';')  >>
+    many (pnot '\n')    >>= \cs ->
+    pure (Comment cs)
+
+
+symbol :: Parser Char Token
+symbol =
+    firstChar             >>= \c ->
+    many restChar         >>= \cs ->
+    pure (Symbol (c:cs))
+  where
+    firstChar = alpha <|> mconcat (map literal "!@#$%^&*-_=+?/<>")
+    restChar = digit <|> firstChar
+    alpha = mconcat $ map literal (['a' .. 'z'] ++ ['A' .. 'Z'])
+
+
+nextToken :: Parser Char Token
+nextToken = 
+    punctuation      <|>
+    whitespace       <|>
+    float            <|>
+    integer          <|>
+    str              <|>
+    comment          <|>
+    symbol
   
   
 scanner :: Parser Char [Token]
@@ -101,19 +164,27 @@ type Beagle = [Form]
 
 
 astring :: Parser Token Expr
-astring (String s:rest) = succeed (AList $ map AChar s) rest
-astring r = pfail "unable to match 'AString'" r
+astring =
+    getOne >>= f
+  where
+    f (String s)   =  pure (AList $ map AChar s)
+    f   _          =  empty
 
 
 anumber :: Parser Token Expr
-anumber (Integer i:rest) = succeed (ANumber $ fromIntegral i) rest
-anumber (Decimal f:rest) = succeed (ANumber f) rest
-anumber r = pfail "unable to match 'ANumber'" r
+anumber =
+    getOne >>= f
+  where
+    f (Decimal f)   =  pure (ANumber f)
+    f    _          =  empty
 
 
-asymbol :: Parser Token Expr
-asymbol (Symbol s:rest) = succeed (ASymbol s) rest
-asymbol r = pfail "unable to match 'ASymbol'" r
+asymbol :: Parser Token Symbol
+asymbol =
+    getOne >>= f
+  where
+    f (Symbol s)   =  pure s
+    f   _          =  empty
 
 
 -- probably nearly every use of 'ws' should actually be '(some ws)' to allow multiple whitespace/comment tokens
@@ -124,96 +195,119 @@ ws = satisfy f
         f _ = False
 
 
-infixl 0 *>
-a *> b = ignoreLeft a b
-
-
-infixl 0 <*
-a <* b = ignoreRight a b
-
-
-infixl 0 <*>
-a <*> b = pseq a b
-
-
 alist :: Parser Token Expr
-alist = literal OpenSquare *> using AList (exprs <* literal CloseSquare)
-  where exprs = using fst $ separatedBy0 expr (some ws)      
+alist = 
+    literal OpenSquare     >> 
+    sepBy0 expr (some ws)  >>= \(es, _) ->
+    literal CloseSquare    >>
+    pure (AList es)
 
 
 myList :: Parser Token a -> Parser Token [a]
-myList p = literal OpenSquare *> ps <* literal CloseSquare
-  where ps = using fst $ separatedBy0 p (some ws)
+myList p = 
+    literal OpenSquare    >>
+    sepBy0 p (some ws)    >>= \(ps,_) ->
+    literal CloseSquare   >>
+    pure ps
 
 
 app :: Parser Token Expr
-app = using (\(x:xs) -> Application x xs) (op *> exprs <* cp)
-  where exprs = using fst $ separatedByOne expr (some ws)
-        op = literal OpenParen
-        cp = literal CloseParen
+app = 
+    literal OpenParen        >>
+    sepBy1 expr (some ws)    >>= \(e:es,_) ->
+    literal CloseParen       >>
+    pure (Application e es)
 
 
 expr :: Parser Token Expr
-expr = pany [astring, anumber, asymbol, alist, app, cond, lambda]
+expr = mconcat [astring, anumber, fmap ASymbol asymbol, alist, app, cond, lambda]
 
 
 cond :: Parser Token Expr
-cond = using (uncurry Cond) (oc *> conSym *> ws *> (myList pair) <* ws <*> expr <* cc)
-  where pair = os *> expr <*> (ws *> expr <* cs)
-        oc = literal OpenCurly
-        cc = literal CloseCurly
-        os = literal OpenSquare
-        cs = literal CloseSquare
-        conSym = literal $ Symbol "cond"
+cond =
+    literal OpenCurly        >>
+    literal (Symbol "cond")  >>
+    some ws                  >>
+    myList pair              >>= \ps ->
+    some ws                  >>
+    expr                     >>= \el ->
+    literal CloseCurly       >>
+    pure (Cond ps el)
+  where
+    pair =
+        literal OpenSquare   >>
+        expr                 >>= \e1 ->
+        some ws              >>
+        expr                 >>= \e2 ->
+        literal CloseSquare  >>
+        pure (e1, e2)
 
 
-lambda :: Parser Token Expr -- {lambda [x y] (what) (+ x y)}
-lambda = using f (oc *> lamSym *> ws *> (myList sym) <* ws <*> bodies <* cc)
-  where oc = literal OpenCurly
-        cc = literal CloseCurly
-        os = literal OpenSquare
-        cs = literal CloseSquare
-        f (syms, (forms, ex)) = Lambda syms forms ex
-        sym = using (\(Symbol x) -> x) $ satisfy (\x -> case x of (Symbol x) -> True; _ -> False) -- wow, that's awful:  matching on 'Symbol' like that in the 'using' function
-        lamSym = literal $ Symbol "lambda"
-        bodies inp = (using fst $ separatedByOne form (some ws)) inp >>= 
-          \(rest, result) -> case (last result) of (Expression e) -> Right (rest, (init result, e));
-                                                   _ -> Left "lambda must end with an expression"
+-- {lambda [x y] (what) (+ x y)}
+-- TODO:  oops, last form has to be an expression
+lambda :: Parser Token Expr
+lambda = 
+    literal OpenCurly          >>
+    literal (Symbol "lambda")  >>
+    some ws                    >>
+    myList asymbol             >>= \syms ->
+    some ws                    >>
+    sepBy1 form (some ws)      >>= \(bs,_) ->
+    literal CloseCurly         >>
+    f syms (init bs) (last bs)
+  where
+    f xs ys (Expression e)  =  pure (Lambda xs ys e)   -- TODO:  oops, partial functions
+    f _  _  _               =  empty
 
 
 define :: Parser Token Statement
-define = using (uncurry Define) (op *> def *> ws *> sym <* ws <*> expr <* cp)
-  where op = literal OpenCurly
-        cp = literal CloseCurly
-        sym = using (\(Symbol x) -> x) $ satisfy (\x -> case x of (Symbol x) -> True; _ -> False)
-        def = literal $ Symbol "define"
+define =
+    literal OpenCurly          >>
+    literal (Symbol "define")  >>
+    some ws                    >>
+    asymbol                    >>= \s ->
+    some ws                    >>
+    expr                       >>= \e ->
+    literal CloseCurly         >>
+    pure (Define s e)
 
 
 setbang :: Parser Token Statement
-setbang = using (uncurry SetBang) (op *> set *> ws *> sym <* ws <*> expr <* cp)
-  where op = literal OpenCurly
-        cp = literal CloseCurly
-        sym = using (\(Symbol x) -> x) $ satisfy (\x -> case x of (Symbol x) -> True; _ -> False)
-        set = literal $ Symbol "set!"
+setbang = 
+    literal OpenCurly          >>
+    literal (Symbol "set!")    >>
+    some ws                    >>
+    asymbol                    >>= \s ->
+    some ws                    >>
+    expr                       >>= \e ->
+    literal CloseCurly         >>
+    pure (SetBang s e)
+
         
 
 form :: Parser Token Form
-form = alt (using Expression expr) (using Statement statement)
+form = 
+    fmap Expression expr      <|>
+    fmap Statement statement
 
 
 statement :: Parser Token Statement
-statement = alt define setbang
+statement = 
+    define   <|>
+    setbang
 
  
 beagle :: Parser Token [Form]
-beagle = some form
-
-unwrap :: (Monad m) => m (b, c) -> m c
-unwrap = liftM snd
+beagle = fmap fst $ sepBy1 form (some ws)
 
 
+unwrap :: (Monad' m) => m (b, c) -> m c
+unwrap = fmap snd
 
-full :: String -> Either String [Form]
-full str = scanner str >>= 
-    (beagle . snd) >>= 
+
+
+full :: String -> Maybe [Form]
+full str = 
+    getParser scanner str     >>= 
+    (getParser beagle . snd)  >>= 
     (return . snd)
