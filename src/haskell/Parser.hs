@@ -3,7 +3,7 @@ module Parser (
     Token
   , scanner
 
---  , beagle
+  , beagle
 --  , full  -- what a terrible name
 
 ) where
@@ -124,46 +124,24 @@ scanner = many nextToken
 
 -- ------------------------------------------------------------------
 -- AST construction
+
 type Symbol = String
 
 
-data Statement
-  = Define Symbol Expr
-  | SetBang Symbol Expr
-  deriving (Show, Eq)
-
-
--- the first Expr must evaluate to a boolean,
---   so it can only be an Application, Symbol,
---   or Cond ... oopsy-daisy!!
-type Pair = (Expr, Expr)
-
-
- -- the first Expr in Application must
- --   evaluate to a function, so it can
- --   only be an Application, Lambda,
- --   Cond, or Symbol ... oopsy-daisy!!
-data Expr
-  = Application Expr [Expr]    
-  | Lambda [Symbol]  [Form] Expr
-  | Cond   [Pair]    Expr
-  | AList   [Expr]
-  | ANumber Float
-  | AChar   Char
-  | ASymbol Symbol
-  deriving (Show, Eq)
-
-
 data Form
-  = Statement Statement
-  | Expression Expr
+    = Application   Form    [Form]    
+    | ASpecial      Symbol  [Form]
+    | AList        [Form]
+    | ANumber       Float
+    | AChar         Char
+    | ASymbol       Symbol
   deriving (Show, Eq)
 
 
 type Beagle = [Form]
 
 
-astring :: Parser Token Expr
+astring :: Parser Token Form
 astring =
     getOne >>= f
   where
@@ -171,7 +149,7 @@ astring =
     f   _          =  empty
 
 
-anumber :: Parser Token Expr
+anumber :: Parser Token Form
 anumber =
     getOne >>= f
   where
@@ -195,108 +173,42 @@ ws = satisfy f
         f _ = False
 
 
-alist :: Parser Token Expr
+alist :: Parser Token Form
 alist = 
     literal OpenSquare     >> 
-    sepBy0 expr (some ws)  >>= \(es, _) ->
+    sepBy0 form (some ws)  >>= \(es, _) ->
     literal CloseSquare    >>
     pure (AList es)
 
 
-myList :: Parser Token a -> Parser Token [a]
-myList p = 
-    literal OpenSquare    >>
-    sepBy0 p (some ws)    >>= \(ps,_) ->
-    literal CloseSquare   >>
-    pure ps
-
-
-app :: Parser Token Expr
+app :: Parser Token Form
 app = 
     literal OpenParen        >>
-    sepBy1 expr (some ws)    >>= \(e:es,_) ->
+    sepBy1 form (some ws)    >>= \(e:es,_) ->
     literal CloseParen       >>
     pure (Application e es)
 
 
-expr :: Parser Token Expr
-expr = mconcat [astring, anumber, fmap ASymbol asymbol, alist, app, cond, lambda]
+special :: Parser Token Form
+special =
+    literal OpenCurly      >>
+    asymbol                >>= \s ->
+    some ws                >>
+    sepBy0 form (some ws)  >>= \(fs,_) ->
+    literal CloseCurly     >>
+    pure (ASpecial s fs)
 
-
-cond :: Parser Token Expr
-cond =
-    literal OpenCurly        >>
-    literal (Symbol "cond")  >>
-    some ws                  >>
-    myList pair              >>= \ps ->
-    some ws                  >>
-    expr                     >>= \el ->
-    literal CloseCurly       >>
-    pure (Cond ps el)
-  where
-    pair =
-        literal OpenSquare   >>
-        expr                 >>= \e1 ->
-        some ws              >>
-        expr                 >>= \e2 ->
-        literal CloseSquare  >>
-        pure (e1, e2)
-
-
--- {lambda [x y] (what) (+ x y)}
--- TODO:  oops, last form has to be an expression
-lambda :: Parser Token Expr
-lambda = 
-    literal OpenCurly          >>
-    literal (Symbol "lambda")  >>
-    some ws                    >>
-    myList asymbol             >>= \syms ->
-    some ws                    >>
-    sepBy1 form (some ws)      >>= \(bs,_) ->
-    literal CloseCurly         >>
-    f syms (init bs) (last bs)
-  where
-    f xs ys (Expression e)  =  pure (Lambda xs ys e)   -- TODO:  oops, partial functions
-    f _  _  _               =  empty
-
-
-define :: Parser Token Statement
-define =
-    literal OpenCurly          >>
-    literal (Symbol "define")  >>
-    some ws                    >>
-    asymbol                    >>= \s ->
-    some ws                    >>
-    expr                       >>= \e ->
-    literal CloseCurly         >>
-    pure (Define s e)
-
-
-setbang :: Parser Token Statement
-setbang = 
-    literal OpenCurly          >>
-    literal (Symbol "set!")    >>
-    some ws                    >>
-    asymbol                    >>= \s ->
-    some ws                    >>
-    expr                       >>= \e ->
-    literal CloseCurly         >>
-    pure (SetBang s e)
-
-        
 
 form :: Parser Token Form
 form = 
-    fmap Expression expr      <|>
-    fmap Statement statement
+    astring               <|> 
+    anumber               <|>
+    fmap ASymbol asymbol  <|>
+    alist                 <|>
+    app                   <|>
+    special
 
 
-statement :: Parser Token Statement
-statement = 
-    define   <|>
-    setbang
-
- 
 beagle :: Parser Token [Form]
 beagle = fmap fst $ sepBy1 form (some ws)
 

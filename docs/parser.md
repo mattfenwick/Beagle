@@ -3,35 +3,17 @@
 
 Concrete syntax, loosely using [BNF](http://en.wikipedia.org/wiki/Backus%E2%80%93Naur_Form):
 
-    Beagle      :=  Form(+)
+    Beagle      :=  (sepBy1  Form  ws)
     
-    Form        :=  Special  |  Application  |  List  |  Symbol  |  Number  |  String
+    Form        :=  Special  |  Application  |  List  |  SYMBOL  |  NUMBER  |  STRING
     
-    Special     :=  '{'  ( Define  |  Set!  |  Lambda  |  Cond )  '}'
+    Special     :=  '{'  Symbol  ws  (sepBy0  Form  ws)  '}'
     
-    Define      :=  'define'  Symbol  Form
+    Application :=  '('  (sepBy1  Form  ws)  ')' 
     
-    Set!        :=  'set!'  Symbol  Form
-    
-    Application :=  '('  Form(+)  ')' 
-    
-    List(T)(n)  :=  '['  T(n)  ']'
-    
-    Symbol      :=  [a-zA-Z\!\@\#\$\%\^\&\*\-\_\=\+\?\/\!\<\>][a-zA-Z0-9\!\@\#\$\%\^\&\*\-\_\=\+\?\/\!\<\>]*
-    
-    Number      :=  Float  |  Integer
-    
-    Float       :=  \d*\.\d+  |  \d+\.\d*
-    
-    Integer     :=  \d+
-    
-    String      :=  '"'  (not '"')(*)  '"'
-    
-    Lambda      :=  'lambda'  List(Symbol)(*)  Form(+)
-    
-    Pair        :=  List(Form)(2)
-    
-    Cond        :=  'cond'  List(Pair)(*)  Form
+    List        :=  '['  (sepBy0  Form  ws)  ']'
+
+    ws          :=  ( COMMENT  |  WHITESPACE )(+)
 
 
 
@@ -49,7 +31,8 @@ Concrete syntax, loosely using [BNF](http://en.wikipedia.org/wiki/Backus%E2%80%9
 
  - symbol
 
-   - see above for precise definition
+   - `[a-zA-Z\!\@\#\$\%\^\&\*\-\_\=\+\?\/\!\<\>][a-zA-Z0-9\!\@\#\$\%\^\&\*\-\_\=\+\?\/\!\<\>]*`
+
    - one of `!@#$%^&*-_=+?/!<>` or a letter, followed by any number of `!@#$%^&*-_=+?/!<>`
      characters or letters or numbers
 
@@ -58,17 +41,16 @@ Concrete syntax, loosely using [BNF](http://en.wikipedia.org/wiki/Backus%E2%80%9
    - `\s+`
    - any positive number of whitespace chars
 
- - integer
+ - number
 
-   - `\d+`
-   - any positive number of digits
-
- - float
-
-   - `\d*\.\d+` or `\d+\.\d*`
-   - either any number of digits, a decimal point, and at least one digit, or
-     at least one digit, a decimal point, and any number of digits (so there's
-     always at least one digit)
+   - integer
+     - `\d+`
+     - any positive number of digits
+   - float
+     - `\d*\.\d+` or `\d+\.\d*`
+     - either any number of digits, a decimal point, and at least one digit, or
+       at least one digit, a decimal point, and any number of digits (so there's
+       always at least one digit)
 
  - punctuation tokens
 
@@ -124,9 +106,12 @@ Concrete syntax, loosely using [BNF](http://en.wikipedia.org/wiki/Backus%E2%80%9
 
  1. tokenization
     - breaking text into tokens
-    - checking whitespace separation
 
  2. assembly of tokens to form the AST (Abstract Syntax Tree)
+
+ 3. syntax checking:
+    - special form syntax
+    - ???
 
 
 ## Interface ##
