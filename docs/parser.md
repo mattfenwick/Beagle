@@ -19,87 +19,94 @@ Concrete syntax, loosely using [BNF](http://en.wikipedia.org/wiki/Backus%E2%80%9
 
 ## Tokens ##
 
- - string  
+These are the punctuation tokens:
 
-   - `"[^\"]*"`
-   - `"` followed by any number of non `"` chars, followed by `"`
+    OPEN-PAREN   :=  (
 
- - comment 
+    CLOSE-PAREN  :=  )
 
-   - `;[^\n]*`
-   - semicolon followed by any number of non-newline chars
+    OPEN-SQUARE  :=  [
 
- - symbol
+    CLOSE-SQUARE :=  ]
 
-   - `[a-zA-Z\!\@\#\$\%\^\&\*\-\_\=\+\?\/\!\<\>][a-zA-Z0-9\!\@\#\$\%\^\&\*\-\_\=\+\?\/\!\<\>]*`
+    OPEN-CURLY   :=  {
 
-   - one of `!@#$%^&*-_=+?/!<>` or a letter, followed by any number of `!@#$%^&*-_=+?/!<>`
-     characters or letters or numbers
+    CLOSE-CURLY  :=  }
 
- - whitespace
+And the non-punctuation tokens:
 
-   - `\s+`
-   - any positive number of whitespace chars
+    STRING       :=  "[^\"]*"
 
- - number
+    COMMENT      :=  ;[^\n]*
 
-   - integer
-     - `\d+`
-     - any positive number of digits
-   - float
-     - `\d*\.\d+` or `\d+\.\d*`
-     - either any number of digits, a decimal point, and at least one digit, or
-       at least one digit, a decimal point, and any number of digits (so there's
-       always at least one digit)
+    SYMBOL       :=  [a-zA-Z\!\@\#\$\%\^\&\*\-\_\=\+\?\/\!\<\>][a-zA-Z0-9\!\@\#\$\%\^\&\*\-\_\=\+\?\/\!\<\>]*
 
- - punctuation tokens
+    WHITESPACE   :=  \s+
 
-   - `(`:  OPEN-PAREN
-   - `)`:  CLOSE-PAREN
-   - `[`:  OPEN-SQUARE
-   - `]`:  CLOSE-SQUARE
-   - '{':  OPEN-CURLY
-   - '}':  CLOSE-CURLY
+    NUMBER       :=  \d*\.\d+  |  \d+\.\d*  |  \d+
 
 
-## Whitespace requirements ##
 
- - required between any two of the atom tokens:
 
-   - string
+## Whitespace ##
+
+Beagle does not allow forms to appear without some separation, where the 
+separation is any amount of consecutive whitespace and comment tokens.  Thus, Beagle is
+not a totally free-format language, although it does allow a good deal of
+formatting latitude.
+
+The following examples are invalid because of adjacent forms:
+
+    (abc(+ 3 2))
+
+    {lambda [] 3}(+ 3 2)
+
+    ["abc"
+     "def"345]
+
+However, these are fine:
+
+    (abc   \t\t  \t(+           3 2))
+  
+    {abc ;;;; a comment
+      (+ 3 2)}
+
+    [abc
+     (+
+          ;; nothing but whitespace and a comment on this line
+         []         3
+       2]
+
+The second group of examples are valid because all forms are separated by
+some amount of whitespace and/or comments.
+
+On the other hand, whitespace is not allowed in two places:
+
+ 1. between an opening punctuation token and the first contained form
  
-   - symbol
+ 2. between a closing punctuation token and the preceding form (if there is one)
 
-   - integer
+Here are some invalid examples:
 
-   - float
+    ( + x y)
 
- - optional between all other pairs of non-whitespace tokens
+    [[] ]
 
- - examples: `(2(` is fine because `(` is not a string or
-   a symbol, so the token sequence is `OPEN symbol OPEN`
+    {
+     define
+     x
+     3
+    }
 
-   this is fine:
+And their valid counterparts:
 
-        (abc "def" 1 (2(3))(4 5))
+    (+ x y)
 
-   but this is not:
+    [[]]
 
-        (abc "def"1)
-
-   because there's no whitespace between the string `"def"` and the symbol `1`
-
- - number of whitespace characters
-
-   - there is no difference between 1 and n whitespace characters:  each counts
-     as a single whitespace token
-
-   - there cannot be two or more consecutive whitespace tokens because
-     the the first token begins at a ws char and ends at the next non-ws char
-
- - newlines only matter to comments:  comment tokens are ended by newlines. 
-   otherwise they count as whitespace, same as any other whitespace character
-
+    {define
+     x
+     3}
 
 
 ## Parsing stages ##
@@ -112,58 +119,3 @@ Concrete syntax, loosely using [BNF](http://en.wikipedia.org/wiki/Backus%E2%80%9
  3. syntax checking:
     - special form syntax
     - ???
-
-
-## Interface ##
-
-### Tokens ###
-
- - helper functions
-
-   - `nextToken :: String -> Maybe (Token, String)`
-
- - data types
-  
-   - `Token`
-
- - core functions
-
-   - `tokenize :: String -> Maybe [Token]`
-      extract a list of tokens from a string
-
-   - `stripTokens :: [Token] -> [Token]`
-      remove comment and whitespace tokens from a list of tokens
-   
-
-### Parser ###
-
- - helper functions
- 
-   - `expandString :: String -> ASTList ASTChar`
-  
-   - `getAtom :: [Token] -> Maybe (ASTAtom, [Token])`
-
-   - `getApplication :: [Token] -> Maybe (Application, [Token])`
- 
-   - `getList :: [Token] -> Maybe (ASTList, [Token])`
-
-   - `getNextForm :: [Token] -> Maybe (ASTObject, [Token])`
-
- - data types
-
-   - `ParseError`
-   
-   - `ASTChar`
-   
-   - `ASTList`
-   
-   - `ASTNumber`
-   
-   - `Symbol`
-   
-   - `Application`
-
- - core functions
-
-   - `makeAst :: [Token] -> Maybe [LispObject]`
-
