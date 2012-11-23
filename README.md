@@ -27,7 +27,7 @@ but it also lacks some characteristic features:
  - homoiconicity
  
 Also, Beagle's concrete syntax differentiates between function application `()`,
-list literals `[]`, and special forms (not yet implemented).
+list literals `[]`, and special form application `{}`.
 
 
 

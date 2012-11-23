@@ -36,7 +36,7 @@ For more information about the evaluation rules for these forms, see [here](eval
  
  - general
    
-   - `eq? :: a -> a -> Boolean` (where `a` is one of String, Boolean, Number, Symbol)
+   - `eq? :: a -> a -> Boolean` (where `a` is one of String, Boolean, Number)
    
    
 ### Constants ###

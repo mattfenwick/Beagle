@@ -82,7 +82,7 @@ var Functions = (function (Data) {
                 throw Data.FunctionError('TypeError', 'number/char/boolean', 
                       ltype, "eq?", "can't compare type");
             }
-            if(!(rtype in COMPARABLE)) {
+            if(!(rtype in COMPARABLE)) { // TODO:  isn't this test unnecessary?
                 throw Data.FunctionError('TypeError', 'number/char/boolean', 
                       rtype, "eq?", "can't compare type");
             }
