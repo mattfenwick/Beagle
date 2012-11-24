@@ -102,7 +102,7 @@ symbol =
     many restChar         >>= \cs ->
     pure (Symbol (c:cs))
   where
-    firstChar = alpha <|> mconcat (map literal "!@#$%^&*-_=+?/<>")
+    firstChar = mconcat (alpha : map literal "!@#$%^&*-_=+?/<>")
     restChar = digit <|> firstChar
     alpha = mconcat $ map literal (['a' .. 'z'] ++ ['A' .. 'Z'])
 
@@ -165,18 +165,10 @@ asymbol =
     f   _          =  empty
 
 
--- probably nearly every use of 'ws' should actually be '(some ws)' to allow multiple whitespace/comment tokens
-ws :: Parser Token Token
-ws = satisfy f
-  where f (Whitespace _) = True
-        f (Comment _) = True
-        f _ = False
-
-
 alist :: Parser Token Form
 alist = 
     literal OpenSquare     >> 
-    sepBy0 form (some ws)  >>= \(es, _) ->
+    many form              >>= \es ->
     literal CloseSquare    >>
     pure (AList es)
 
@@ -184,7 +176,7 @@ alist =
 app :: Parser Token Form
 app = 
     literal OpenParen        >>
-    sepBy1 form (some ws)    >>= \(e:es,_) ->
+    some form                >>= \(e:es) ->
     literal CloseParen       >>
     pure (Application e es)
 
@@ -193,8 +185,7 @@ special :: Parser Token Form
 special =
     literal OpenCurly      >>
     asymbol                >>= \s ->
-    some ws                >>
-    sepBy0 form (some ws)  >>= \(fs,_) ->
+    many form              >>= \fs ->
     literal CloseCurly     >>
     pure (ASpecial s fs)
 
@@ -210,7 +201,7 @@ form =
 
 
 beagle :: Parser Token [Form]
-beagle = fmap fst $ sepBy1 form (some ws)
+beagle = some form
 
 
 unwrap :: (Monad' m) => m (b, c) -> m c
@@ -220,6 +211,11 @@ unwrap = fmap snd
 
 full :: String -> Maybe [Form]
 full str = 
-    getParser scanner str     >>= 
-    (getParser beagle . snd)  >>= 
+    getParser scanner str         >>= 
+    (getParser beagle . f . snd)  >>= 
     (return . snd)
+  where
+    f = filter isWs
+    isWs (Whitespace _)   =  False
+    isWs (Comment _)      =  False
+    isWs   _              =  True
