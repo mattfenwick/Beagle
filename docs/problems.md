@@ -1,3 +1,5 @@
+## Special form names and their interaction with regular namespaces ##
+
 with special forms now being all special, there's some weird stuff going on with names:
 
     {define define 3}
@@ -27,4 +29,14 @@ possible solutions:
     downsides:  forwards compatibility, breaks uniformity by introducing
     an artificial divide between some names and other names.  probably
     my least favorite solution
+
+## Newlines ##
+
+Currently, the comment parser is the only one for which the newline character matters; 
+comments end at `\n`.  So if the newline characters aren't `\n`, the first comment will
+presumably consume the entire rest of the file.
+
+Possible solutions:
+
+ 1. allow all possible newline sequences to end a comment
 
