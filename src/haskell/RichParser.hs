@@ -5,7 +5,7 @@ module RichParser (
 ) where
 
 
-import MParse
+import TParse
 import Instances
 import Classes
 import Prelude hiding (foldr, foldl, (>>=), (>>), fmap, fail)

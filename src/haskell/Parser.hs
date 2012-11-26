@@ -4,11 +4,11 @@ module Parser (
   , scanner
 
   , beagle
---  , full  -- what a terrible name
+  , full  -- what a terrible name
 
 ) where
 
-import MParse
+import TParse
 import Instances
 import Classes
 import Prelude hiding (foldr, foldl, (>>=), (>>), fmap, fail)
@@ -18,25 +18,20 @@ import Prelude hiding (foldr, foldl, (>>=), (>>), fmap, fail)
 
 
 data Token 
-  = OpenParen
-  | CloseParen
-  | OpenSquare
-  | CloseSquare
-  | OpenCurly
-  | CloseCurly
-  | Whitespace String
-  | Comment String
-  | Decimal Float
-  | String String -- again, weird
-  | Symbol String
+    = OpenParen
+    | CloseParen
+    | OpenSquare
+    | CloseSquare
+    | OpenCurly
+    | CloseCurly
+    | Whitespace String
+    | Comment String
+    | Number Float
+    | String String -- again, weird
+    | Symbol String
   deriving (Show, Eq)
   
   
-myReader :: String -> Integer
-myReader [] = 0
-myReader xs = read xs
-
-
 separators :: [(Char, Token)]
 separators = 
     [('(', OpenParen),
@@ -67,7 +62,7 @@ digit = mconcat $ map literal ['0' .. '9']
 
 float :: Parser Char Token
 float =
-    pure (Decimal . read . concat)  <*>
+    pure (Number . read . concat)  <*>
     (float1 <|> float2)
   where
     float1 = commute [some digit, dot, many digit]
@@ -77,7 +72,7 @@ float =
 
 integer :: Parser Char Token
 integer =
-    pure (Decimal . read)  <*>
+    pure (Number . read)  <*>
     some digit
 
 
@@ -153,7 +148,7 @@ anumber :: Parser Token Form
 anumber =
     getOne >>= f
   where
-    f (Decimal f)   =  pure (ANumber f)
+    f (Number f)   =  pure (ANumber f)
     f    _          =  empty
 
 
@@ -167,10 +162,12 @@ asymbol =
 
 alist :: Parser Token Form
 alist = 
-    literal OpenSquare     >> 
+    literal OpenSquare     >>
+    commit (
     many form              >>= \es ->
     literal CloseSquare    >>
     pure (AList es)
+    )
 
 
 app :: Parser Token Form
@@ -201,19 +198,17 @@ form =
 
 
 beagle :: Parser Token [Form]
-beagle = some form
+beagle = some form <* end
 
 
-unwrap :: (Monad' m) => m (b, c) -> m c
-unwrap = fmap snd
-
-
-
-full :: String -> Maybe [Form]
+-- full :: String -> Either (Thing String String (String, [Token])) (Thing [Token] [Token] [Form])
 full str = 
-    getParser scanner str         >>= 
-    (getParser beagle . f . snd)  >>= 
-    (return . snd)
+    case (getParser (scanner <* end) str) of
+         Ok (rest, ts) -> case (getParser beagle . f $ ts) of
+                               Ok (r1, fs) -> Right (Ok fs);
+                               Fail x      -> Right (Fail x);
+                               Error y     -> Right (Error y);   
+         y             -> Left y;
   where
     f = filter isWs
     isWs (Whitespace _)   =  False
