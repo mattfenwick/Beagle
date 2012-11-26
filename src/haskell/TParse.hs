@@ -39,6 +39,14 @@ data Thing a b c
   deriving (Show, Eq, Ord)
 
 
+-- ideas for dealing with errors:
+--   1. in a 'commit', record where the commit started
+--      and how far the parsing got before it failed
+--   2. maybe forget the idea of having all 'stack trace'
+--      be automatically managed, but instead, whenever
+--      the user adds a context message to a parser, push
+--      that message on to a stack if the parser fails
+
 mapFail :: (b -> d) -> Thing a b c -> Thing a d c
 mapFail f (Fail x)    =  Fail (f x)
 mapFail _ (Error a)   =  Error a
@@ -55,21 +63,30 @@ mapFE :: (a -> c) -> Thing a a b -> Thing c c b
 mapFE f = mapFail f . mapError f
 
 
-(<?>) :: String -> Parser t a -> Parser t a
+{-(<?>) :: String -> Parser t a -> Parser t a
 name <?> p = Parser h name
   where
     h xs = mapFE (\(_,ts) -> (name,ts)) (getParser p xs)
-
+-}
 
 
 data Parser t a = Parser {
-        getParser :: ( [t] -> Thing (String, [t]) (String, [t]) ([t], a) )
-      , name :: String
-    }
+      getParser ::  [t] -> Thing ([String], [t]) ([String], [t]) ([t], a) 
+    , name :: String
+  }
 
 
--- runParser :: Parser t a -> [t] -> Thing (String, [t]) (String, [t]) ([t], a)
--- runParser p xs = 
+runParser :: Parser t a -> [t] -> Thing ([String], [t]) ([String], [t]) ([t], a)
+runParser p xs = 
+    mapFE f (getParser p xs)
+  where
+    f (ns, rest) = (name p : ns, rest)
+
+
+(<?>) :: String -> Parser t a -> Parser t a
+name <?> p = Parser h name
+  where
+    h xs = runParser (setName name p) xs
     
 
 
@@ -140,13 +157,13 @@ instance Semigroup' (Parser s a) where
   Parser f _  <|>  Parser g _  =  Parser (\xs -> f xs <|> g xs) ""
   
 instance Monoid' (Parser s a) where
-  empty = Parser (Fail . (,) "empty") ""
+  empty = Parser (Fail . (,) ["empty"]) ""
   
 instance Switch' (Parser s) where
   switch (Parser f _) = Parser h ""
 --  switch (Parser f) = Parser h
     where h xs = case (f xs) of
-                      (Ok _)     ->  Fail ("switched", xs)
+                      (Ok _)     ->  Fail (["switched"], xs)
                       (Fail _)   ->  Ok (xs, ())
                       (Error z)  ->  Error z
 
@@ -160,7 +177,7 @@ instance Switch' (Parser s) where
 getOne :: Parser s s
 getOne = Parser (\xs -> case xs of 
                         (y:ys) -> pure (ys, y);
-                        _      -> Fail ("getOne", xs))
+                        _      -> Fail (["getOne"], xs))
                 ""
   
   
