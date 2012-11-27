@@ -50,6 +50,10 @@ import Thing
 --      position information, and there's more than 1
 --      parsing stage, I'll have to preserve that information
 --      to be able to deliver a decent error message
+--   5. ways to do that:  a) augment all tokens with column,
+--      line info -- but how does that interact with multi-
+--      stage parsers?? -- b) keep track of the columns, 
+--      lines inside the parser -- same ? as for a ...
 
 mapFail :: (b -> d) -> Thing a b c -> Thing a d c
 mapFail f (Fail x)    =  Fail (f x)
@@ -70,12 +74,17 @@ mapFE f = mapFail f . mapError f
 (<?>) :: String -> Parser t a -> Parser t a
 name <?> p = Parser h
   where
-    h xs = mapFE (\(ns,ts) -> (name:ns,ts)) (getParser p xs)
+    h xs = mapFE (\(ns,ts,us) -> (name:ns,ts,us)) (getParser p xs)
+
 
 
 data Parser t a = Parser {
-      getParser ::  [t] -> Thing ([String], [t]) ([String], [t]) ([t], a) 
+      getParser ::  [t] -> 
+          Thing ([String], [t], [t]) 
+                ([String], [t], [t]) 
+                ([t], a) 
   }
+
 
 
 
@@ -109,14 +118,13 @@ instance Semigroup' (Parser s a) where
   Parser f  <|>  Parser g  =  Parser (\xs -> f xs <|> g xs)
   
 instance Monoid' (Parser s a) where
-  empty = Parser (Fail . (,) [])
+  empty = Parser (Fail . (,,) [] [])
   
 instance Switch' (Parser s) where
-  switch (Parser f) = Parser h
-    where h xs = case (f xs) of
-                      (Ok _)     ->  Fail ([], xs)
-                      (Fail _)   ->  Ok (xs, ())
-                      (Error z)  ->  Error z
+  switch (Parser f) = Parser (\xs -> h xs (f xs))
+    where h xs (Ok _)     =  Fail ([], xs, xs)
+          h xs (Fail _)   =  Ok (xs, ())
+          h _  (Error z)  =  Error z
 
 
 
@@ -127,7 +135,7 @@ instance Switch' (Parser s) where
 getOne :: Parser s s
 getOne = Parser (\xs -> case xs of 
                         (y:ys) -> pure (ys, y);
-                        _      -> Fail ([], xs))
+                        _      -> Fail ([], xs, xs))
   
 
 -- have to preserve the original position
@@ -137,7 +145,7 @@ check :: (a -> Bool) -> Parser s a -> Parser s a
 check pred p = Parser h
   where 
     h xs = mapFE (f xs) (getParser parser xs)
-    f ys (ns, _) = (ns, ys)
+    f ys (ns, _, _) = (ns, ys, ys)
     parser =
         p >>= \x -> 
         guard (pred x) >> 
@@ -220,10 +228,13 @@ string :: Eq t => [t] -> Parser t [t]
 string = commute . map literal
 
 
+-- should I add something in here
+-- to make it keep track of where
+-- it was in the token stream when
+-- it started the parser?  (in case
+-- it fails, for reporting)
 commit :: Parser t a -> Parser t a
-commit p = Parser h
+commit p = Parser (\xs -> h xs $ getParser p xs)
   where
-    h xs = case (getParser p xs) of
-                (Ok x)     -> Ok x;
-                (Fail y)   -> Error y;
-                (Error z)  -> Error z;
+    h xs (Fail (ts,_,ys))   =  Error (ts,xs,ys)
+    h _  x                  =  x
