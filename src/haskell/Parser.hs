@@ -45,14 +45,19 @@ separators =
 punctuation :: Parser Char Token
 punctuation = mconcat $ map f separators
   where
-    f (c, v) = literal c *> pure v
+    f (c, v) = show v <?> (literal c *> pure v)
+-- is the <?> really doing anything?
+-- it's kind of nullified by mconcat (which finishes 
+-- with 'empty', blowing away any error message)
 
 
 whitespace :: Parser Char Token
 whitespace =
-    pure Whitespace   <*>
-    some wschar
+    "whitespace" <?> parser
   where
+    parser = 
+        pure Whitespace   <*>
+        some wschar
     wschar = satisfy (flip elem " \t\n\r\f")
 
 
@@ -62,9 +67,11 @@ digit = mconcat $ map literal ['0' .. '9']
 
 float :: Parser Char Token
 float =
-    pure (Number . read . concat)  <*>
-    (float1 <|> float2)
+    "decimal" <?> parser
   where
+    parser = 
+        pure (Number . read . concat)  <*>
+        (float1 <|> float2)
     float1 = commute [some digit, dot, many digit]
     float2 = commute [many digit, dot, some digit]
     dot = string "."
@@ -72,31 +79,44 @@ float =
 
 integer :: Parser Char Token
 integer =
-    pure (Number . read)  <*>
-    some digit
+    "integer" <?> parser
+  where
+    parser = 
+        pure (Number . read)  <*>
+        some digit
 
 
 str :: Parser Char Token
 str =
-    literal '"'       >>
-    many (pnot '"')   >>= \cs ->
-    literal '"'       >>
-    pure (String cs)
+    "string" <?> parser
+  where
+    parser =
+        literal '"'       >>
+        commit (
+        many (pnot '"')   >>= \cs ->
+        literal '"'       >>
+        pure (String cs)
+        )
 
 
 comment :: Parser Char Token
 comment =
-    some (literal ';')  >>
-    many (pnot '\n')    >>= \cs ->
-    pure (Comment cs)
+    "comment" <?> parser
+  where
+    parser = 
+        some (literal ';')  >>
+        many (pnot '\n')    >>= \cs ->
+        pure (Comment cs)
 
 
 symbol :: Parser Char Token
 symbol =
-    firstChar             >>= \c ->
-    many restChar         >>= \cs ->
-    pure (Symbol (c:cs))
+    "symbol" <?> parser
   where
+    parser =
+        firstChar             >>= \c ->
+        many restChar         >>= \cs ->
+        pure (Symbol (c:cs))
     firstChar = mconcat (alpha : map literal "!@#$%^&*-_=+?/<>")
     restChar = digit <|> firstChar
     alpha = mconcat $ map literal (['a' .. 'z'] ++ ['A' .. 'Z'])
@@ -104,13 +124,16 @@ symbol =
 
 nextToken :: Parser Char Token
 nextToken = 
-    punctuation      <|>
-    whitespace       <|>
-    float            <|>
-    integer          <|>
-    str              <|>
-    comment          <|>
-    symbol
+    "token" <?> parser
+  where
+    parser = 
+      punctuation      <|>
+      whitespace       <|>
+      float            <|>
+      integer          <|>
+      str              <|>
+      comment          <|>
+      symbol
   
   
 scanner :: Parser Char [Token]
@@ -163,28 +186,35 @@ asymbol =
 alist :: Parser Token Form
 alist = 
     literal OpenSquare     >>
-    commit (
-    many form              >>= \es ->
-    literal CloseSquare    >>
-    pure (AList es)
-    )
+    ("list" <?> commit rest)
+  where
+    rest =
+      many form              >>= \es ->
+      literal CloseSquare    >>
+      pure (AList es)
 
 
 app :: Parser Token Form
 app = 
     literal OpenParen        >>
-    some form                >>= \(e:es) ->
-    literal CloseParen       >>
-    pure (Application e es)
+    ("application" <?> commit rest)
+  where
+    rest =
+      some form                >>= \(e:es) ->
+      literal CloseParen       >>
+      pure (Application e es)
 
 
 special :: Parser Token Form
 special =
     literal OpenCurly      >>
-    asymbol                >>= \s ->
-    many form              >>= \fs ->
-    literal CloseCurly     >>
-    pure (ASpecial s fs)
+    ("special" <?> commit rest)
+  where
+    rest =
+      asymbol                >>= \s ->
+      many form              >>= \fs ->
+      literal CloseCurly     >>
+      pure (ASpecial s fs)
 
 
 form :: Parser Token Form

@@ -1,0 +1,8 @@
+[] ;; a comment 
+
+
+{define map
+  {lambda [f xs]
+    {cond [[(null? xs) []]
+          (cons (f (car xs))
+                (map f (cdr xs)))}}}

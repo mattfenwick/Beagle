@@ -25,18 +25,14 @@ module TParse (
   
   , commit
 
+  , (<?>)
+
 ) where
 
 import Classes
 import Instances () -- what does this do?
 import Prelude hiding (fmap, (>>=), (>>), fail, foldr, foldl)
-
-
-data Thing a b c
-    = Error a
-    | Fail  b
-    | Ok    c
-  deriving (Show, Eq, Ord)
+import Thing
 
 
 -- ideas for dealing with errors:
@@ -46,6 +42,14 @@ data Thing a b c
 --      be automatically managed, but instead, whenever
 --      the user adds a context message to a parser, push
 --      that message on to a stack if the parser fails
+--   3. or just return all possible failure points (even
+--      ones that were successfully backtracked from ??)
+--      and leave it up to the programmer to use 'commit'
+--      to pare down the tree of possibilities
+--   4. but remember that if I want to be able to read the
+--      position information, and there's more than 1
+--      parsing stage, I'll have to preserve that information
+--      to be able to deliver a decent error message
 
 mapFail :: (b -> d) -> Thing a b c -> Thing a d c
 mapFail f (Fail x)    =  Fail (f x)
@@ -63,72 +67,20 @@ mapFE :: (a -> c) -> Thing a a b -> Thing c c b
 mapFE f = mapFail f . mapError f
 
 
-{-(<?>) :: String -> Parser t a -> Parser t a
-name <?> p = Parser h name
+(<?>) :: String -> Parser t a -> Parser t a
+name <?> p = Parser h
   where
-    h xs = mapFE (\(_,ts) -> (name,ts)) (getParser p xs)
--}
+    h xs = mapFE (\(ns,ts) -> (name:ns,ts)) (getParser p xs)
 
 
 data Parser t a = Parser {
       getParser ::  [t] -> Thing ([String], [t]) ([String], [t]) ([t], a) 
-    , name :: String
   }
-
-
-runParser :: Parser t a -> [t] -> Thing ([String], [t]) ([String], [t]) ([t], a)
-runParser p xs = 
-    mapFE f (getParser p xs)
-  where
-    f (ns, rest) = (name p : ns, rest)
-
-
-(<?>) :: String -> Parser t a -> Parser t a
-name <?> p = Parser h name
-  where
-    h xs = runParser (setName name p) xs
-    
-
-
-instance Functor' (Thing a b) where
-  fmap f (Ok x)     =  Ok (f x)
-  fmap _ (Fail y)   =  Fail y
-  fmap _ (Error z)  =  Error z
-
-instance Pointed' (Thing a b) where
-  pure = Ok
-
-instance Applicative' (Thing a b) where
-  Ok f     <*>   x    =  fmap f x
-  Fail y   <*>   _    =  Fail y
-  Error z  <*>   _    =  Error z
-
-instance Monad' (Thing a b) where
-  join (Ok (Ok x))  =  Ok x
-  join (Ok q)       =  q
-  join (Fail y)     =  Fail y
-  join (Error z)    =  Error z
-
-instance Semigroup' (Thing a b c) where
-  Ok x      <|>  _   =  Ok x
-  Error z   <|>  _   =  Error z
-  Fail _    <|>  r   =  r
-
-instance Foldable' (Thing a b) where
-  foldr f base (Ok x)  =  f x base
-  foldr _ base   _     =  base
-
-instance Traversable' (Thing a b) where
-  commute (Ok    x)  =  fmap Ok x
-  commute (Fail  y)  =  pure (Fail y)
-  commute (Error z)  =  pure (Error z)
-
 
 
 
 instance Functor' (Parser s) where
-  fmap f (Parser g _) = Parser (fmap (fmap f) . g) ""
---  fmap f (Parser g) = Parser (fmap (fmap f) . g)
+  fmap f (Parser g) = Parser (fmap (fmap f) . g)
 {- I'm shocked that this doesn't work;
 what does it do, invoke a circular definition?
 fmap f p = 
@@ -144,30 +96,28 @@ instance Applicative' (Parser s) where
 
         
 instance Pointed' (Parser s) where
-  pure a = Parser (\xs -> pure (xs, a)) ""  
+  pure a = Parser (\xs -> pure (xs, a))
 
 instance Monad' (Parser s) where
-  join (Parser f _) = Parser h ""
+  join (Parser f) = Parser h
     where
       h xs = 
-          f xs >>= \(o, Parser g _) -> 
+          f xs >>= \(o, Parser g) -> 
           g o  
   
 instance Semigroup' (Parser s a) where
-  Parser f _  <|>  Parser g _  =  Parser (\xs -> f xs <|> g xs) ""
+  Parser f  <|>  Parser g  =  Parser (\xs -> f xs <|> g xs)
   
 instance Monoid' (Parser s a) where
-  empty = Parser (Fail . (,) ["empty"]) ""
+  empty = Parser (Fail . (,) [])
   
 instance Switch' (Parser s) where
-  switch (Parser f _) = Parser h ""
---  switch (Parser f) = Parser h
+  switch (Parser f) = Parser h
     where h xs = case (f xs) of
-                      (Ok _)     ->  Fail (["switched"], xs)
+                      (Ok _)     ->  Fail ([], xs)
                       (Fail _)   ->  Ok (xs, ())
                       (Error z)  ->  Error z
 
--- fmap (const (xs, ())) $ switch (f xs)
 
 
 -- -------------------------
@@ -177,14 +127,21 @@ instance Switch' (Parser s) where
 getOne :: Parser s s
 getOne = Parser (\xs -> case xs of 
                         (y:ys) -> pure (ys, y);
-                        _      -> Fail (["getOne"], xs))
-                ""
+                        _      -> Fail ([], xs))
   
-  
+
+-- have to preserve the original position
+-- in token stream for error reporting, 
+-- otherwise this would be a lot simpler  
 check :: (a -> Bool) -> Parser s a -> Parser s a
-check f p = p >>= \x -> 
-  guard (f x) >> 
-  pure x
+check pred p = Parser h
+  where 
+    h xs = mapFE (f xs) (getParser parser xs)
+    f ys (ns, _) = (ns, ys)
+    parser =
+        p >>= \x -> 
+        guard (pred x) >> 
+        pure x
 
 
 satisfy :: (a -> Bool) -> Parser a a
@@ -264,13 +221,9 @@ string = commute . map literal
 
 
 commit :: Parser t a -> Parser t a
-commit p = Parser h ""
+commit p = Parser h
   where
     h xs = case (getParser p xs) of
                 (Ok x)     -> Ok x;
                 (Fail y)   -> Error y;
                 (Error z)  -> Error z;
-
-
-setName :: String -> Parser t a -> Parser t a
-setName n (Parser f _)  =  Parser f n
