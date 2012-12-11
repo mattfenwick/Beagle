@@ -42,9 +42,9 @@ function testTokens(lang, testHelper) {
                 ["symbols may not include ;'s",
                                  'wh;at',     {'rest': ';at',    'token': tok('symbol', 'wh')      }],
 
-                ["open-special", "~(abc",     {'rest': 'abc',    'token': tok('open-special', '~(')}],
+                ["open-special", ",(abc",     {'rest': 'abc',    'token': tok('open-special', ',(')}],
 
-                ["close-special","~))[]",     {'rest': ')[]',   'token': tok('close-special', '~)')}]
+                ["close-special",",))[]",     {'rest': ')[]',   'token': tok('close-special', ',)')}]
         ];
         
         testCases.map(function(data) {

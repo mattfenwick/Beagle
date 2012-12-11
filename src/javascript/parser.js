@@ -282,6 +282,22 @@ var Parser = (function() {
         }
         return getDelimited('open-square', 'close-square', tokens, callback);
     }
+    
+    
+    function getTable(tokens) {
+        function callback(objs) {
+            var pairs = [],
+                i;
+            if (!(objs.length % 2 === 0)) {
+                throw new ParseError('ObjectLiteralError', 'object literal needs key-value pairs', tokens);
+            }
+            for(i = 0; i < objs.length; i += 2) {
+                pairs.push(new ASTList([objs[i], objs[i + 1]]));
+            }
+            return new Application([new Symbol('object'), new ASTList(pairs)]);
+        }
+        return getDelimited('open-curly', 'close-curly', tokens, callback);
+    }
 
 
     var SPECIAL_FORMS = {
@@ -307,7 +323,7 @@ var Parser = (function() {
                 throw new ParseError("ValueError", "invalid special form name " + objs[0], objs[0]);
             }
         }
-        return getDelimited('open-curly', 'close-curly', tokens, callback);
+        return getDelimited('open-special', 'close-special', tokens, callback);
     }
 
 
@@ -336,8 +352,14 @@ var Parser = (function() {
             return sexpr;
         }
 
-        // or a list
+        // a list literal
         sexpr = getList(tokens);
+        if (sexpr) {
+            return sexpr;
+        }
+        
+        // or an object literal
+        sexpr = getTable(tokens);
         if (sexpr) {
             return sexpr;
         }
@@ -409,6 +431,7 @@ var Parser = (function() {
         'getSpecial'     : getSpecial,
         'getList'        : getList,
         'getNextForm'    : getNextForm,
+        'getTable'       : getTable,
 
         // the public function
         'makeAST'        : makeAST,        

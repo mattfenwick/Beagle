@@ -11,8 +11,8 @@ var Tokens = (function () {
         'close-square' : /^(\])/,   // "]"
         'open-curly'   : /^(\{)/,   // "{"
         'close-curly'  : /^(\})/,   // "}"
-        'open-special' : /^(~\()/,  // "~("
-        'close-special': /^(~\))/,  // "~)"
+        'open-special' : /^(,\()/,  // "~("
+        'close-special': /^(,\))/,  // "~)"
         'comment'      : /^;(.*)/,        /* because: 1) * is greedy; 2) . doesn't match \n */
         'float'        : /^(\d*\.\d+|\d+\.\d*)/,
         'integer'      : /^(\d+)/,

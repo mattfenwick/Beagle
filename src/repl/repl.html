@@ -81,6 +81,10 @@ function printer(obj) {
     return "'" + obj.value;
   }
   
+  if( obj.type === 'object' ) {
+    return JSON.stringify(obj.value); // um, should probably change this to be recursive
+  }
+  
   if( obj.type === 'error' ) {
     return "error: [" + printer(obj.value) + "]";
   }

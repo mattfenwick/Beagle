@@ -79,9 +79,9 @@ var Data = (function () {
     }
     
     
-    function Datum(type, value) {
-        this.value = value;
-        this.type = type;
+    function MyObject(table) {
+        this.type = 'object';
+        this.value = table;
     }
     
     
@@ -96,7 +96,7 @@ var Data = (function () {
 
 
     return {
-        // the 4 basics
+        // primitive types
         'Number': function (x) {
             return new MyNumber(x);
         },
@@ -106,25 +106,21 @@ var Data = (function () {
         'Boolean': function (x) {
             return new MyBoolean(x);
         },
+        'Function': function (types, name, body) {
+            return new MyFunction(types, name, body);
+        },
         
-        // the way to combine stuff
+        // composite types
         'List': function (x) {
             return new List(x);
         },
-        
-        // functions
-        'Function': function (types, name, body) {
-            return new MyFunction(types, name, body);
+        'Object': function(table) {
+            return new MyObject(table);
         },
         
         // like () in Haskell??
         'Null': function () {
             return new Null();
-        },
-        
-        // the 'base' of all Lisp objects
-        'Datum': function(type, value) {
-            return new Datum(type, value);
         },
         
         // convenience function

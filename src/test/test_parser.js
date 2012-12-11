@@ -11,12 +11,14 @@ function testParser(parse, tokens, testHelper) {
         spec = parse.Special,
         str = parse.expandString,
         expExc = testHelper.expectException,
-        op = tok('open-paren', '('),
-        os = tok('open-square', '['),
-        cp = tok('close-paren', ')'),
-        cs = tok('close-square', ']'),
-        oc = tok('open-curly', '['),
-        cc = tok('close-curly', ']'),
+        op  =  tok('open-paren'    ,  '('),
+        os  =  tok('open-square'   ,  '['),
+        cp  =  tok('close-paren'   ,  ')'),
+        cs  =  tok('close-square'  ,  ']'),
+        oc  =  tok('open-curly'    ,  '{'),
+        cc  =  tok('close-curly'   ,  '}'),
+        osp =  tok('open-special'  ,  '~('),
+        csp =  tok('close-special' ,  '~)'),
         tokSym = tok('symbol', "+"),
         tokStr = tok('string', 'str1'),
         tokInt = tok('integer', '345');
@@ -44,6 +46,23 @@ function testParser(parse, tokens, testHelper) {
         );
         
         deepEqual({rest: [], result: list([])}, parse.getNextForm([emp]), "empty string token => empty AST list");
+    });
+    
+    
+    test("tables", function() {
+        // examples:
+        //   { } 
+        //   { "abc" 123 "def" [1 18 29] "qrs" (+ 3 2)  }
+        var s1 = tok('string', "abc"),
+            n1 = tok('integer', '123'),
+            r1 = app([sym('table'), list([])]),
+            r2 = app([sym('table'), list([list([str("abc"), num('123')])])]);
+        deepEqual({rest: [oc], result: r1}, parse.getNextForm([oc, cc, oc]));
+        deepEqual({rest: [], result: r2}, parse.getNextForm([oc, s1, n1, cc]));
+        
+        expExc(function() {
+            parse.getNextForm([oc, s1, n1, tok('string', 'def'), cc, s1]);
+        }, 'ParseError', 'object literal needs one key for each value');
     });
     
 
@@ -104,15 +123,15 @@ function testParser(parse, tokens, testHelper) {
         var lam = tok('symbol', 'lambda');
 
         expExc(function() {
-            parse.getNextForm([oc, lam, oc]);
-        }, 'ParseError', 'special form braces must match', 'DelimiterError');
+            parse.getNextForm([osp, lam]);
+        }, 'ParseError', 'an opening delimiter needs a corresponding closing one', 'DelimiterError');
         
         expExc(function() {
-            parse.getNextForm([oc, cc]);
+            parse.getNextForm([osp, csp]);
         }, 'ParseError', 'special forms need a symbol -- cannot be empty', 'ValueError');
         
         expExc(function() {
-            parse.getNextForm([oc, tok('symbol', 'nope'), cc]);
+            parse.getNextForm([osp, tok('symbol', 'nope'), csp]);
         }, 'ParseError', 'only cond/lambda/define/set! are valid special forms', 'ValueError');
     });
 
@@ -225,7 +244,7 @@ function testParser(parse, tokens, testHelper) {
         }, 'ParseError', "... as long as the parentheses match", "DelimiterError");
         
         expExc(function() {
-            parse.getList([os, oc, tok('symbol', 'define'), tok('symbol', 'c'), tok('integer', '32'), cc, cs]);
+            parse.getList([os, osp, tok('symbol', 'define'), tok('symbol', 'c'), tok('integer', '32'), csp, cs]);
         }, 'ParseError', 'lists may not contain statements', 'TypeError');
     });
 
@@ -248,24 +267,24 @@ function testParser(parse, tokens, testHelper) {
 
         deepEqual(
             {'rest': [], 'result': parse.Define([sym('+'), num('345')])},
-            parse.getSpecial([oc, def, tokSym, tokInt, cc]),
+            parse.getSpecial([osp, def, tokSym, tokInt, csp]),
             'define ...'
         );
 
         expExc(function() {
-            parse.getSpecial([oc, def, tokSym, cc]);
+            parse.getSpecial([osp, def, tokSym, csp]);
         }, 'ParseError', 'it takes two arguments', 'NumArgsError');
 
         expExc(function() {
-            parse.getSpecial([oc, def, tokSym, tokStr, tokInt, cc]);
+            parse.getSpecial([osp, def, tokSym, tokStr, tokInt, csp]);
         }, 'ParseError', '... no more, no less', 'NumArgsError');
 
         expExc(function() {
-            parse.getSpecial([oc, def, tokInt, tokStr, cc]); // did it throw for the *right* reason?
+            parse.getSpecial([osp, def, tokInt, tokStr, csp]); // did it throw for the *right* reason?
         }, 'ParseError', 'the first argument must be a Beagle symbol', 'TypeError');
 
         expExc(function() {
-            parse.getSpecial([oc, def, tokSym, oc, def, tokSym, tokInt, cc, cc]); 
+            parse.getSpecial([osp, def, tokSym, osp, def, tokSym, tokInt, csp, csp]); 
         }, 'ParseError', 'the 2nd arg must be an expression -- not a statement', 'TypeError');
 
     });
@@ -278,24 +297,24 @@ function testParser(parse, tokens, testHelper) {
         
         deepEqual(
             {'rest': [], 'result': parse.SetBang([sym('+'), num('345')])},
-            parse.getSpecial([oc, set, tokSym, tokInt, cc]),
+            parse.getSpecial([osp, set, tokSym, tokInt, csp]),
             'set! ...'
         );
 
         expExc(function() {
-            parse.getSpecial([oc, set, tokSym, cc]);
+            parse.getSpecial([osp, set, tokSym, csp]);
         }, 'ParseError', 'it takes two arguments', 'NumArgsError');
 
         expExc(function() {
-            parse.getSpecial([oc, set, tokSym, tokStr, tokInt, cc]);
+            parse.getSpecial([osp, set, tokSym, tokStr, tokInt, csp]);
         }, 'ParseError', '... no more, no less', 'NumArgsError');
 
         expExc(function() {
-            parse.getSpecial([oc, set, tokInt, tokStr, cc]); // did it throw for the *right* reason?
+            parse.getSpecial([osp, set, tokInt, tokStr, csp]); // did it throw for the *right* reason?
         }, 'ParseError', 'the first argument must be a Beagle symbol', 'TypeError');
 
         expExc(function() {
-            parse.getSpecial([oc, set, tokSym, oc, set, tokSym, tokInt, cc, cc]); 
+            parse.getSpecial([osp, set, tokSym, osp, set, tokSym, tokInt, csp, csp]); 
         }, 'ParseError', 'the 2nd arg must be an expression -- not a statement', 'TypeError');
     });
 
@@ -324,32 +343,32 @@ function testParser(parse, tokens, testHelper) {
         // {cond [[+ "str1"][+ 345]] "str"} -- don't worry that it's non-sensical
         deepEqual(
             {'rest': [tokStr], 'result': parse.Cond([list([list([sy, s]), list([sy, i])]), s])},
-            parse.getSpecial([oc, cond, os, os, tokSym, tokStr, cs, os, tokSym, tokInt, cs, cs, tokStr, cc, tokStr]),
+            parse.getSpecial([osp, cond, os, os, tokSym, tokStr, cs, os, tokSym, tokInt, cs, cs, tokStr, csp, tokStr]),
             'cond ...'
         );
         
         expExc(function() {
-            parse.getSpecial([oc, cond, os, os, tokSym, tokInt, cs, cs, cc]);
+            parse.getSpecial([osp, cond, os, os, tokSym, tokInt, cs, cs, csp]);
         }, 'ParseError', 'needs two arguments', 'NumArgsError');
         
         expExc(function() {
-            parse.getSpecial([oc, cond, tokSym, tokInt, cc]);
+            parse.getSpecial([osp, cond, tokSym, tokInt, csp]);
         }, 'ParseError', '1st arg must be a list', 'TypeError');
         
         expExc(function() {
-            parse.getSpecial([oc, cond, os, tokSym, cs, tokInt, cc]);
+            parse.getSpecial([osp, cond, os, tokSym, cs, tokInt, csp]);
         }, 'ParseError', 'and all of its elements must be lists', 'TypeError');
         
         expExc(function() {
-            parse.getSpecial([oc, cond, os, os, tokSym, cs, cs, tokInt, cc]);
+            parse.getSpecial([osp, cond, os, os, tokSym, cs, cs, tokInt, csp]);
         }, 'ParseError', 'each with two elements', 'ValueError');
         
         expExc(function() {
-            parse.getSpecial([oc, cond, os, os, oc, tok('symbol', 'define'), tokSym, tokInt, cc, tokInt, cs, cs, tokInt, cc]);
+            parse.getSpecial([osp, cond, os, os, osp, tok('symbol', 'define'), tokSym, tokInt, csp, tokInt, cs, cs, tokInt, csp]);
         }, 'ParseError', 'and both of those elements must be expressions', 'TypeError');
         
         expExc(function() {
-            parse.getSpecial([oc, cond, os, cs, oc, tok('symbol', 'define'), tokSym, tokInt, cc, cc]);
+            parse.getSpecial([osp, cond, os, cs, osp, tok('symbol', 'define'), tokSym, tokInt, csp, csp]);
         }, 'ParseError', 'the else-value must also be an expression', 'TypeError');
     });
 
@@ -385,28 +404,28 @@ function testParser(parse, tokens, testHelper) {
             {'rest': [tokStr], 'result': parse.Lambda([list([sym('x')]), 
                                                        parse.Define([sym('y'), num('345')]), 
                                                        parse.Application([sy, sym('x'), sym('y')])])},
-            parse.getSpecial([oc, lam, os, x, cs, oc, tok('symbol', 'define'), y, tokInt, cc, op, tokSym, x, y, cp, cc, tokStr]),
+            parse.getSpecial([osp, lam, os, x, cs, osp, tok('symbol', 'define'), y, tokInt, csp, op, tokSym, x, y, cp, csp, tokStr]),
             'lambda ...'
         );
         
         expExc(function() {
-            parse.getSpecial([oc, lam, os, cs, cc]);
+            parse.getSpecial([osp, lam, os, cs, csp]);
         }, 'ParseError', 'needs at least two arguments', 'NumArgsError');
         
         expExc(function() {
-            parse.getSpecial([oc, lam, tokSym, tokInt, cc]);
+            parse.getSpecial([osp, lam, tokSym, tokInt, csp]);
         }, 'ParseError', '1st arg must be a list', 'TypeError');
         
         expExc(function() {
-            parse.getSpecial([oc, lam, os, tokInt, cs, tokInt, cc]);
+            parse.getSpecial([osp, lam, os, tokInt, cs, tokInt, csp]);
         }, 'ParseError', '... of symbols', 'TypeError');
         
         expExc(function() {
-            parse.getSpecial([oc, lam, os, tokSym, tokSym, cs, tokInt, cc]);
+            parse.getSpecial([osp, lam, os, tokSym, tokSym, cs, tokInt, csp]);
         }, 'ParseError', 'and no repeated symbols', 'ValueError');
         
         expExc(function() {
-            parse.getSpecial([oc, lam, os, cs, oc, tok('symbol', 'define'), tokSym, tokInt, cc, cc]);
+            parse.getSpecial([osp, lam, os, cs, osp, tok('symbol', 'define'), tokSym, tokInt, csp, csp]);
         }, 'ParseError', 'the last body form must be an expression', 'TypeError');
 
     });

@@ -118,6 +118,39 @@ var Functions = (function (Data) {
     );
     
     
+    var object = Data.Function(
+        ['list'],
+        'object',
+        function(args) {
+            var table = {},
+                pairs = args[0];
+            pairs.value.map(function(pair) {
+                if(pair.type !== 'list') {
+                    throw new Data.FunctionError('TypeError', 'list', pair.type,
+                        'object', "'object' needs list of pairs");
+                }
+                if(pair.value.length !== 2) {
+                    throw new Data.FunctionError('ObjectError', 'key-value pairs',
+                          'list of length ' + pair.length, 'object', 'when building an object');
+                }
+                if(pair.value[0].type !== 'list') {
+                    throw new Data.FunctionError('TypeError', 'list', pair.value[0].type,
+                        'object', 'object keys must be lists of characters');
+                }
+                var key = pair.value[0].value.map(function(c) {
+                        if(c.type !== 'char') {
+                            throw Data.FunctionError('TypeError', "list of chars", 
+                                'list with ' + c.type, 'object', 'object key');
+                        }
+                        return c.value;
+                    }).join('');
+                table[key] = pair.value[1]; // what about duplicate keys?  what about empty keys?
+            });
+            return Data.Object(table);
+        }
+    );
+    
+    
     // does this belong elsewhere? (in Data?)
     var BUILT_INS = {
         'number'      : 1,
@@ -125,36 +158,11 @@ var Functions = (function (Data) {
         'boolean'     : 1,
         'list'        : 1,
         'function'    : 1,
-        'specialform' : 1,
+        'object'      : 1,
+        'specialform' : 1, // do I need this?
         'null'        : 1  // not sure if I need this
     };
-    
-    
-    var datum = Data.Function(
-        ['list', null],
-        'datum',
-        function(args) {
-            var typeList = args[0],
-                type = typeList.value.map(function(c) {// need to get value right?
-                    if(c.type !== 'char') {
-                        throw Data.FunctionError('TypeError', "list of chars", 'list with ' + c.type, 'datum', '1st arg');
-                    }
-                    return c.value;
-                }).join('');
-                value = args[1];
-                
-            if(type.length === 0) {
-                throw Data.FunctionError('ValueError', "non-empty type", "empty type", "datum", '1st arg');
-            }
-            
-            if(type in BUILT_INS) {
-                throw Data.FunctionError("ValueError", 'non built-in type', type, 'datum', "1st arg");
-            }
-            
-            return Data.Datum(type, value);
-        }
-    );
-    
+
     
     var type = Data.Function(
         [null],
@@ -164,19 +172,6 @@ var Functions = (function (Data) {
         }
     );
     
-    
-    var value = Data.Function(
-        [null],
-        'value',
-        function(args) {
-            var obj = args[0];
-            if(obj.type in BUILT_INS) {
-                throw Data.FunctionError('TypeError', 'non built-in type', obj.type, 'value', "1st arg");
-            }
-            return obj.value;
-        }
-    );
-
 
     return {
         'cons'      :  cons,
@@ -187,9 +182,8 @@ var Functions = (function (Data) {
         'neg'       :  neg,
         'number-<'  :  numberLessThan,
         'eq?'       :  eqQ,
-        'type'      :  type,
-        'datum'     :  datum,
-        'value'     :  value
+        'object'    :  object,
+        'type'      :  type
     };
 
 })(Data);
