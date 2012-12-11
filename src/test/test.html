@@ -8,6 +8,7 @@
   
   <script type="text/javascript" src="helper_test.js"></script>
 
+  <script type="text/javascript" src="../javascript/parsercombs.js"></script>
   <script type="text/javascript" src="../javascript/unparser.js"></script>
   <script type="text/javascript" src="../javascript/environment.js"></script>
   <script type="text/javascript" src="../javascript/data.js"></script>
@@ -18,6 +19,7 @@
   <script type="text/javascript" src="../javascript/beagle.js"></script>
   <script type="text/javascript" src="../javascript/macros.js"></script>
 
+  <script type="text/javascript" src="test_parsercombs.js"></script>
   <script type="text/javascript" src="test_unparser.js"></script>
   <script type="text/javascript" src="test_tokens.js"></script>
   <script type="text/javascript" src="test_data.js"></script>
@@ -32,6 +34,8 @@
 
 <script>
   $(document).ready(function(){
+  
+    testParserCombs(ParserCombs, TestHelper);
       
     testUnparser(Unparser, Parser);
     

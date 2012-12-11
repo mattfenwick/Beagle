@@ -20,7 +20,8 @@ function testEvaluate(evaluate, parser, data, envir, testHelper) {
         var env = ev.getDefaultEnv();
         var names = [
             'true', 'false', 'cons', 'car', 'cdr', 'eq?', '+', 
-            'neg', 'null?', 'number-<', 'datum', 'type', 'value'
+            'neg', 'null?', 'number-<', 'type', 'object', 'get',
+            'entries'
         ];
 
         names.map(function(n) {
@@ -32,8 +33,8 @@ function testEvaluate(evaluate, parser, data, envir, testHelper) {
             bindings++;
         }
 
-        equal(13, bindings, 'there are 13 built-in constants and functions');
-        equal(13, names.length, 'and we need to test for all of them');
+        equal(14, bindings, 'there are 14 built-in constants and functions');
+        equal(14, names.length, 'and we need to test for all of them');
     });
     
     

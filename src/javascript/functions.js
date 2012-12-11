@@ -82,10 +82,6 @@ var Functions = (function (Data) {
                 throw Data.FunctionError('TypeError', 'number/char/boolean', 
                       ltype, "eq?", "can't compare type");
             }
-            if(!(rtype in COMPARABLE)) { // TODO:  isn't this test unnecessary?
-                throw Data.FunctionError('TypeError', 'number/char/boolean', 
-                      rtype, "eq?", "can't compare type");
-            }
             return Data.Boolean(args[0].value === args[1].value);
         }
     );
@@ -100,7 +96,7 @@ var Functions = (function (Data) {
     );
 
 
-    var neg = Data.Function(
+    var negate = Data.Function(
         ['number'],
         'neg',
         function(args) {
@@ -159,7 +155,6 @@ var Functions = (function (Data) {
         'list'        : 1,
         'function'    : 1,
         'object'      : 1,
-        'specialform' : 1, // do I need this?
         'null'        : 1  // not sure if I need this
     };
 
@@ -179,7 +174,7 @@ var Functions = (function (Data) {
         'cdr'       :  cdr,
         'null?'     :  nullQ,
         '+'         :  plus,
-        'neg'       :  neg,
+        'neg'       :  negate,
         'number-<'  :  numberLessThan,
         'eq?'       :  eqQ,
         'object'    :  object,

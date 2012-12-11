@@ -55,8 +55,8 @@ function testParser(parse, tokens, testHelper) {
         //   { "abc" 123 "def" [1 18 29] "qrs" (+ 3 2)  }
         var s1 = tok('string', "abc"),
             n1 = tok('integer', '123'),
-            r1 = app([sym('table'), list([])]),
-            r2 = app([sym('table'), list([list([str("abc"), num('123')])])]);
+            r1 = app([sym('object'), list([])]),
+            r2 = app([sym('object'), list([list([str("abc"), num('123')])])]);
         deepEqual({rest: [oc], result: r1}, parse.getNextForm([oc, cc, oc]));
         deepEqual({rest: [], result: r2}, parse.getNextForm([oc, s1, n1, cc]));
         
