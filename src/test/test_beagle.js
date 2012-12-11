@@ -8,14 +8,13 @@ function testBeagle(beagle, data, tokens, parser) {
         str = data.makeCharList;
     
     test("single expressions", function() {
-        expect(7);
+        expect(6);
 
         var e0 = "456",
             e1 = " ( neg 11 \t \n ) ",
             e2 = "(cons 3 [])",
             e3 = '(car (cdr (cons 1 (cons "blargh" (cons 3 (cons 4 []))))))',
             e4 = ' 3 ; this is a comment',
-            e5 = '"abc"123',
             ex = beagle.exec;
 
         deepEqual([num(456)], ex(e0).result, 'can evaluate an atom');
@@ -29,13 +28,6 @@ function testBeagle(beagle, data, tokens, parser) {
         deepEqual([str('blargh')], ex(e3).result, 'can evaluate a deeply nested application');
 
         deepEqual([num(3)], ex(e4).result, 'can ignore comments');
-
-        var m = true;
-        try {
-            ex(e5);
-            m = false;
-        } catch(e) {};
-        ok(m, 'strings and symbols must be separated by a space');
     });
     
     

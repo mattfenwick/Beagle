@@ -1,30 +1,37 @@
 var Tokens = (function () {
     "use strict";
 
+    // put capturing parentheses around that which should be saved
+    //   for *all* tokens; don't worry about efficiency
     var TOKEN_TYPES = {
-        'whitespace'   : /^\s+/,
-        'open-paren'   : /^\(/,
-        'close-paren'  : /^\)/,
-        'open-square'  : /^\[/,
-        'close-square' : /^\]/,
-        'open-curly'   : /^\{/,
-        'close-curly'  : /^\}/,
-        'comment'      : /^;+(.*)/,        /* because: 1) * is greedy; 2) . doesn't match \n */
-        'float'        : /^(?:\d*\.\d+|\d+\.\d*)/,
-        'integer'      : /^\d+/,
-        'symbol'       : /^[a-zA-Z\!\@\#\$\%\^\&\*\-\_\=\+\?\/\<\>][a-zA-Z0-9\!\@\#\$\%\^\&\*\-\_\=\+\?\/\<\>]*/,
+        'whitespace'   : /^(\s+)/,
+        'open-paren'   : /^(\()/,   // "("
+        'close-paren'  : /^(\))/,   // "("
+        'open-square'  : /^(\[)/,   // "["
+        'close-square' : /^(\])/,   // "]"
+        'open-curly'   : /^(\{)/,   // "{"
+        'close-curly'  : /^(\})/,   // "}"
+        'open-special' : /^(~\()/,  // "~("
+        'close-special': /^(~\))/,  // "~)"
+        'comment'      : /^;(.*)/,        /* because: 1) * is greedy; 2) . doesn't match \n */
+        'float'        : /^(\d*\.\d+|\d+\.\d*)/,
+        'integer'      : /^(\d+)/,
+        'symbol'       : /^([a-zA-Z\!\@\#\$\%\^\&\*\-\_\=\+\?\/\<\>][a-zA-Z0-9\!\@\#\$\%\^\&\*\-\_\=\+\?\/\<\>]*)/,
         'string'       : /^"([^"]*)"/,
     }
     
-    // comment needs special handling
-    var PUNCTUATION = ['whitespace', 'open-paren', 'open-square', 'close-paren', 'close-square', 'open-curly', 'close-curly'],
-    
-        // float needs to go before integer -- otherwise integer matches only a part of what float would
-        //   'string' requires special handling
-        ATOMS = ['float', 'integer', 'symbol'],
-    
-        PUNC_OR_WS = /^[\(\)\[\]\{\};\s]/; // an atom needs to be followed by one of '()[];' or whitespace (or by the empty string)
-    
+    // try the tokens in a specific order
+    // i.e. float must go before integer -- 
+    //   otherwise integer matches only a part of what float would
+    // string is left out to allow better error reporting
+    //   if a string is opened but not closed
+    var TOKEN_ORDER = [
+        'whitespace',    'open-paren',     'open-square', 
+        'close-paren',   'close-square',   'open-curly', 
+        'close-curly',   'open-special',   'close-special',
+        'comment',
+        'float',         'integer',        'symbol'];
+
 
     function Token(type, value) {
         if(!(type in TOKEN_TYPES)) {
@@ -45,59 +52,7 @@ var Tokens = (function () {
     TokenError.prototype.toString = function () {
         return this.message + " (from " + this.value + ")";
     };
-
-
-    function nextPunctuation(string) {
-        var match, i, name;
-        
-        for(i = 0; i < PUNCTUATION.length; i++) {
-            name = PUNCTUATION[i];
-            if(match = string.match(TOKEN_TYPES[name])) {
-                return {
-                    'token': new Token(name, match[0]),
-                    'rest' : string.substring(match[0].length)
-                };
-            }
-        }
-        
-        if (match = string.match(TOKEN_TYPES['comment'])) {
-            return {
-                'token': new Token('comment', match[1]),
-                'rest': string.substring(match[0].length)
-            };
-        }
-        
-        return false;
-    }
     
-    
-    function nextAtom(string) {
-        var match, i, name;
-        
-        for(i = 0; i < ATOMS.length; i++) {
-            name = ATOMS[i];
-            if(match = string.match(TOKEN_TYPES[name])) {
-                return {
-                    'token': new Token(name, match[0]),
-                    'rest' : string.substring(match[0].length)
-                };
-            }
-        }
-        
-        if (string[0] === '"') {
-            match = string.match(TOKEN_TYPES['string']);
-            if (match) {
-                return {
-                    'token': new Token('string', match[1]),
-                    'rest': string.substring(match[0].length)
-                };
-            } else {
-                throw new TokenError("tokenizer error: end-of-string (\") not found", string);
-            }
-        }
-        
-        return false;
-    }
 
     // String -> Maybe (Token, String)
     //   where false is the "empty" value
@@ -110,16 +65,28 @@ var Tokens = (function () {
         if (string === "") {
             return false;
         }
-
-        if (res = nextPunctuation(string)) {
-            return res;
+        
+        for(i = 0; i < TOKEN_ORDER.length; i++) {
+            name = TOKEN_ORDER[i];
+            if(match = string.match(TOKEN_TYPES[name])) {
+                // all matches should return a pair:
+                //   0: the entire match;  1: the 'saved' portion of the match
+                return {
+                    'token': new Token(name, match[1]),
+                    'rest' : string.substring(match[0].length)
+                };
+            }
         }
         
-        if (res = nextAtom(string)) {
-            if(res.rest === "" || res.rest.match(PUNC_OR_WS)) {
-                return res;
+        if (string[0] === '"') {   // why is this special-cased?  to provide better error reporting
+            match = string.match(TOKEN_TYPES['string']);
+            if (match) {
+                return {
+                    'token': new Token('string', match[1]),
+                    'rest': string.substring(match[0].length)
+                };
             } else {
-                throw new TokenError("atom must be followed by whitespace or punctuation (got " + res.rest[0] + ")", res);
+                throw new TokenError("tokenizer error: end-of-string (\") not found", string);
             }
         }
 
@@ -139,26 +106,22 @@ var Tokens = (function () {
     }
 
 
-    function stripTokens(tokens) {
-        function isNotCommentNorWS(token) {
+    function stripCommentsAndWhitespace(tokens) {
+        function predicate(token) {
             return (token.type !== 'comment' && token.type !== 'whitespace');
         }
-        return tokens.filter(isNotCommentNorWS);
+        return tokens.filter(predicate);
     }
 
 
     return {
-        // the data types
         'Token': function (t, v) {
             return new Token(t, v);
         },
 
-        // the helper functions (exported for testing)
-        'nextToken': nextToken,
-
-        // the core public functionality
-        'tokenize': tokenize,
-        'stripTokens': stripTokens
+        'nextToken'   : nextToken,
+        'tokenize'    : tokenize,
+        'stripTokens' : stripCommentsAndWhitespace
     };
 
 })();

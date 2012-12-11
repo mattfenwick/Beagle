@@ -6,7 +6,7 @@ function testTokens(lang, testHelper) {
         tok = lang.Token;
     
     test("nextToken", function() {
-        expect(17);
+        expect(19);
         
         var testCases = [
                 ['empty string', "",          false                                                 ],
@@ -40,7 +40,11 @@ function testTokens(lang, testHelper) {
                                  '"ab cd" f', {'rest': ' f',     'token': tok('string', 'ab cd')   }],
                                  
                 ["symbols may not include ;'s",
-                                 'wh;at',     {'rest': ';at',    'token': tok('symbol', 'wh')      }]
+                                 'wh;at',     {'rest': ';at',    'token': tok('symbol', 'wh')      }],
+
+                ["open-special", "~(abc",     {'rest': 'abc',    'token': tok('open-special', '~(')}],
+
+                ["close-special","~))[]",     {'rest': ')[]',   'token': tok('close-special', '~)')}]
         ];
         
         testCases.map(function(data) {
@@ -86,20 +90,14 @@ function testTokens(lang, testHelper) {
                 ['digits followed by a decimal point',       '03.',   tok('float', '03.'  )],
                 ['digits, decimal point, and more digits',   '3.456', tok('float', '3.456')],
                 ['leading decimal point followed by digits', '.001',  tok('float', '.001' )],
-                ["leading and trialing 0's",                 '0.00',  tok('float', '0.00' )]];
+                ["leading and trailing 0's",                 '0.00',  tok('float', '0.00' )]];
 
         testCases.map(function(data) {
             deepEqual({"rest": "", "token": data[2]}, lang.nextToken(data[1]), data[0]);
         });
-        
-        expectExc(function() {
-            lang.nextToken('4..0');
-        }, 'TokenError', "if it starts with a digit, it *must* be tokenizable as an integer or float");
 
-        expectExc(function(){
-            lang.nextToken('0a');
-        }, 'TokenError', "another example of forcing number tokenization");
-        
+        deepEqual({rest: ".0", 'token': tok('float', '4.')}, lang.nextToken('4..0'), 'a corner case');
+
         expectExc(function() {
             lang.nextToken('.');
         }, 'TokenError', "'.' is not a valid token");
