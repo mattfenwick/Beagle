@@ -1,4 +1,5 @@
 var ParserCombs = (function () {
+"use strict";
 
 // Parse result types
     function pSuccess(rest, value) {
@@ -9,9 +10,10 @@ var ParserCombs = (function () {
         };
     }
     
-    function pFail() {
+    function pFail(rest) {
         return {
-            'status':  'failed'
+            'status':  'failed',
+			'rest'  :  rest
         };
     }
     
@@ -26,26 +28,13 @@ var ParserCombs = (function () {
 
     function item(xs) {
         if(xs.length === 0) {
-            return pFail();
+            return pFail(xs);
         }
         return pSuccess(xs.slice(1), xs[0]);
     }
     
-    function satisfy(f) {
-        return function(xs) {
-            var t = item(xs);
-            if(t.status === 'success') {
-                // apply predicate to value
-                if(f(t[1])) {
-                    return t;
-                }
-            }
-            return t;
-        };
-    }
-    
-    // comparison function, token, stream
     // PROBLEM:  equality comparison
+	// t -> Parser t t
     function literal(t) {
         return function(xs) {
             var r = item(xs);
@@ -54,44 +43,45 @@ var ParserCombs = (function () {
                     return r;
                 }
                 // success -> failure
-                return pFail();
+                return pFail(xs);
             }
             // failure/error -> failure/error
             return r;
         };
     }
     
-    // TODO functions below this line aren't
-    //   using the real data model
-    
-    // predicate, parser, stream
+    // (a -> Bool) -> Parser t a -> Parser t a
     function check(f, p) {
         return function(xs) {
             var r = p(xs);
-            if(!r) {
-                return false;
+            if(r.status === 'success') {
+                if(f(r.value)) {
+                    return r;
+                }
+				return pFail(xs);
             }
-            if(f(r[1])) {
-                return r;
-            }
-            return false;
+            return r;
         };
+    }
+    
+    function satisfy(f) {
+        return check(f, item);
     }
     
     function unit(v) {
         return function(xs) {
-            return [xs, v];
+            return pSuccess(xs, v);
         };
     }
     
     function fail(xs) {
-        return false;
+        return pFail(xs);
     }
     
-    function commit(message, p) {
+    function commit(p, message) {
         return function(xs) {
             var r = p(xs);
-            if(r.status === 'fail') {
+            if(r.status === 'failed') {
                 return pError(message, xs);
             }
             return r;
@@ -101,31 +91,97 @@ var ParserCombs = (function () {
     function either(pl, pr) {
         return function(xs) {
             var r1 = pl(xs);
-            if(r1) {
-                return r1;
+            if(r1.status === 'failed') {
+                return pr(xs);
             }
-            return pr(xs);
+			// success/error in the first parser 
+			//   are left alone
+            return r1;
         };
     }
     
+	// Parser t a -> (a -> Parser t b) -> Parser t b
     function bind(p, fp) {
         return function(xs) {
             var r1 = p(xs);
-            if(!r1) {
-                return false;
+            if(r1.status === 'success') {
+                var r2 = fp(r1.value)(r1.rest); // hmm ... f(a)(b) or f(a, b) ???
+                return r2;
             }
-            var r2 = fp(r1[1])(r1[0]);
-            return r2;
+			return r1;
         };
     }
-     
-    function example() {
-        var p = bind(item, 
-                     function(x) {
-                         return literal(x);
-                     });
-        return p;
-    }
+	
+	// [Parser t a] -> Parser t [a]
+	function all(ps) {
+	    return function(xs) {
+		    var r, i,
+			    tokens = xs,
+				vals = [];
+		    for(i = 0; i < ps.length; i++) {
+			    r = ps[i](tokens);
+				if (r.status === 'success') {
+				    tokens = r.rest;
+					vals.push(r.value);
+				} else {
+				    return r;
+				}
+			}
+			return pSuccess(tokens, vals);
+		};
+	}
+	
+	// [t] -> Parser t [t]
+	function string(s) {
+	    return function(xs) {
+		    var i;
+		    for(i = 0; i < s.length; i++) {
+			    if (s[i] !== xs[i]) {
+				    return pFail(xs.slice(i));
+				}
+			}
+			return pSuccess(xs.slice(i), s);
+		};
+	}
+	
+	// Parser t a -> Parser t [a]
+	function many0(p) {
+	    return function(xs) {
+		    var r,
+			    tokens = xs,
+				vals   = [];
+			while(true) {
+			    r = p(tokens);
+				if (r.status === 'success') {
+				    tokens = r.rest;
+					vals.push(r.value);
+				} else {
+				    return pSuccess(tokens, vals);
+				}
+			}
+		};
+	}
+	
+	function many1(p) {
+	    return function(xs) {
+		    var r = many0(p)(xs);
+			if(r.value.length > 0) {
+			    return r;
+			}
+			return pFail(xs);
+		};
+	}
+    
+	// (a -> b) -> Parser t a -> Parser t b
+	function fmap(f, p) {
+	    return function(xs) {
+		    var r = p(xs);
+			if(r.status === 'success') {
+			    return pSuccess(r.rest, f(r.value));
+			}
+			return r;
+		};
+	}
     
 
 
@@ -136,9 +192,18 @@ var ParserCombs = (function () {
         check   :  check,
         unit    :  unit,
         fail    :  fail,
+		commit  :  commit,
         either  :  either,
         bind    :  bind,
-        example :  example
+		all     :  all,
+		string  :  string,
+		'many0' :  many0,
+		'many1' :  many1,
+		fmap    :  fmap,
+		
+		pFail   :  pFail,
+		pSuccess:  pSuccess,
+		pError  :  pError
     };
 
 })();
