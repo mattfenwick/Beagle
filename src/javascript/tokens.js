@@ -17,8 +17,8 @@ var Tokens = (function () {
         'float'        : /^(\d*\.\d+|\d+\.\d*)/,
         'integer'      : /^(\d+)/,
         'symbol'       : /^([a-zA-Z\!\@\#\$\%\^\&\*\-\_\=\+\?\/\<\>][a-zA-Z0-9\!\@\#\$\%\^\&\*\-\_\=\+\?\/\<\>]*)/,
-        'string'       : /^"([^"]*)"/,
-    }
+        'string'       : /^"([^"]*)"/
+    };
     
     // try the tokens in a specific order
     // i.e. float must go before integer -- 
@@ -30,7 +30,8 @@ var Tokens = (function () {
         'close-paren',   'close-square',   'open-curly', 
         'close-curly',   'open-special',   'close-special',
         'comment',
-        'float',         'integer',        'symbol'];
+        'float',         'integer',        'symbol'
+    ];
 
 
     function Token(type, value) {
