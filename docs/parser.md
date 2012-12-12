@@ -3,45 +3,47 @@
 
 Concrete syntax, loosely using [BNF](http://en.wikipedia.org/wiki/Backus%E2%80%93Naur_Form):
 
-    Beagle      :=  Form(+)
+    Beagle       :=  Form(+)
     
-    Form        :=  Special  |  Application  |  List  |  SYMBOL  |  NUMBER  |  STRING
+    Form         :=  Special  |  Application  |  List  |  Object  |  SYMBOL  |  NUMBER  |  STRING
     
-    Special     :=  '{'  SYMBOL  Form(*)  '}'
+    Special      :=  ',('  SYMBOL  Form(*)  ',)'
     
-    Application :=  '('  Form(+)  ')' 
+    Application  :=  '('  Form(+)  ')' 
     
-    List        :=  '['  Form(*)  ']'
+    List         :=  '['  Form(*)  ']'
+    
+    Object       :=  '{'  ( STRING  Form )(*)  '}'
 
 
 
 ## Tokens ##
 
-These are the punctuation tokens:
+    WHITESPACE     :=  \s+
 
-    OPEN-PAREN   :=  (
+    OPEN-PAREN     :=  (
 
-    CLOSE-PAREN  :=  )
+    CLOSE-PAREN    :=  )
 
-    OPEN-SQUARE  :=  [
+    OPEN-SQUARE    :=  [
 
-    CLOSE-SQUARE :=  ]
+    CLOSE-SQUARE   :=  ]
 
-    OPEN-CURLY   :=  {
+    OPEN-CURLY     :=  {
 
-    CLOSE-CURLY  :=  }
+    CLOSE-CURLY    :=  }
+    
+    OPEN-SPECIAL   :=  ,(
+    
+    CLOSE-SPECIAL  :=  ,)
 
-And the non-punctuation tokens:
+    STRING         :=  "[^\"]*"
 
-    STRING       :=  "[^\"]*"
+    COMMENT        :=  ;[^\n]*
 
-    COMMENT      :=  ;[^\n]*
+    SYMBOL         :=  [a-zA-Z!@#$%^&*-_=+?/<>][a-zA-Z0-9!@#$%^&*-_=+?/<>]*
 
-    SYMBOL       :=  [a-zA-Z\!\@\#\$\%\^\&\*\-\_\=\+\?\/\!\<\>][a-zA-Z0-9\!\@\#\$\%\^\&\*\-\_\=\+\?\/\!\<\>]*
-
-    WHITESPACE   :=  \s+
-
-    NUMBER       :=  \d*\.\d+  |  \d+\.\d*  |  \d+
+    NUMBER         :=  \d*\.\d+  |  \d+\.\d*  |  \d+
 
 
 
