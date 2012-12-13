@@ -1,4 +1,37 @@
 var Parse2 = (function(P) {
+
+    function myObject(pairs) {
+        return {
+            'type': 'objectliteral',
+            'entries': pairs
+        };
+    }
+    
+    function myList(elements) {
+        return {
+            'type': 'listliteral',
+            'elements': elements
+        };
+    }
+    
+    function myApp(args) {
+        return {
+            'type'     : 'application',
+            'operator' : args[0],
+            'arguments': args[1]
+        };
+    }
+    
+    function mySpecial(args) {
+        return {
+            'type'     : 'special',
+            'operator' : args[0],
+            'arguments': args[1]
+        };
+    }
+
+
+    // parsers
     
     function tokentype(type) {
         return P.satisfy(
@@ -22,29 +55,33 @@ var Parse2 = (function(P) {
     
     var pObject = openCommit(
         tokentype('open-curly'),
-        P.many0(P.all([pString, pForm])), // PROBLEM:  mutual recursion doesn't work !!!
-        tokentype('close-curly'),         // with vars -- have to use functions !!
+        P.fmap(myObject, P.many0(P.all([pString, pForm]))),
+        tokentype('close-curly'), 
         'object');
     
     var pList = openCommit(
         tokentype('open-square'),
-        P.many0(pForm),
+        P.fmap(myList, P.many0(pForm)),
         tokentype('close-square'),
         'list');
     
     var pApp = openCommit(
         tokentype('open-paren'),
-        P.all([pForm, P.many0(pForm)]), // could just do P.many1(pForm), but this keeps 1st separate from rest
+        P.fmap(myApp, P.all([pForm, P.many0(pForm)])), // could just do P.many1(pForm), but this keeps 1st separate from rest
         tokentype('close-paren'),
         'application');
     
     var pSpec = openCommit(
         tokentype('open-special'),
-        P.all([pSymbol, P.many0(pForm)]),
+        P.fmap(mySpecial, P.all([pSymbol, P.many0(pForm)])),
         tokentype('close-special'),
         'special-form application');
-    
-    var pForm = P.any([pSpec, pApp, pList, pObject, pSymbol, pNumber, pString]);
+
+    // written as a function instead of a `var` to allow mutual recursion,
+    //   and functions are hoisted (I believe)
+    function pForm(xs) {
+        return P.any([pSpec, pApp, pList, pObject, pSymbol, pNumber, pString])(xs);
+    }
     
     var parser = P.many0(pForm);
     
@@ -57,7 +94,6 @@ var Parse2 = (function(P) {
         'object'  :  pObject,
         'special' :  pSpec,
         'form'    :  pForm,
-        'op'      :  openCommit, // TODO:  remove
         'parse'   :  parser
     };
 
