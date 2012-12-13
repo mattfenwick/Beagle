@@ -13,7 +13,7 @@ var ParserCombs = (function () {
     function pFail(rest) {
         return {
             'status':  'failed',
-			'rest'  :  rest
+            'rest'  :  rest
         };
     }
     
@@ -33,13 +33,18 @@ var ParserCombs = (function () {
         return pSuccess(xs.slice(1), xs[0]);
     }
     
+    function equality(l, r) {
+        return l === r;
+    }
+    
     // PROBLEM:  equality comparison
-	// t -> Parser t t
-    function literal(t) {
+    // t -> Parser t t
+    function literal(t, f) {
+        var eq = f ? f : equality;
         return function(xs) {
             var r = item(xs);
-            if(r.status === 'success') {
-                if(r.value === t) {
+            if (r.status === 'success') {
+                if (eq(r.value, t)) {
                     return r;
                 }
                 // success -> failure
@@ -58,7 +63,7 @@ var ParserCombs = (function () {
                 if(f(r.value)) {
                     return r;
                 }
-				return pFail(xs);
+                return pFail(xs);
             }
             return r;
         };
@@ -94,13 +99,13 @@ var ParserCombs = (function () {
             if(r1.status === 'failed') {
                 return pr(xs);
             }
-			// success/error in the first parser 
-			//   are left alone
+            // success/error in the first parser 
+            //   are left alone
             return r1;
         };
     }
     
-	// Parser t a -> (a -> Parser t b) -> Parser t b
+    // Parser t a -> (a -> Parser t b) -> Parser t b
     function bind(p, fp) {
         return function(xs) {
             var r1 = p(xs);
@@ -108,81 +113,102 @@ var ParserCombs = (function () {
                 var r2 = fp(r1.value)(r1.rest); // hmm ... f(a)(b) or f(a, b) ???
                 return r2;
             }
-			return r1;
+            return r1;
         };
     }
-	
-	// [Parser t a] -> Parser t [a]
-	function all(ps) {
-	    return function(xs) {
-		    var r, i,
-			    tokens = xs,
-				vals = [];
-		    for(i = 0; i < ps.length; i++) {
-			    r = ps[i](tokens);
-				if (r.status === 'success') {
-				    tokens = r.rest;
-					vals.push(r.value);
-				} else {
-				    return r;
-				}
-			}
-			return pSuccess(tokens, vals);
-		};
-	}
-	
-	// [t] -> Parser t [t]
-	function string(s) {
-	    return function(xs) {
-		    var i;
-		    for(i = 0; i < s.length; i++) {
-			    if (s[i] !== xs[i]) {
-				    return pFail(xs.slice(i));
-				}
-			}
-			return pSuccess(xs.slice(i), s);
-		};
-	}
-	
-	// Parser t a -> Parser t [a]
-	function many0(p) {
-	    return function(xs) {
-		    var r,
-			    tokens = xs,
-				vals   = [];
-			while(true) {
-			    r = p(tokens);
-				if (r.status === 'success') {
-				    tokens = r.rest;
-					vals.push(r.value);
-				} else {
-				    return pSuccess(tokens, vals);
-				}
-			}
-		};
-	}
-	
-	function many1(p) {
-	    return function(xs) {
-		    var r = many0(p)(xs);
-			if(r.value.length > 0) {
-			    return r;
-			}
-			return pFail(xs);
-		};
-	}
     
-	// (a -> b) -> Parser t a -> Parser t b
-	function fmap(f, p) {
-	    return function(xs) {
-		    var r = p(xs);
-			if(r.status === 'success') {
-			    return pSuccess(r.rest, f(r.value));
-			}
-			return r;
-		};
-	}
+    // [Parser t a] -> Parser t [a]
+    function all(ps) {
+        return function(xs) {
+            var r, i,
+                tokens = xs,
+                vals = [];
+            for(i = 0; i < ps.length; i++) {
+                r = ps[i](tokens);
+                if (r.status === 'success') {
+                    tokens = r.rest;
+                    vals.push(r.value);
+                } else {
+                    return r;
+                }
+            }
+            return pSuccess(tokens, vals);
+        };
+    }
     
+    // [t] -> Parser t [t]
+    function string(s) {
+        return function(xs) {
+            var i;
+            for(i = 0; i < s.length; i++) {
+                if (s[i] !== xs[i]) {
+                    return pFail(xs.slice(i));
+                }
+            }
+            return pSuccess(xs.slice(i), s);
+        };
+    }
+    
+    // Parser t a -> Parser t [a]
+    function many0(p) {
+        return function(xs) {
+             var r,
+                tokens = xs,
+                vals   = [];
+            while(true) {
+                r = p(tokens);
+                if (r.status === 'success') {
+                    tokens = r.rest;
+                    vals.push(r.value);
+                } else {
+                    return pSuccess(tokens, vals);
+                }
+            }
+        };
+    }
+    
+    function many1(p) {
+        return function(xs) {
+            var r = many0(p)(xs);
+            if(r.value.length > 0) {
+                return r;
+            }
+            return pFail(xs);
+        };
+    }
+    
+    // (a -> b) -> Parser t a -> Parser t b
+    function fmap(f, p) {
+        return function(xs) {
+            var r = p(xs);
+            if(r.status === 'success') {
+                return pSuccess(r.rest, f(r.value));
+            }
+            return r;
+        };
+    }
+    
+    function any(ps) {
+        return function(xs) {
+            var r = pFail(xs),
+                i;
+            for(i = 0; i < ps.length; i++) {
+                r = ps[i](xs);
+                if(r.status === 'success' || r.status === 'error') {
+                    return r;
+                }
+            }
+            return r;
+        };
+    }
+    
+    function seq2L(pl, pr) {
+        return fmap(function (x) {return x[0];}, all([pl, pr]));
+    }
+    
+    function seq2R(pl, pr) {
+        return fmap(function (x) {return x[1];}, all([pl, pr]));
+    }
 
 
     return {
@@ -192,18 +218,21 @@ var ParserCombs = (function () {
         check   :  check,
         unit    :  unit,
         fail    :  fail,
-		commit  :  commit,
+        commit  :  commit,
         either  :  either,
         bind    :  bind,
-		all     :  all,
-		string  :  string,
-		'many0' :  many0,
-		'many1' :  many1,
-		fmap    :  fmap,
-		
-		pFail   :  pFail,
-		pSuccess:  pSuccess,
-		pError  :  pError
+        all     :  all,
+        string  :  string,
+        'many0' :  many0,
+        'many1' :  many1,
+        fmap    :  fmap,
+        any     :  any,
+        seq2L   :  seq2L,
+        seq2R   :  seq2R,
+        
+        pFail   :  pFail,
+        pSuccess:  pSuccess,
+        pError  :  pError
     };
 
 })();

@@ -17,7 +17,10 @@ function testParserCombs(parserC, testHelper) {
 		string   =  parserC.string,
 		many0    =  parserC.many0,
 		many1    =  parserC.many1,
-		fmap     =  parserC.fmap;
+		fmap     =  parserC.fmap,
+		any      =  parserC.any,
+		seq2L    =  parserC.seq2L,
+		seq2R    =  parserC.seq2R;
     
     
     test("item", function() {
@@ -41,9 +44,25 @@ function testParserCombs(parserC, testHelper) {
 		    {status: 'success', 'rest': "att", 'value': 'm'});
 		deepEqual(literal(13)([13, 79, 22]),
 		    {status: 'success', 'rest': [79, 22], 'value': 13});
-		deepEqual(literal([12, 13])([[12,13], 27, "abc"]),
+		function g(l, r) {
+		    if(l.length !== r.length) {
+			    return false;
+			}
+			for(var i = 0; i < l.length; i++) {
+			    if(l[i] !== r[i]) {
+				    return false;
+				}
+			}
+			return true;
+		}
+		deepEqual(literal([12, 13], g)([[12,13], 27, "abc"]),
 		    {status: 'success', 'rest': [27, "abc"], 'value': [12, 13]},
 			"the equality comparison should work for anything");
+	    function f(x, y) {
+		    return x.b === y.b;
+		}
+		deepEqual(literal({b: 2, c: 3}, f)([{b: 2, c: 311}, 17]),
+		    pSuccess([17], {b: 2, c: 311}));
 	});
 
 	test("check", function() {
@@ -129,6 +148,25 @@ function testParserCombs(parserC, testHelper) {
 	    var p = fmap(function(x) {return x.length;}, many1(literal('a')));
 		deepEqual(p("aaabcd"), pSuccess("bcd", 3));
 		deepEqual(p("bcd"), pFail("bcd"));
+	});
+	
+	test("any", function() {
+	    var p = any([literal('a'), literal('b'), string("zyx")]);
+		deepEqual(p("aq123"), pSuccess("q123", 'a'));
+		deepEqual(p("zyx34534"), pSuccess("34534", "zyx"));
+		deepEqual(p("zy123"), pFail("123"));
+	});
+	
+	test("seq2L", function() {
+	    var p = seq2L(literal('a'), string("bcd"));
+		deepEqual(p("abcdefg"), pSuccess("efg", 'a'));
+		deepEqual(p("abefg"), pFail("efg"));
+	});
+	
+	test("seq2R", function() {
+	    var p = seq2R(literal('a'), string("bcd"));
+		deepEqual(p("abcdefg"), pSuccess("efg", 'bcd'));
+		deepEqual(p("abefg"), pFail("efg"));
 	});
 
 }
