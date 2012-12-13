@@ -9,12 +9,15 @@ function testParse2(p2, tokens, testHelper) {
     
     // TODO: should probably free these tests
     //   from depending so intimately on the tokenizer
+    // currently they're overspecified ... 
+    //   incidentally coupled
     
     test("simple", function() {
-        deepEqual(p(s(t('33 21.2 abc "like, duh"'))), 
+        deepEqual(p(s(t('33 21.2 "like, duh" \n abc '))), 
             {'status': 'success', 'rest': [],
-             'value': [tk('integer', '33'), tk('float', '21.2'), 
-                       tk('symbol', 'abc'), tk('string', "like, duh")]});
+             'value': [tk('integer', '33', 1, 1), tk('float', '21.2', 1, 4), 
+                       tk('string', 'like, duh', 1, 9), 
+                       tk('symbol', "abc", 2, 2)]});
     });
     
     test("complex", function() {
