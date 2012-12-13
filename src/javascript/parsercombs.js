@@ -160,6 +160,8 @@ var ParserCombs = (function () {
                 if (r.status === 'success') {
                     tokens = r.rest;
                     vals.push(r.value);
+                } else if (r.status === 'error') {
+                    return r;
                 } else {
                     return pSuccess(tokens, vals);
                 }
@@ -170,7 +172,12 @@ var ParserCombs = (function () {
     function many1(p) {
         return function(xs) {
             var r = many0(p)(xs);
-            if(r.value.length > 0) {
+            if (r.status === 'error') {
+                return r;
+            }
+            // many0 always returns an error or
+            //   a success -- never a failure
+            if (r.value.length > 0) {
                 return r;
             }
             return pFail(xs);

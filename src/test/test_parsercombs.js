@@ -7,6 +7,7 @@ function testParserCombs(parserC, testHelper) {
         literal  =  parserC.literal,
         check    =  parserC.check,
         pFail    =  parserC.pFail,
+        pError   =  parserC.pError,
         unit     =  parserC.unit,
         fail     =  parserC.fail,
         commit   =  parserC.commit,
@@ -136,12 +137,18 @@ function testParserCombs(parserC, testHelper) {
         var p = many0(literal('a'));
         deepEqual(p("bbb"), pSuccess("bbb", []));
         deepEqual(p("aaaaaabcd"), pSuccess("bcd", ['a', 'a', 'a', 'a', 'a', 'a']));
+        deepEqual(many0(commit(fail, 'the message'))("abc"),
+            pError('the message', "abc"),
+            'must respect errors');
     });
     
     test("many1", function() {
         var p = many1(literal('a'));
         deepEqual(p("bbb"), pFail("bbb"));
         deepEqual(p("aaaaaabcd"), pSuccess("bcd", ['a', 'a', 'a', 'a', 'a', 'a']));
+        deepEqual(many1(commit(fail, 'the message'))("abc"),
+            pError('the message', "abc"),
+            'must respect errors');
     });
     
     test("fmap", function() {
