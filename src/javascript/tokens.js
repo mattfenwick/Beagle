@@ -45,18 +45,15 @@ var Tokens = (function () {
     }
 
 
-    function TokenError(message, line, column, rest) {
-        this.message  =  message;
-        this.line     =  line;
-        this.column   =  column;
-        this.rest     =  rest;
-        this.type     =  'TokenError';
+    function tokenError(message, line, column, rest) {
+        return {
+            message  :  message,
+            line     :  line,
+            column   :  column,
+            rest     :  rest,
+            status   :  'error'
+        };
     }
-
-
-    TokenError.prototype.toString = function () {
-        return this.message + " at line " + this.line + ", column " + this.column;
-    };
     
     
     function countLCs(string) {
@@ -102,31 +99,47 @@ var Tokens = (function () {
                     'token' : new Token(name, match[1], line, column),
                     'rest'  : string.substring(match[0].length),
                     'line'  : newLine,
-                    'column': newCol
+                    'column': newCol,
+                    'status': 'success'
                 };
             }
         }
         
         if (string[0] === '"') {   // why is this special-cased?  to provide better error reporting
-            throw new TokenError("tokenizer error: end-of-string (\") not found", line, column, string);
+            return tokenError("end-of-string not found", line, column, string);
         }
 
-        throw new TokenError("tokenizer error:  no tokens match input", line, column, string);
+        return tokenError("no tokens matched", line, column, string);
     }
 
 
+    // success fields:
+    //   - status, tokens
+    // failure:
+    //   - status, tokens, error
+    // must parse entire string to succeed
     function tokenize(string) {
         var tokens = [],
             next,
             line = 1,
             column = 1;
         while (next = nextToken(string, line, column)) {
+            if(next.status === 'error') {
+                return {
+                    status:  'error',
+                    error :  next,
+                    tokens:  tokens
+                };
+            }
             tokens.push(next.token);
             string = next.rest;
             line = next.line;
             column = next.column;
         }
-        return tokens;
+        return {
+            status:  'success',
+            tokens:  tokens
+        };
     }
 
 
