@@ -2,49 +2,50 @@ function testParserCombs(parserC, testHelper) {
 
     module("parser combinators");
     
-    var item     =  parserC.item,
-        sat      =  parserC.satisfy,
-        literal  =  parserC.literal,
-        check    =  parserC.check,
-        pFail    =  parserC.pFail,
-        pError   =  parserC.pError,
-        unit     =  parserC.unit,
-        fail     =  parserC.fail,
-        commit   =  parserC.commit,
-        either   =  parserC.either,
-        bind     =  parserC.bind,
-        all      =  parserC.all,
-        pSuccess =  parserC.pSuccess,
-        string   =  parserC.string,
-        many0    =  parserC.many0,
-        many1    =  parserC.many1,
-        fmap     =  parserC.fmap,
-        any      =  parserC.any,
-        seq2L    =  parserC.seq2L,
-        seq2R    =  parserC.seq2R;
+    var item     =  parserC.Parser.item,
+        sat      =  parserC.Parser.satisfy,
+        literal  =  parserC.Parser.literal,
+        zero     =  parserC.Result.zero,
+        error    =  parserC.Result.error,
+        pure     =  parserC.Result.pure,
+        all      =  parserC.Parser.all,
+        string   =  parserC.Parser.string,
+        any      =  parserC.Parser.any;
+    
+    function myPure(value, rest) {
+        return parserC.Parser.pure(value).parse(rest);
+    }
     
     
     test("item", function() {
-        deepEqual(item(""), pFail(""));
-        deepEqual(item("abcde"), {'status': 'success', 'rest': "bcde", 'value': "a"});
-        deepEqual(item([1,2,3,4]), {'status': 'success', 'rest': [2,3,4], 'value': 1});
+        deepEqual(item.parse(""), zero);
+        deepEqual(item.parse("abcde"), myPure('a', 'bcde'));
+        deepEqual(item.parse([1,2,3,4]), myPure(1, [2,3,4]));
+    });
+
+    test("check", function() {
+        deepEqual(item.check(false).parse(""), zero);
+        deepEqual(item.check(function(x) {return x > 3;}).parse([4, 5, "abc"]), 
+            myPure(4, [5, "abc"]));
+        deepEqual(item.check(function(y) {return y % 2 === 0;}).parse([17, 'duh']),
+            zero);
     });
     
     test("satisfy", function() {
-        deepEqual(sat(false)(""), pFail(""));
-        deepEqual(sat(function(x) {return x > 3;})([4, 5, "abc"]), 
-            {'status': 'success', 'rest': [5, "abc"], 'value': 4});
-        deepEqual(sat(function(y) {return y % 2 === 0;})([17, 'duh']),
-            pFail([17, 'duh']));
+        deepEqual(sat(false).parse(""), zero);
+        deepEqual(sat(function(x) {return x > 3;}).parse([4, 5, "abc"]), 
+            myPure(4, [5, "abc"]));
+        deepEqual(sat(function(y) {return y % 2 === 0;}).parse([17, 'duh']),
+            zero);
     });
     
     test("literal", function() {
-        deepEqual(literal('a')(""), pFail(""));
-        deepEqual(literal('b')("cde"), pFail("cde"));
-        deepEqual(literal('m')("matt"),
-            {status: 'success', 'rest': "att", 'value': 'm'});
-        deepEqual(literal(13)([13, 79, 22]),
-            {status: 'success', 'rest': [79, 22], 'value': 13});
+        deepEqual(literal('a').parse(""), zero);
+        deepEqual(literal('b').parse("cde"), zero);
+        deepEqual(literal('m').parse("matt"),
+            myPure('m', "att"));
+        deepEqual(literal(13).parse([13, 79, 22]),
+            myPure(13, [79, 22]));
         function g(l, r) {
             if(l.length !== r.length) {
                 return false;
@@ -56,124 +57,133 @@ function testParserCombs(parserC, testHelper) {
             }
             return true;
         }
-        deepEqual(literal([12, 13], g)([[12,13], 27, "abc"]),
-            {status: 'success', 'rest': [27, "abc"], 'value': [12, 13]},
-            "the equality comparison should work for anything");
+        deepEqual(literal([12, 13], g).parse([[12,13], 27, "abc"]),
+            myPure([12, 13], [27, "abc"]),
+            "the equality comparison must work for anything");
         function f(x, y) {
             return x.b === y.b;
         }
-        deepEqual(literal({b: 2, c: 3}, f)([{b: 2, c: 311}, 17]),
-            pSuccess([17], {b: 2, c: 311}));
-    });
-
-    test("check", function() {
-        deepEqual(check(false, item)(""), pFail(""));
-        deepEqual(check(false, item)(""), pFail(""));
-        deepEqual(check(function(x) {return x > 3;}, item)([4, 5, "abc"]), 
-            {'status': 'success', 'rest': [5, "abc"], 'value': 4});
-        deepEqual(check(function(y) {return y % 2 === 0;}, item)([17, 'duh']),
-            pFail([17, 'duh']));
+        deepEqual(literal({b: 2, c: 3}, f).parse([{b: 2, c: 311}, 17]),
+            myPure({b: 2, c: 311}, [17]));
     });
     
-    test("unit", function() {
-        deepEqual(unit("hi there")("123abc"),
-            {status: 'success', 'rest': '123abc', 'value': 'hi there'});
+    test("pure", function() {
+        deepEqual(parserC.Parser.pure("hi there").parse("123abc"),
+            myPure('hi there', '123abc'));
     });
     
-    test("fail", function() {
-        deepEqual(fail("abc123"),
-            {status: 'failed', rest: "abc123"});
+    test("parser zero", function() {
+        deepEqual(parserC.Parser.zero.parse("abc123"), zero);
+    });
+    
+    test("result plus", function() {
+        var rs = parserC.Result.pure,
+            rf = zero,
+            re = parserC.Result.error;
+        deepEqual(rs(3).plus(rs(4)), rs(3), "left-biased in success");
+        deepEqual(rs(3).plus(re("error")), rs(3), "even if right is an error");
+        deepEqual(zero.plus(rs(18)), rs(18));
+        deepEqual(zero.plus(re("uh-oh")), re("uh-oh"));
+        deepEqual(re("left").plus(re("right")), re("left"), "left-biased in error");
+        deepEqual(zero.plus(zero), zero);
+    });
+    
+    test("parser plus", function() {
+        var parser = literal('a').plus(literal('b'));
+        deepEqual(parser.parse("abcde"),
+            myPure('a', 'bcde'));
+        deepEqual(parser.parse("bcde"),
+            myPure('b', 'cde'));
+        deepEqual(parser.parse("cde"),
+            zero);
+        deepEqual(literal('a').plus(parserC.Parser.error).parse("xyz"),
+            parserC.Result.error("xyz"));
     });
     
     test("commit", function() {
-        deepEqual(commit(literal('a'))("abcde"),
-            {status: 'success', rest: 'bcde', value: 'a'},
-            'commit does not affect success');
-        deepEqual(commit(literal('a'), "looking for a")("bcde"),
-            {status: 'error', rest: 'bcde', message: 'looking for a'},
+        deepEqual(literal('a').commit().parse("bcde"),
+            parserC.Parser.error.parse("bcde"),
             'commit turns failure into an error');
-    });
-    
-    test("either", function() {
-        var parser = either(literal('a'), literal('b'));
-        deepEqual(parser("abcde"),
-            {status: 'success', 'rest': "bcde", 'value': 'a'});
-        deepEqual(parser("bcde"),
-            {status: 'success', 'rest': "cde", 'value': 'b'});
-        deepEqual(parser("cde"),
-            {status: 'failed', 'rest': "cde"});
+        deepEqual(literal('a').commit().parse("abcde"),
+            myPure('a', 'bcde'),
+            'but does not affect success');
+        deepEqual(parserC.Parser.throwError(123).commit().parse('abcde'),
+            parserC.Result.error(123),
+            'or error');
     });
     
     test("bind", function() {
-        var p = bind(item, literal); // recognizes two of the same token
-        deepEqual(p("aabcd"), {status: 'success', 'rest': 'bcd', value: 'a'});
-        deepEqual(p("bbcd"), {status: 'success', 'rest': 'cd', value: 'b'});
-        deepEqual(p("abcd"), pFail("bcd"));
+        var p = item.bind(literal); // recognizes two of the same token
+        deepEqual(p.parse("aabcd"), myPure('a', 'bcd'));
+        deepEqual(p.parse("bbcd"), myPure('b', 'cd'));
+        deepEqual(p.parse("abcd"), zero);
         
-        var ex = bind(item, 
-            function(x) {
-                return bind(item, 
-                    function(y) {
-                        return literal(x);
-                    });
+        var ex = item.bind(function(x) {
+            return item.bind(function(y) {
+                return literal(x);
             });
-        deepEqual(ex([1,2,1,3]), {status: 'success', 'rest': [3], value: 1});
-        deepEqual(ex([1,2,3,4]), pFail([3,4]));
+        });
+        deepEqual(ex.parse([1,2,1,3]), myPure(1, [3]));
+        deepEqual(ex.parse([1,2,3,4]), zero);
     });
     
     test("all", function() {
         var p = all([item, literal('x'), literal('3')]);
-        deepEqual(p("ax3dyz"), pSuccess("dyz", ['a', 'x', '3']));
-        deepEqual(p("bx4zzz"), pFail("4zzz"));
+        deepEqual(all([]).parse('abc'), myPure([], 'abc'), "all's identity");
+        deepEqual(all([literal('2')]).parse("2345"), myPure(['2'], '345'));
+        deepEqual(p.parse("ax3dyz"), myPure(['a', 'x', '3'], "dyz"));
+        deepEqual(p.parse("bx4zzz"), zero);
+    });
+    
+    test("fmap", function() {
+        var p = literal(3).fmap(function(x) {return x + 15;});
+        deepEqual(p.parse([3,4,5]), myPure(18, [4,5]));
+        deepEqual(p.parse("bcd"), zero);
+    });
+    
+    test("seq2L", function() {
+        var p = literal('a').seq2L(literal("b"));
+        deepEqual(p.parse("abcdefg"), myPure('a', 'cdefg'));
+        deepEqual(p.parse("acefg"), zero);
+    });
+    
+    test("seq2R", function() {
+        var p = literal('a').seq2R(literal("b"));
+        deepEqual(p.parse("abcdefg"), myPure('b', 'cdefg'));
+        deepEqual(p.parse("acefg"), zero);
     });
     
     test("string", function() {
         var p = string("public");
-        deepEqual(p("publicness"), pSuccess("ness", "public"));
-        deepEqual(p("pub-a-thon"), pFail("-a-thon"));
+        deepEqual(p.parse("publicness"), myPure('public', 'ness'));
+        deepEqual(p.parse("pub-a-thon"), zero);
     });
     
     test("many0", function() {
-        var p = many0(literal('a'));
-        deepEqual(p("bbb"), pSuccess("bbb", []));
-        deepEqual(p("aaaaaabcd"), pSuccess("bcd", ['a', 'a', 'a', 'a', 'a', 'a']));
-        deepEqual(many0(commit(fail, 'the message'))("abc"),
-            pError('the message', "abc"),
+        var p = literal('a').many0();
+        deepEqual(p.parse("bbb"), myPure([], 'bbb'));
+        deepEqual(p.parse("aaaaaabcd"), myPure(['a', 'a', 'a', 'a', 'a', 'a'], 'bcd'));
+        deepEqual(parserC.Parser.error.many0().commit().parse("abc"),
+            parserC.Result.error("abc"),
             'must respect errors');
     });
     
     test("many1", function() {
-        var p = many1(literal('a'));
-        deepEqual(p("bbb"), pFail("bbb"));
-        deepEqual(p("aaaaaabcd"), pSuccess("bcd", ['a', 'a', 'a', 'a', 'a', 'a']));
-        deepEqual(many1(commit(fail, 'the message'))("abc"),
-            pError('the message', "abc"),
+        var p = literal('a').many1();
+        deepEqual(p.parse("bbb"), zero);
+        deepEqual(p.parse("aaaaaabcd"), myPure(['a', 'a', 'a', 'a', 'a', 'a'], 'bcd'));
+        deepEqual(parserC.Parser.error.many1().commit().parse("abc"),
+            parserC.Result.error("abc"),
             'must respect errors');
     });
     
-    test("fmap", function() {
-        var p = fmap(function(x) {return x.length;}, many1(literal('a')));
-        deepEqual(p("aaabcd"), pSuccess("bcd", 3));
-        deepEqual(p("bcd"), pFail("bcd"));
-    });
-    
     test("any", function() {
-        var p = any([literal('a'), literal('b'), string("zyx")]);
-        deepEqual(p("aq123"), pSuccess("q123", 'a'));
-        deepEqual(p("zyx34534"), pSuccess("34534", "zyx"));
-        deepEqual(p("zy123"), pFail("123"));
-    });
-    
-    test("seq2L", function() {
-        var p = seq2L(literal('a'), string("bcd"));
-        deepEqual(p("abcdefg"), pSuccess("efg", 'a'));
-        deepEqual(p("abefg"), pFail("efg"));
-    });
-    
-    test("seq2R", function() {
-        var p = seq2R(literal('a'), string("bcd"));
-        deepEqual(p("abcdefg"), pSuccess("efg", 'bcd'));
-        deepEqual(p("abefg"), pFail("efg"));
+        var p = parserC.Parser.any([literal('a'), literal('b'), string("zyx")]);
+        deepEqual(p.parse("aq123"), myPure('a', 'q123'));
+        deepEqual(p.parse("zyx34534"), myPure('zyx', '34534'));
+        deepEqual(p.parse("zy123"), zero);
+        deepEqual(parserC.Parser.any([literal('a'), parserC.Parser.error]).parse('cde'),
+            parserC.Result.error('cde'));
     });
 
 }

@@ -1,256 +1,307 @@
 var ParserCombs = (function () {
 "use strict";
 
-// Parse result types
-    function pSuccess(rest, value) {
-        return {
-            'status':  'success',
-            'rest'  :  rest,
-            'value' :  value
-        };
-    }
-    
-    function pFail(rest) {
-        return {
-            'status':  'failed',
-            'rest'  :  rest
-        };
-    }
-    
-    function pError(message, rest) {
-        return {
-            'status'  :  'error',
-            'rest'    :  rest,
-            'message' :  message
-        };
-    }
+    var TYPES = {
+        'success': 1,
+        'failure': 1,
+        'error'  : 1
+    };
 
-
-    function item(xs) {
-        if(xs.length === 0) {
-            return pFail(xs);
+    function Result(type, value) {
+        if(!(type in TYPES)) {
+            throw new Error('bad Result type ' + type);
         }
-        return pSuccess(xs.slice(1), xs[0]);
+        this.type = type;
+        this.value = value;
     }
     
-    function equality(l, r) {
-        return l === r;
+    Result.prototype.fmap = function(f) {
+        if(this.type === 'success') {
+            return new Result('success', f(this.value));
+        }
+        return this;
+    };
+    
+    Result.pure = function(x) {
+        return new Result('success', x);
+    };
+    
+    Result.prototype.ap = function(y) {
+        if(this.type === 'success') {
+            return y.fmap(this.value);
+        }
+        return this;
     }
     
-    // PROBLEM:  equality comparison
-    // t -> Parser t t
-    function literal(t, f) {
-        var eq = f ? f : equality;
-        return function(xs) {
-            var r = item(xs);
-            if (r.status === 'success') {
-                if (eq(r.value, t)) {
-                    return r;
-                }
-                // success -> failure
-                return pFail(xs);
-            }
-            // failure/error -> failure/error
-            return r;
-        };
+    Result.prototype.bind = function(f) {
+        if(this.type === 'success') {
+            return f(this.value);
+        }
+        return this;
     }
     
-    // (a -> Bool) -> Parser t a -> Parser t a
-    function check(f, p) {
-        return function(xs) {
-            var r = p(xs);
-            if(r.status === 'success') {
-                if(f(r.value)) {
-                    return r;
-                }
-                return pFail(xs);
-            }
-            return r;
-        };
-    }
+    Result.error = function(e) {
+        return new Result('error', e);
+    };
     
-    function satisfy(f) {
-        return check(f, item);
-    }
+    Result.prototype.plus = function(that) {
+        if(this.type === 'failure') {
+            return that;
+        }
+        return this;
+    };
     
-    function unit(v) {
-        return function(xs) {
-            return pSuccess(xs, v);
-        };
-    }
+    Result.zero = new Result('failure', undefined);
     
-    function fail(xs) {
-        return pFail(xs);
-    }
+    Result.prototype.mapError = function(f) {
+        if(this.type === 'error') {
+            return Result.error(f(this.value));
+        }
+        return this;
+    };
     
-    function commit(p, message) {
-        return function(xs) {
-            var r = p(xs);
-            if(r.status === 'failed') {
-                return pError(message, xs);
-            }
-            return r;
-        };
-    }
     
-    function either(pl, pr) {
-        return function(xs) {
-            var r1 = pl(xs);
-            if(r1.status === 'failed') {
-                return pr(xs);
-            }
-            // success/error in the first parser 
-            //   are left alone
-            return r1;
-        };
-    }
-    
-    // Parser t a -> (a -> Parser t b) -> Parser t b
-    function bind(p, fp) {
-        return function(xs) {
-            var r1 = p(xs);
-            if(r1.status === 'success') {
-                var r2 = fp(r1.value)(r1.rest); // hmm ... f(a)(b) or f(a, b) ???
-                return r2;
-            }
-            return r1;
-        };
-    }
-    
-    // [Parser t a] -> Parser t [a]
-    function all(ps) {
-        return function(xs) {
-            var r, i,
-                tokens = xs,
-                vals = [];
-            for(i = 0; i < ps.length; i++) {
-                r = ps[i](tokens);
-                if (r.status === 'success') {
-                    tokens = r.rest;
-                    vals.push(r.value);
-                } else {
-                    return r;
-                }
-            }
-            return pSuccess(tokens, vals);
-        };
-    }
-    
-    // [t] -> Parser t [t]
-    function string(s) {
-        return function(xs) {
-            var i;
-            for(i = 0; i < s.length; i++) {
-                if (s[i] !== xs[i]) {
-                    return pFail(xs.slice(i));
-                }
-            }
-            return pSuccess(xs.slice(i), s);
-        };
-    }
-    
-    // Parser t a -> Parser t [a]
-    function many0(p) {
-        return function(xs) {
-             var r,
-                tokens = xs,
-                vals   = [];
-            while(true) {
-                r = p(tokens);
-                if (r.status === 'success') {
-                    tokens = r.rest;
-                    vals.push(r.value);
-                } else if (r.status === 'error') {
-                    return r;
-                } else {
-                    return pSuccess(tokens, vals);
-                }
-            }
-        };
-    }
-    
-    function many1(p) {
-        return function(xs) {
-            var r = many0(p)(xs);
-            if (r.status === 'error') {
-                return r;
-            }
-            // many0 always returns an error or
-            //   a success -- never a failure
-            if (r.value.length > 0) {
-                return r;
-            }
-            return pFail(xs);
-        };
+    // ([t] -> m ([t], a)) -> Parser m t a
+    function Parser(f) {
+        this.parse = f;
     }
     
     // (a -> b) -> Parser t a -> Parser t b
-    function fmap(f, p) {
-        return function(xs) {
-            var r = p(xs);
-            if(r.status === 'success') {
-                return pSuccess(r.rest, f(r.value));
+    Parser.prototype.fmap = function(f) {
+        var self = this;
+        return new Parser(function(xs) {
+            return self.parse(xs).fmap(function(r) {
+                return {
+                    rest: r.rest,
+                    result: f(r.result)
+                };
+            });
+        });
+    };
+    
+    // a -> Parser t a
+    Parser.pure = function(x) {
+        return new Parser(function(xs) {
+            return Result.pure({rest: xs, result: x});
+        });
+    };
+    
+    // skipping Applicative ... for now
+    
+    // m a -> (a -> m b) -> m b
+    // ([t] -> m ([t], a)) -> (a -> [t] -> m ([t], b)) -> [t] -> m ([t], b)
+    Parser.prototype.bind = function(f) {
+        var self = this;
+        return new Parser(function(xs) {
+            var r = self.parse(xs);
+            if(r.type === 'success') {
+                return f(r.value.result).parse(r.value.rest);
             }
             return r;
-        };
-    }
+        });
+    };
+    
+    Parser.prototype.plus = function(that) {
+        var self = this;
+        return new Parser(function(xs) {
+            return self.parse(xs).plus(that.parse(xs));
+        });
+    };
+    
+    Parser.zero = new Parser(function(xs) {
+        return Result.zero;
+    });
+    
+    Parser.throwError = function(value) {
+        return new Parser(function(xs) {
+            return Result.error(value);
+        });
+    };
+    
+    Parser.error = new Parser(function(xs) {
+        return Result.error(xs);
+    });
     
     // (e -> m) -> Parser e t a -> Parser m t a
-    function fmapError(f, p) {
-        return function(xs) {
-            var r = p(xs);
-            if(r.status === 'error') {
-                return pError(r.rest, f(r.message));
+    Parser.prototype.mapError = function(f) {
+        var self = this;
+        return new Parser(function(xs) {
+            return self.parse(xs).mapError(f);
+        });
+    };
+
+    
+    // parsers
+    
+    // Parser t t
+    Parser.item = new Parser(function(xs) {
+        if(xs.length === 0) {
+            return Result.zero;
+        }
+        var x = xs[0];
+        return Result.pure({rest: xs.slice(1), result: x});
+    });
+    
+    // (a -> Bool) -> Parser t a -> Parser t a
+    Parser.prototype.check = function(p) {
+        var self = this;
+        return new Parser(function(xs) {
+            var r = self.parse(xs);
+            if(r.type !== 'success') {
+                return r;
+            } else if(p(r.value.result)) {
+                return r;
             }
-        };
+            return Result.zero;
+        });
+    };
+    
+    function equality(x, y) {
+        return x === y;
+    }
+
+    // t -> Maybe (t -> t -> Bool) -> Parser t t    
+    Parser.literal = function(x, f) {
+        var eq = f ? f : equality;
+        return Parser.item.check(function (y) {
+                                     return eq(x, y);
+                                 });
+    };
+    
+    // (t -> Bool) -> Parser t t
+    Parser.satisfy = function(pred) {
+        return Parser.item.check(pred);
+    };
+    
+    // Parser t a -> Parser t [a]
+    Parser.prototype.many0 = function() {
+        var self = this;
+        return new Parser(function(xs) {
+            var vals = [],
+                tokens = xs,
+                r;
+            while(true) {
+                r = self.parse(tokens);
+                if(r.type === 'success') {
+                    vals.push(r.value.result);
+                    tokens = r.value.rest;
+                } else if(r.type === 'failure') {
+                    return Result.pure({rest: tokens, result: vals});
+                } else { // must respect errors
+                    return r;
+                }
+            }
+        });
+    };
+    
+    // Parser t a -> Parser t [a]
+    Parser.prototype.many1 = function() {
+        return this.many0().check(function(x) {return x.length > 0;});
+    };
+
+    // what do you think ... too much magic?  probably
+    // (a -> b -> ... z) -> (Parser t a, Parser t b, ...) -> Parser t z
+    Parser.app = function(f, ps__) {
+        var p = Parser.all(Array.prototype.slice.call(arguments, 1));
+        return p.fmap(function(rs) {return f.apply(rs);});
+    };
+    
+    // a -> Parser t a -> Parser t a
+    Parser.prototype.optional = function(x) {
+        return this.plus(Parser.pure(x));
+    };
+    
+    // [Parser t a] -> Parser t [a]
+    Parser.all = function(ps) {
+        return new Parser(function(xs) {
+            var vals = [],
+                i, r,
+                tokens = xs;
+            for(i = 0; i < ps.length; i++) {
+                r = ps[i].parse(tokens);
+                if(r.type === 'error') {
+                    return r;
+                } else if(r.type === 'success') {
+                    vals.push(r.value.result);
+                    tokens = r.value.rest;
+                } else {
+                    return Result.zero;
+                }
+            }
+            return Result.pure({rest: tokens, result: vals});
+        });
+    };
+    
+    // Parser t a -> Parser t ()
+    Parser.prototype.not0 = function() {
+        var self = this;
+        return new Parser(function(xs) {
+            var r = self.parse(xs);
+            if(r.type === 'error') {
+                return r;
+            } else if(r.type === 'success') {
+                return Result.zero;
+            } else {
+                return Result.pure({rest: xs, result: null}); // or undefined?  ???
+            }
+        });
+    };
+    
+    // Parser t a -> Parser t t
+    Parser.prototype.not1 = function() {
+        return this.not0().seq2R(Parser.item);
+    };
+    
+    // Parser t a -> Parser t a
+    Parser.prototype.commit = function() {
+        return this.plus(Parser.error);
+    };
+    
+    Parser.prototype.seq2L = function(p) {
+        return Parser.all([this, p]).fmap(function(x) {return x[0];});
+    };
+    
+    Parser.prototype.seq2R = function(p) {
+        return Parser.all([this, p]).fmap(function(x) {return x[1];});
+    };
+    
+    // purpose:  '[].map' passes in index also
+    //   which messed up literal because it
+    //   expects 2nd arg to be a function or undefined
+    // this function ensures that doesn't happen
+    function safeMap(array, f) {
+        var out = [], i;
+        for(i = 0; i < array.length; i++) {
+            out.push(f(array[i]));
+        }
+        return out;
     }
     
-    function any(ps) {
-        return function(xs) {
-            var r = pFail(xs),
+    // [t] -> Parser t [t]
+    // n.b.:  [t] != string !!!
+    Parser.string = function(str) {
+        return Parser.all(safeMap(str, Parser.literal)).seq2R(Parser.pure(str));
+    };
+
+    // [Parser t a] -> Parser t a
+    Parser.any = function (ps) {
+        return new Parser(function(xs) {
+            var r = Result.zero,
                 i;
             for(i = 0; i < ps.length; i++) {
-                r = ps[i](xs);
-                if(r.status === 'success' || r.status === 'error') {
+                r = ps[i].parse(xs);
+                if(r.type === 'success' || r.type === 'error') {
                     return r;
                 }
             }
             return r;
-        };
-    }
-    
-    function seq2L(pl, pr) {
-        return fmap(function (x) {return x[0];}, all([pl, pr]));
-    }
-    
-    function seq2R(pl, pr) {
-        return fmap(function (x) {return x[1];}, all([pl, pr]));
-    }
+        });
+    };
 
 
     return {
-        item    :  item,
-        satisfy :  satisfy,
-        literal :  literal,
-        check   :  check,
-        unit    :  unit,
-        fail    :  fail,
-        commit  :  commit,
-        either  :  either,
-        bind    :  bind,
-        all     :  all,
-        string  :  string,
-        'many0' :  many0,
-        'many1' :  many1,
-        fmap    :  fmap,
-        any     :  any,
-        seq2L   :  seq2L,
-        seq2R   :  seq2R,
-        fmapError: fmapError,
-        
-        pFail   :  pFail,
-        pSuccess:  pSuccess,
-        pError  :  pError
+        Result:  Result,
+        Parser:  Parser
     };
 
 })();
