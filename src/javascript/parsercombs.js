@@ -195,6 +195,16 @@ var ParserCombs = (function () {
         };
     }
     
+    // (e -> m) -> Parser e t a -> Parser m t a
+    function fmapError(f, p) {
+        return function(xs) {
+            var r = p(xs);
+            if(r.status === 'error') {
+                return pError(r.rest, f(r.message));
+            }
+        };
+    }
+    
     function any(ps) {
         return function(xs) {
             var r = pFail(xs),
@@ -236,6 +246,7 @@ var ParserCombs = (function () {
         any     :  any,
         seq2L   :  seq2L,
         seq2R   :  seq2R,
+        fmapError: fmapError,
         
         pFail   :  pFail,
         pSuccess:  pSuccess,
