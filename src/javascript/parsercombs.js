@@ -199,11 +199,13 @@ var ParserCombs = (function () {
         return this.many0().check(function(x) {return x.length > 0;});
     };
 
-    // what do you think ... too much magic?  probably
     // (a -> b -> ... z) -> (Parser t a, Parser t b, ...) -> Parser t z
+    // example:   app(myFunction, parser1, parser2, parser3, parser4)
     Parser.app = function(f, ps__) {
         var p = Parser.all(Array.prototype.slice.call(arguments, 1));
-        return p.fmap(function(rs) {return f.apply(rs);});
+        return p.fmap(function(rs) {
+            return f.apply(undefined, rs); // 'undefined' gets bound to 'this' inside f
+        });
     };
     
     // a -> Parser t a -> Parser t a

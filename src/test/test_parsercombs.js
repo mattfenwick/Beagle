@@ -185,5 +185,42 @@ function testParserCombs(parserC, testHelper) {
         deepEqual(parserC.Parser.any([literal('a'), parserC.Parser.error]).parse('cde'),
             parserC.Result.error('cde'));
     });
+    
+    test("app", function() {
+        var app = parserC.Parser.app;
+        deepEqual(app(function(x,y,z) {return x + z;}, item, literal(-1), item).parse([18, -1, 27, 3, 4]), 
+            myPure(45, [3, 4]));
+        deepEqual(app(undefined, item, literal(2)).parse([1,3,4,5]), zero);
+        deepEqual(app(undefined, item, literal(1).commit()).parse([1,2,3,4]),
+            parserC.Result.error([2,3,4]), 
+            'app must respect errors');
+    });
+    
+    test("optional", function() {
+        deepEqual(literal('a').optional().parse('bcde'),
+            myPure(undefined, 'bcde'));
+        deepEqual(literal('a').optional().parse('abcd'),
+            myPure('a', 'bcd'));
+    });
+    
+    test("error", function() {
+        var err = parserC.Parser.error;
+        deepEqual(literal('a').seq2R(err).parse('abcd'),
+            parserC.Result.error('bcd'));
+        deepEqual(literal('a').seq2R(err).parse('bcd'), zero);
+    });
+    
+    test("mapError", function() {
+        var err = parserC.Parser.error;
+        deepEqual(err.parse([2,3,4]).mapError(function(e) {
+            return {rest: e, length: e.length};
+        }), parserC.Result.error({rest: [2,3,4], length: 3}));
+    });
+    
+    test("throwError", function() {
+        deepEqual(parserC.Parser.throwError('wtf just happened?').parse('qrst'),
+            parserC.Result.error('wtf just happened?'));
+    });
 
+    // not0, not1
 }
