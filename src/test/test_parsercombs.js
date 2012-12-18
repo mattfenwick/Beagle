@@ -96,18 +96,19 @@ function testParserCombs(parserC, testHelper) {
             myPure('b', 'cde'));
         deepEqual(parser.parse("cde"),
             zero);
-        deepEqual(literal('a').plus(parserC.Parser.error).parse("xyz"),
+        deepEqual(literal('a').plus(parserC.Parser.get.bind(parserC.Parser.error)).parse("xyz"),
             parserC.Result.error("xyz"));
     });
     
     test("commit", function() {
-        deepEqual(literal('a').commit().parse("bcde"),
-            parserC.Parser.error.parse("bcde"),
+        var err = parserC.Parser.error;
+        deepEqual(literal('a').commit('blegg').parse("bcde"),
+            err('blegg').parse("bcde"),
             'commit turns failure into an error');
-        deepEqual(literal('a').commit().parse("abcde"),
+        deepEqual(literal('a').commit('???').parse("abcde"),
             myPure('a', 'bcde'),
             'but does not affect success');
-        deepEqual(parserC.Parser.throwError(123).commit().parse('abcde'),
+        deepEqual(parserC.Parser.error(123).commit('ouch!').parse('abcde'),
             parserC.Result.error(123),
             'or error');
     });
@@ -163,7 +164,7 @@ function testParserCombs(parserC, testHelper) {
         var p = literal('a').many0();
         deepEqual(p.parse("bbb"), myPure([], 'bbb'));
         deepEqual(p.parse("aaaaaabcd"), myPure(['a', 'a', 'a', 'a', 'a', 'a'], 'bcd'));
-        deepEqual(parserC.Parser.error.many0().commit().parse("abc"),
+        deepEqual(parserC.Parser.error('abc').many0().parse("abc"),
             parserC.Result.error("abc"),
             'must respect errors');
     });
@@ -172,7 +173,7 @@ function testParserCombs(parserC, testHelper) {
         var p = literal('a').many1();
         deepEqual(p.parse("bbb"), zero);
         deepEqual(p.parse("aaaaaabcd"), myPure(['a', 'a', 'a', 'a', 'a', 'a'], 'bcd'));
-        deepEqual(parserC.Parser.error.many1().commit().parse("abc"),
+        deepEqual(parserC.Parser.error('abc').many1().parse("abc"),
             parserC.Result.error("abc"),
             'must respect errors');
     });
@@ -182,8 +183,8 @@ function testParserCombs(parserC, testHelper) {
         deepEqual(p.parse("aq123"), myPure('a', 'q123'));
         deepEqual(p.parse("zyx34534"), myPure('zyx', '34534'));
         deepEqual(p.parse("zy123"), zero);
-        deepEqual(parserC.Parser.any([literal('a'), parserC.Parser.error]).parse('cde'),
-            parserC.Result.error('cde'));
+        deepEqual(parserC.Parser.any([literal('a'), parserC.Parser.error(13)]).parse('cde'),
+            parserC.Result.error(13));
     });
     
     test("app", function() {
@@ -191,8 +192,8 @@ function testParserCombs(parserC, testHelper) {
         deepEqual(app(function(x,y,z) {return x + z;}, item, literal(-1), item).parse([18, -1, 27, 3, 4]), 
             myPure(45, [3, 4]));
         deepEqual(app(undefined, item, literal(2)).parse([1,3,4,5]), zero);
-        deepEqual(app(undefined, item, literal(1).commit()).parse([1,2,3,4]),
-            parserC.Result.error([2,3,4]), 
+        deepEqual(app(undefined, item, literal(1).commit('blah')).parse([1,2,3,4]),
+            parserC.Result.error('blah'), 
             'app must respect errors');
     });
     
@@ -205,21 +206,16 @@ function testParserCombs(parserC, testHelper) {
     
     test("error", function() {
         var err = parserC.Parser.error;
-        deepEqual(literal('a').seq2R(err).parse('abcd'),
-            parserC.Result.error('bcd'));
-        deepEqual(literal('a').seq2R(err).parse('bcd'), zero);
+        deepEqual(literal('a').seq2R(err('qrs')).parse('abcd'),
+            parserC.Result.error('qrs'));
+        deepEqual(literal('a').seq2R(err('tuv')).parse('bcd'), zero);
     });
     
     test("mapError", function() {
         var err = parserC.Parser.error;
-        deepEqual(err.parse([2,3,4]).mapError(function(e) {
-            return {rest: e, length: e.length};
-        }), parserC.Result.error({rest: [2,3,4], length: 3}));
-    });
-    
-    test("throwError", function() {
-        deepEqual(parserC.Parser.throwError('wtf just happened?').parse('qrst'),
-            parserC.Result.error('wtf just happened?'));
+        deepEqual(err([89, 22]).parse([2,3,4]).mapError(function(e) {
+            return {e: e, length: e.length};
+        }), parserC.Result.error({e: [89, 22], length: 2}));
     });
 
     // not0, not1

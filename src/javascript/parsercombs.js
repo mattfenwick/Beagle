@@ -112,15 +112,12 @@ var ParserCombs = (function () {
         return Result.zero;
     });
     
-    Parser.throwError = function(value) {
+    // Parser [t] t a
+    Parser.error = function(value) {
         return new Parser(function(xs) {
             return Result.error(value);
         });
     };
-    
-    Parser.error = new Parser(function(xs) {
-        return Result.error(xs);
-    });
     
     // (e -> m) -> Parser e t a -> Parser m t a
     Parser.prototype.mapError = function(f) {
@@ -129,8 +126,19 @@ var ParserCombs = (function () {
             return self.parse(xs).mapError(f);
         });
     };
-
     
+    // Parser t [t]
+    Parser.get = new Parser(function(xs) {
+        return Result.pure({rest: xs, result: xs});
+    });
+    
+    // [t] -> Parser t ()   // just for completeness
+    Parser.put = function(xs) {
+        return new Parser(function() {
+            return Result.pure({rest: xs, result: null});
+        });
+    };
+
     // parsers
     
     // Parser t t
@@ -254,9 +262,9 @@ var ParserCombs = (function () {
         return this.not0().seq2R(Parser.item);
     };
     
-    // Parser t a -> Parser t a
-    Parser.prototype.commit = function() {
-        return this.plus(Parser.error);
+    // e -> Parser e t a
+    Parser.prototype.commit = function(e) {
+        return this.plus(Parser.error(e));
     };
     
     Parser.prototype.seq2L = function(p) {
