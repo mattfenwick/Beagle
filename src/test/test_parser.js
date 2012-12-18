@@ -1,84 +1,97 @@
-function testParser(p2, tokens, testHelper) {
+function testParser(parser, pc, tokens, testHelper) {
 
     module("parser");
     
-    var t   =  tokens.tokenize,
-        s   =  tokens.stripTokens,
-        p   =  p2.parse,
-        tk  =  tokens.Token;
-    
-    // TODO: should probably free these tests
-    //   from depending so intimately on the tokenizer
-    // currently they're overspecified ... 
-    //   incidentally coupled
+    var p   =  parser.parse,
+        t   =  tokens.Token,
+        ti  =  t('integer', '33', 14, 79),
+        tf  =  t('float', '21.2', 3, 22),
+        ts  =  t('string', 'hi there', 8, 5),
+        tc  =  t('comment', 'blargh', 27, 28),
+        tsy =  t('symbol', 'abc', 19, 41),
+        tsy2 = t('symbol', 'x', 19, 3),
+        toc =  t('open-curly', '{', 22, 53),
+        tcc =  t('close-curly', '}', 8, 17),
+        tos =  t('open-square', '[', 9, 17),
+        tcs =  t('close-square', ']', 15, 82),
+        tosp = t('open-special', ',(', 79, 13),
+        tcsp = t('close-special', ',)', 102, 11),
+        top  = t('open-paren', '(', 21, 44),
+        tcp  = t('close-paren', ')', 29, 18),
+        pure = pc.Result.pure;
     
     test("simple", function() {
-        deepEqual(p(s(t('33 21.2 "like, duh" \n abc '))), 
-            {'status': 'success', 'rest': [],
-             'value': [tk('integer', '33', 1, 1), tk('float', '21.2', 1, 4), 
-                       tk('string', 'like, duh', 1, 9), 
-                       tk('symbol', "abc", 2, 2)]});
+        deepEqual(p.parse([ti, tf, ts, tsy]), 
+            pure({'rest': [],
+                  'result': [ti, tf, ts, tsy]},
+            'simple tokens are easy to parse'));
     });
     
     test("complex", function() {
-        deepEqual(p2.list(s(t('[abc 1] ['))),
-            {'status': 'success', 'rest': [tk('open-square', '[')],
-             'value': {type: 'listliteral', 
-                       elements: [tk('symbol', 'abc'), tk('integer', '1')]}},
+        deepEqual(parser.list.parse([tos, tsy, ti, tcs, tos]), // maybe doesn't make sense to reuse tos token ... lazy!
+            pure({'rest': [tos],
+                  'result': {type: 'listliteral', 
+                             line: 9, column: 17,
+                             elements: [tsy, ti]}}),
             'simple list literal');
-        deepEqual(p2.special(s(t(' \t,(define x 22,) z'))),
-            {'status': 'success', 'rest': [tk('symbol', 'z')],
-             'value': {type: 'special',
-                       operator: tk('symbol', 'define'), 
-                       'arguments':[tk('symbol', 'x'), tk('integer', '22')]}},
+        deepEqual(parser.special.parse([tosp, tsy, tsy2, ti, tcsp, tsy]),
+            pure({'rest': [tsy],
+                  'result': {type: 'special',
+                             operator: tsy, 
+                             'arguments':[tsy2, ti],
+                             line: 79, column: 13}}),
             'simple special form application');
-        deepEqual(p2.object(s(t('  { "abc" def "ghi  " 27  } 1'))),
-            {'status':'success', 'rest': [tk('integer', '1')],
-             'value': {type: 'objectliteral',
-                       entries: [[tk('string', 'abc'), tk('symbol', 'def')],
-                                 [tk('string', 'ghi  '), tk('integer', '27')]]}},
+        deepEqual(parser.object.parse([toc, ts, tsy, ts, tsy2, tcc, ti]),
+            pure({'rest': [ti],
+                  'result': {type: 'objectliteral',
+                            entries: [[ts, tsy], [ts, tsy2]],
+                            line: 22, column: 53}}),
             'simple object literal');
-        deepEqual(p2.app(s(t('(+ 1 2) 3'))),
-            {'status': 'success', 'rest': [tk('integer', '3')],
-             'value': {type: 'application',
-                       operator: tk('symbol', '+'),
-                       'arguments': [tk('integer', '1'), tk('integer', '2')]}},
+        deepEqual(parser.app.parse([top, tsy, ti, tf, tcp, ts]),
+            pure({'rest': [ts],
+                  'result': {type: 'application',
+                             operator: tsy,
+                             'arguments': [ti, tf],
+                             line: 21, column: 44}}),
             'simple function application');
         // probably not a great unit test ... vvv
-        deepEqual(p(s(t('{"abc" [1] "xyz" (qrs ,(tuv xyz,))}'))),
-            {'status': 'success', 'rest': [],
-             'value': [{type: 'objectliteral',
-                       entries: [[tk('string', 'abc'), 
-                                  {type: 'listliteral', elements: [tk('integer', '1')]}],
-                                 [tk('string', 'xyz'),
-                                  {type: 'application',
-                                   operator: tk('symbol', 'qrs'),
-                                   'arguments': [{type: 'special', 
-                                                  operator: tk('symbol', 'tuv'),
-                                                  'arguments': [tk('symbol', 'xyz')]}]}]]}]});
+/*        deepEqual(p.parse([toc, ts, tos, ti, tcs, ts, top, tsy, tosp, tsy2, tf, tcsp, tcp, tcc]),
+            pure({'rest': [],
+                  'result': [{type: 'objectliteral',
+                              line:  22, column: 53,
+                              entries: [[ts, {type: 'listliteral', elements: [ti],
+                                              line: 9, column: 17}],
+                                        [ts,
+                                         {type: 'application',
+                                          line: 79, column: 13,
+                                          operator: tsy,
+                                          'arguments': [{type: 'special', 
+                                                         line: 21, column: 44, 
+                                                         operator: tsy2,
+                                                         'arguments': [tf]}]}]]}]}),
+            'nested example');*/
     });
-    
+
     test("error messages", function() {
-        deepEqual(p(s(t('[abc 1 []'))),
-            {'status': 'error', 'rest': s(t('abc 1 []')),
-             'message': 'list'},
-            'list literal');
-        deepEqual(p(s(t('{"abc" 1'))),
-            {'status': 'error', 'rest': s(t('"abc" 1')),
-             'message': 'object'},
+        var err = pc.Result.error;
+        deepEqual(p.parse([toc, tsy, ti]),
+            err({'rule': 'object literal', line: 22, column: 53}),
             'object literal');
-        deepEqual(p(s(t('(abc 1 []'))),
-            {'status': 'error', 'rest': s(t('abc 1 []')),
-             'message': 'application'},
+        deepEqual(p.parse([tos, tsy, ti, tos, tcs]),
+            err({'rule': 'list literal', line: 9, column: 17}),
+            'list literal');
+        deepEqual(p.parse([top, tsy, ti, tos, tcs]),
+            err({'rule': 'application', line: 21, column: 44}),
             'function application');
-        deepEqual(p(s(t(',(define abc 1'))),
-            {'status': 'error', 'rest': s(t('define abc 1')),
-             'message': 'special-form application'},
+        deepEqual(p.parse([tosp, tsy, tos, tcs]),
+            err({'rule': 'special-form application', line: 79, column: 13}),
             'special-form application');
-        deepEqual(p(s(t('([abc 123'))),
-            {status: 'error', rest: s(t('abc 123')),
-             message: 'list'},
+        deepEqual(p.parse([top, tos, tsy, ti]),
+            err({'rule': 'list literal', line: 9, column: 17}),
             'innermost error wins');
+        deepEqual(p.parse([tos, top, tsy, ti]),
+            err({'rule': 'application', line: 21, column: 44}),
+            'innermost wins again');
     });
 
 }

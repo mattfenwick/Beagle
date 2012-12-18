@@ -1,32 +1,40 @@
 var Parser = (function(P) {
 
-    function myObject(pairs) {
+    function myObject(pairs, line, column) {
         return {
-            'type': 'objectliteral',
-            'entries': pairs
+            type     : 'objectliteral',
+            entries  :  pairs,
+            line     :  line,
+            column   :  column
         };
     }
     
-    function myList(elements) {
+    function myList(elements, line, column) {
         return {
-            'type': 'listliteral',
-            'elements': elements
+            type      :  'listliteral',
+            elements  :  elements,
+            line      :  line,
+            column    :  column
         };
     }
     
-    function myApp(args) {
+    function myApp(op, args, line, column) {
         return {
-            'type'     : 'application',
-            'operator' : args[0],
-            'arguments': args[1]
+            'type'     :  'application',
+            'operator' :  op,
+            'arguments':  args,
+            line       :  line,
+            column     :  column
         };
     }
     
-    function mySpecial(args) {
+    function mySpecial(op, args, line, column) {
         return {
-            'type'     : 'special',
-            'operator' : args[0],
-            'arguments': args[1]
+            'type'     :  'special',
+            'operator' :  op,
+            'arguments':  args,
+            line       :  line,
+            column     :  column
         };
     }
 
@@ -34,56 +42,104 @@ var Parser = (function(P) {
     // parsers
     
     function tokentype(type) {
-        return P.satisfy(
+        return P.Parser.satisfy(
             function(t) {
                 return t.type === type;
             });
     }
 
-    var pNumber = P.either(tokentype('integer'), tokentype('float'));
+    var pNumber = tokentype('integer').plus(tokentype('float'));
     
     var pString = tokentype('string');
 
     var pSymbol = tokentype('symbol');
     
-    function openCommit(open, middle, close, message) {
-        return P.seq2R(open, 
-                       P.commit(P.seq2L(middle, 
-                                        close),
-                                message));
+    function myObject2(start) {
+        return function(pairs) {
+            return myObject(pairs, start.line, start.column);
+        };
     }
     
-    var pObject = openCommit(
-        tokentype('open-curly'),
-        P.fmap(myObject, P.many0(P.all([pString, pForm]))),
-        tokentype('close-curly'), 
-        'object');
+    function myList2(start) {
+        return function(elems) {
+            return myList(elems, start.line, start.column);
+        };
+    };
     
-    var pList = openCommit(
-        tokentype('open-square'),
-        P.fmap(myList, P.many0(pForm)),
-        tokentype('close-square'),
-        'list');
+    function mySpecial2(start) {
+        return function(op, args) {
+            return mySpecial(op, args, start.line, start.column);
+        };
+    }
     
-    var pApp = openCommit(
+    function myApp2(start) {
+        return function(op, args) {
+            return myApp(op, args, start.line, start.column);
+        };
+    }
+
+    var pForm = P.Parser.error("need to set function");    
+    
+    var pObject = tokentype('open-curly').bind(
+        function(t) {
+            return P.Parser.all([pString, pForm])
+                .many0()
+                .fmap(myObject2(t))
+                .seq2L(tokentype('close-curly'))
+                .commit({line: t.line, column: t.column, rule: 'object literal'});
+        });
+    
+    var pList = tokentype('open-square').bind(
+        function(t) {
+            return pForm 
+                .many0()
+                .fmap(myList2(t))
+                .seq2L(tokentype('close-square'))
+                .commit({line: t.line, column: t.column, rule: 'list literal'});
+        });
+    
+    function whatEvs(start, middle, end, rule) {
+        return start.bind(
+            function(t) {
+                return middle
+                    .seq2L(end)
+                    .fmap(function(a) {a.line = t.line; a.column = t.column; return a;})
+                    .commit({line: t.line, column: t.column, rule: rule});
+            });
+    };
+    
+    var pApp = whatEvs(
         tokentype('open-paren'),
-        P.fmap(myApp, P.all([pForm, P.many0(pForm)])), // could just do P.many1(pForm), but this keeps 1st separate from rest
+        P.Parser.app(myApp, pForm, pForm.many0()),
         tokentype('close-paren'),
         'application');
     
-    var pSpec = openCommit(
-        tokentype('open-special'),
-        P.fmap(mySpecial, P.all([pSymbol, P.many0(pForm)])),
-        tokentype('close-special'),
-        'special-form application');
-
+    var pApp = tokentype('open-paren').bind(
+        function(t) {
+            return P.Parser.app(
+                    myApp2(t),
+                    pForm,
+                    pForm.many0())
+                .seq2L(tokentype('close-paren'))
+                .commit({line: t.line, column: t.column, rule: 'application'});
+        });
+    
+    var pSpec = tokentype('open-special').bind(
+        function(t) {
+            return P.Parser.app(
+                    mySpecial2(t),
+                    pForm,
+                    pForm.many0())
+                .seq2L(tokentype('close-special'))
+                .commit({line: t.line, column: t.column, rule: 'special-form application'});
+        });
+    
     // written as a function instead of a `var` to allow mutual recursion,
     //   and functions are hoisted (I believe)
-    function pForm(xs) {
-        return P.any([pSpec, pApp, pList, pObject, pSymbol, pNumber, pString])(xs);
-    }
+    pForm.parse = P.Parser.any([pSpec, pApp, pList, pObject, pSymbol, pNumber, pString]).parse;
+    // will this work?  if not, switch back to a function maybe
     
-    var parser = P.many0(pForm);
+    var parser = pForm.many0();
     
     return {
         'number'  :  pNumber,
