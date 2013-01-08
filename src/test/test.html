@@ -8,57 +8,25 @@
   
   <script type="text/javascript" src="helper_test.js"></script>
 
-  <script type="text/javascript" src="../javascript/parsercombs.js"></script>
-  <script type="text/javascript" src="../javascript/parser.js"></script>
-  <script type="text/javascript" src="../javascript/unparser.js"></script>
-  <script type="text/javascript" src="../javascript/environment.js"></script>
-  <script type="text/javascript" src="../javascript/data.js"></script>
+  <script type="text/javascript" src="../javascript/maybeerror.js"></script>
   <script type="text/javascript" src="../javascript/tokens.js"></script>
-  <script type="text/javascript" src="../javascript/ast.js"></script>
-  <script type="text/javascript" src="../javascript/functions.js"></script>
-  <script type="text/javascript" src="../javascript/evaluate.js"></script>
-  <script type="text/javascript" src="../javascript/beagle.js"></script>
-  <script type="text/javascript" src="../javascript/macros.js"></script>
+  <script type="text/javascript" src="../javascript/tokenizer.js"></script>
 
-  <script type="text/javascript" src="test_parsercombs.js"></script>
-  <script type="text/javascript" src="test_parser.js"></script>
-  <script type="text/javascript" src="test_unparser.js"></script>
+  <script type="text/javascript" src="test_maybeerror.js"></script>
   <script type="text/javascript" src="test_tokens.js"></script>
-  <script type="text/javascript" src="test_data.js"></script>
-  <script type="text/javascript" src="test_environment.js"></script>
-  <script type="text/javascript" src="test_ast.js"></script>
-  <script type="text/javascript" src="test_functions.js"></script>
-  <script type="text/javascript" src="test_evaluate.js"></script>
-  <script type="text/javascript" src="test_beagle.js"></script>
-  <script type="text/javascript" src="test_macros.js"></script>
+  <script type="text/javascript" src="test_tokenizer.js"></script>
  </head>
 
 
 <script>
   $(document).ready(function(){
   
-    testParserCombs(ParserCombs, TestHelper);
-    
-    testTokens(Tokens, TestHelper);
-    
-    testParser(Parser, ParserCombs, Tokens, TestHelper);
-      
-    testUnparser(Unparser, Parser);
-    
-    testData(Data);
-
-    testEnvironment(Environment);
-
-    testAST(AST, Tokens, TestHelper);
-    
-    testFunctions(Functions, Data, TestHelper);
-    
-    testEvaluate(Evaluate, Parser, Data, Environment, TestHelper);
-    
-    testBeagle(Beagle, Data, Tokens, Parser);
-    
-    testMacros(Macros, Parser);
-    
+  testMaybeError(MaybeError);
+  
+  testTokens(Tokens, TestHelper);
+  
+  testTokenizer(Tokens, Tokenizer, MaybeError);
+  
   });
 </script>
 

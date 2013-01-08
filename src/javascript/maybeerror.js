@@ -1,22 +1,22 @@
 var MaybeError = (function() {
-"use strict";
+    "use strict";
 
-    var TYPES = {
+    var STATUSES = {
         'success': 1,
         'failure': 1,
         'error'  : 1
     };
 
-    function ME(type, value) {
-        if(!(type in TYPES)) {
-            throw new Error('MaybeError constructor name');
+    function ME(status, value) {
+        if(!(status in STATUSES)) {
+            throw new Error('invalid MaybeError constructor name: ' + status);
         }
-        this.type = type;
+        this.status = status;
         this.value = value;
     }
     
     ME.prototype.fmap = function(f) {
-        if(this.type === 'success') {
+        if(this.status === 'success') {
             return new ME('success', f(this.value));
         }
         return this;
@@ -27,14 +27,14 @@ var MaybeError = (function() {
     };
     
     ME.prototype.ap = function(y) {
-        if(this.type === 'success') {
+        if(this.status === 'success') {
             return y.fmap(this.value);
         }
         return this;
     }
     
     ME.prototype.bind = function(f) {
-        if(this.type === 'success') {
+        if(this.status === 'success') {
             return f(this.value);
         }
         return this;
@@ -45,14 +45,14 @@ var MaybeError = (function() {
     };
     
     ME.prototype.mapError = function(f) {
-        if(this.type === 'error') {
+        if(this.status === 'error') {
             return ME.error(f(this.value));
         }
         return this;
     };
     
     ME.prototype.plus = function(that) {
-        if(this.type === 'failure') {
+        if(this.status === 'failure') {
             return that;
         }
         return this;
