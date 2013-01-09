@@ -1,12 +1,18 @@
 var Tokenizer = (function (Tokens, MaybeError) {
     "use strict";
 
+/* tokenizer's missions:
+     1. use 'Tokens' module's data to do String -> MaybeError [Token]
+     2. keep track of input location
+     3. report errors usefully
+*/
+
     function tokenError(message, line, column, rest) {
         return MaybeError.error({
             message  :  message,
             line     :  line,
             column   :  column,
-            rest     :  rest,
+            rest     :  rest
         });
     }
     
@@ -89,20 +95,8 @@ var Tokenizer = (function (Tokens, MaybeError) {
         return MaybeError.pure(tokens);
     }
 
-
-    /* [Token] -> [Token] */
-    function stripCommentsAndWhitespace(tokens) {
-        function predicate(token) {
-            return (token.tokentype !== 'comment' && token.tokentype !== 'whitespace');
-        }
-        return tokens.filter(predicate);
-    }
-
-
     return {
-        'nextToken'   : nextToken,
-        'tokenize'    : tokenize,
-        'stripTokens' : stripCommentsAndWhitespace
+        'tokenize'    : tokenize
     };
 
 })(Tokens, MaybeError);
