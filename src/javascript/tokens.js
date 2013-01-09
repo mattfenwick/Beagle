@@ -20,8 +20,7 @@ var Tokens = (function () {
         'string'       : /^"([^"]*)"/
     };
 
-    // tokens' priorities
-    // i.e. float must go before integer -- 
+    // example: float must go before integer -- 
     //   otherwise integer matches only a part of what float would
     var PRIORITIES = [
         'whitespace',    'open-paren',     'open-square', 
@@ -32,7 +31,7 @@ var Tokens = (function () {
     ];
 
 
-    function token(tokentype, value, line, column) {
+    function token(tokentype, value, meta) {
         if(!(tokentype in REGEXES)) {
             throw new Error("invalid token type: " + tokentype);
         }
@@ -40,8 +39,7 @@ var Tokens = (function () {
             type       :  'token',
             tokentype  :  tokentype,
             value      :  value,
-            line       :  line,
-            column     :  column
+            meta       :  meta
         };
     }
 
