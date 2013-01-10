@@ -1,19 +1,19 @@
-function testParserCombs(parserC, testHelper) {
+function testParserCombs(parser, maybeerror) {
 
     module("parser combinators");
     
-    var item     =  parserC.Parser.item,
-        sat      =  parserC.Parser.satisfy,
-        literal  =  parserC.Parser.literal,
-        zero     =  parserC.Result.zero,
-        error    =  parserC.Result.error,
-        pure     =  parserC.Result.pure,
-        all      =  parserC.Parser.all,
-        string   =  parserC.Parser.string,
-        any      =  parserC.Parser.any;
+    var item     =  parser.item,
+        sat      =  parser.satisfy,
+        literal  =  parser.literal,
+        zero     =  maybeerror.zero,
+        error    =  maybeerror.error,
+        pure     =  maybeerror.pure,
+        all      =  parser.all,
+        string   =  parser.string,
+        any      =  parser.any;
     
     function myPure(value, rest) {
-        return parserC.Parser.pure(value).parse(rest);
+        return parser.pure(value).parse(rest);
     }
     
     
@@ -68,48 +68,33 @@ function testParserCombs(parserC, testHelper) {
     });
     
     test("pure", function() {
-        deepEqual(parserC.Parser.pure("hi there").parse("123abc"),
+        deepEqual(parser.pure("hi there").parse("123abc"),
             myPure('hi there', '123abc'));
     });
     
-    test("parser zero", function() {
-        deepEqual(parserC.Parser.zero.parse("abc123"), zero);
+    test("zero", function() {
+        deepEqual(parser.zero.parse("abc123"), zero);
     });
     
-    test("result plus", function() {
-        var rs = parserC.Result.pure,
-            rf = zero,
-            re = parserC.Result.error;
-        deepEqual(rs(3).plus(rs(4)), rs(3), "left-biased in success");
-        deepEqual(rs(3).plus(re("error")), rs(3), "even if right is an error");
-        deepEqual(zero.plus(rs(18)), rs(18));
-        deepEqual(zero.plus(re("uh-oh")), re("uh-oh"));
-        deepEqual(re("left").plus(re("right")), re("left"), "left-biased in error");
-        deepEqual(zero.plus(zero), zero);
-    });
-    
-    test("parser plus", function() {
-        var parser = literal('a').plus(literal('b'));
-        deepEqual(parser.parse("abcde"),
-            myPure('a', 'bcde'));
-        deepEqual(parser.parse("bcde"),
-            myPure('b', 'cde'));
-        deepEqual(parser.parse("cde"),
-            zero);
-        deepEqual(literal('a').plus(parserC.Parser.get.bind(parserC.Parser.error)).parse("xyz"),
-            parserC.Result.error("xyz"));
+    test("plus", function() {
+        var p = literal('a').plus(literal('b'));
+        deepEqual(p.parse("abcde"), myPure('a', 'bcde'));
+        deepEqual(p.parse("bcde"), myPure('b', 'cde'));
+        deepEqual(p.parse("cde"), zero);
+        deepEqual(literal('a').plus(parser.get.bind(parser.error)).parse("xyz"),
+            maybeerror.error("xyz"));
     });
     
     test("commit", function() {
-        var err = parserC.Parser.error;
+        var err = parser.error;
         deepEqual(literal('a').commit('blegg').parse("bcde"),
             err('blegg').parse("bcde"),
             'commit turns failure into an error');
         deepEqual(literal('a').commit('???').parse("abcde"),
             myPure('a', 'bcde'),
             'but does not affect success');
-        deepEqual(parserC.Parser.error(123).commit('ouch!').parse('abcde'),
-            parserC.Result.error(123),
+        deepEqual(parser.error(123).commit('ouch!').parse('abcde'),
+            maybeerror.error(123),
             'or error');
     });
     
@@ -164,8 +149,8 @@ function testParserCombs(parserC, testHelper) {
         var p = literal('a').many0();
         deepEqual(p.parse("bbb"), myPure([], 'bbb'));
         deepEqual(p.parse("aaaaaabcd"), myPure(['a', 'a', 'a', 'a', 'a', 'a'], 'bcd'));
-        deepEqual(parserC.Parser.error('abc').many0().parse("abc"),
-            parserC.Result.error("abc"),
+        deepEqual(parser.error('abc').many0().parse("abc"),
+            maybeerror.error("abc"),
             'must respect errors');
     });
     
@@ -173,27 +158,27 @@ function testParserCombs(parserC, testHelper) {
         var p = literal('a').many1();
         deepEqual(p.parse("bbb"), zero);
         deepEqual(p.parse("aaaaaabcd"), myPure(['a', 'a', 'a', 'a', 'a', 'a'], 'bcd'));
-        deepEqual(parserC.Parser.error('abc').many1().parse("abc"),
-            parserC.Result.error("abc"),
+        deepEqual(parser.error('abc').many1().parse("abc"),
+            maybeerror.error("abc"),
             'must respect errors');
     });
     
     test("any", function() {
-        var p = parserC.Parser.any([literal('a'), literal('b'), string("zyx")]);
+        var p = parser.any([literal('a'), literal('b'), string("zyx")]);
         deepEqual(p.parse("aq123"), myPure('a', 'q123'));
         deepEqual(p.parse("zyx34534"), myPure('zyx', '34534'));
         deepEqual(p.parse("zy123"), zero);
-        deepEqual(parserC.Parser.any([literal('a'), parserC.Parser.error(13)]).parse('cde'),
-            parserC.Result.error(13));
+        deepEqual(parser.any([literal('a'), parser.error(13)]).parse('cde'),
+            maybeerror.error(13));
     });
     
     test("app", function() {
-        var app = parserC.Parser.app;
+        var app = parser.app;
         deepEqual(app(function(x,y,z) {return x + z;}, item, literal(-1), item).parse([18, -1, 27, 3, 4]), 
             myPure(45, [3, 4]));
         deepEqual(app(undefined, item, literal(2)).parse([1,3,4,5]), zero);
         deepEqual(app(undefined, item, literal(1).commit('blah')).parse([1,2,3,4]),
-            parserC.Result.error('blah'), 
+            maybeerror.error('blah'), 
             'app must respect errors');
     });
     
@@ -205,17 +190,17 @@ function testParserCombs(parserC, testHelper) {
     });
     
     test("error", function() {
-        var err = parserC.Parser.error;
+        var err = parser.error;
         deepEqual(literal('a').seq2R(err('qrs')).parse('abcd'),
-            parserC.Result.error('qrs'));
+            maybeerror.error('qrs'));
         deepEqual(literal('a').seq2R(err('tuv')).parse('bcd'), zero);
     });
     
     test("mapError", function() {
-        var err = parserC.Parser.error;
+        var err = parser.error;
         deepEqual(err([89, 22]).parse([2,3,4]).mapError(function(e) {
             return {e: e, length: e.length};
-        }), parserC.Result.error({e: [89, 22], length: 2}));
+        }), maybeerror.error({e: [89, 22], length: 2}));
     });
 
     // not0, not1

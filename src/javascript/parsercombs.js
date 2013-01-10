@@ -1,66 +1,6 @@
-var ParserCombs = (function () {
-"use strict";
+var ParserCombs = (function (MaybeError) {
+    "use strict";
 
-    var TYPES = {
-        'success': 1,
-        'failure': 1,
-        'error'  : 1
-    };
-
-    function Result(type, value) {
-        if(!(type in TYPES)) {
-            throw new Error('bad Result type ' + type);
-        }
-        this.type = type;
-        this.value = value;
-    }
-    
-    Result.prototype.fmap = function(f) {
-        if(this.type === 'success') {
-            return new Result('success', f(this.value));
-        }
-        return this;
-    };
-    
-    Result.pure = function(x) {
-        return new Result('success', x);
-    };
-    
-    Result.prototype.ap = function(y) {
-        if(this.type === 'success') {
-            return y.fmap(this.value);
-        }
-        return this;
-    }
-    
-    Result.prototype.bind = function(f) {
-        if(this.type === 'success') {
-            return f(this.value);
-        }
-        return this;
-    }
-    
-    Result.error = function(e) {
-        return new Result('error', e);
-    };
-    
-    Result.prototype.plus = function(that) {
-        if(this.type === 'failure') {
-            return that;
-        }
-        return this;
-    };
-    
-    Result.zero = new Result('failure', undefined);
-    
-    Result.prototype.mapError = function(f) {
-        if(this.type === 'error') {
-            return Result.error(f(this.value));
-        }
-        return this;
-    };
-    
-    
     // ([t] -> m ([t], a)) -> Parser m t a
     function Parser(f) {
         this.parse = f;
@@ -82,7 +22,7 @@ var ParserCombs = (function () {
     // a -> Parser t a
     Parser.pure = function(x) {
         return new Parser(function(xs) {
-            return Result.pure({rest: xs, result: x});
+            return MaybeError.pure({rest: xs, result: x});
         });
     };
     
@@ -94,7 +34,7 @@ var ParserCombs = (function () {
         var self = this;
         return new Parser(function(xs) {
             var r = self.parse(xs);
-            if(r.type === 'success') {
+            if(r.status === 'success') {
                 return f(r.value.result).parse(r.value.rest);
             }
             return r;
@@ -109,13 +49,13 @@ var ParserCombs = (function () {
     };
     
     Parser.zero = new Parser(function(xs) {
-        return Result.zero;
+        return MaybeError.zero;
     });
     
     // Parser [t] t a
     Parser.error = function(value) {
         return new Parser(function(xs) {
-            return Result.error(value);
+            return MaybeError.error(value);
         });
     };
     
@@ -129,25 +69,23 @@ var ParserCombs = (function () {
     
     // Parser t [t]
     Parser.get = new Parser(function(xs) {
-        return Result.pure({rest: xs, result: xs});
+        return MaybeError.pure({rest: xs, result: xs});
     });
     
     // [t] -> Parser t ()   // just for completeness
     Parser.put = function(xs) {
         return new Parser(function() {
-            return Result.pure({rest: xs, result: null});
+            return MaybeError.pure({rest: xs, result: null});
         });
     };
 
-    // parsers
-    
     // Parser t t
     Parser.item = new Parser(function(xs) {
         if(xs.length === 0) {
-            return Result.zero;
+            return MaybeError.zero;
         }
         var x = xs[0];
-        return Result.pure({rest: xs.slice(1), result: x});
+        return MaybeError.pure({rest: xs.slice(1), result: x});
     });
     
     // (a -> Bool) -> Parser t a -> Parser t a
@@ -155,12 +93,12 @@ var ParserCombs = (function () {
         var self = this;
         return new Parser(function(xs) {
             var r = self.parse(xs);
-            if(r.type !== 'success') {
+            if(r.status !== 'success') {
                 return r;
             } else if(p(r.value.result)) {
                 return r;
             }
-            return Result.zero;
+            return MaybeError.zero;
         });
     };
     
@@ -190,11 +128,11 @@ var ParserCombs = (function () {
                 r;
             while(true) {
                 r = self.parse(tokens);
-                if(r.type === 'success') {
+                if(r.status === 'success') {
                     vals.push(r.value.result);
                     tokens = r.value.rest;
-                } else if(r.type === 'failure') {
-                    return Result.pure({rest: tokens, result: vals});
+                } else if(r.status === 'failure') {
+                    return MaybeError.pure({rest: tokens, result: vals});
                 } else { // must respect errors
                     return r;
                 }
@@ -229,16 +167,16 @@ var ParserCombs = (function () {
                 tokens = xs;
             for(i = 0; i < ps.length; i++) {
                 r = ps[i].parse(tokens);
-                if(r.type === 'error') {
+                if(r.status === 'error') {
                     return r;
-                } else if(r.type === 'success') {
+                } else if(r.status === 'success') {
                     vals.push(r.value.result);
                     tokens = r.value.rest;
                 } else {
-                    return Result.zero;
+                    return MaybeError.zero;
                 }
             }
-            return Result.pure({rest: tokens, result: vals});
+            return MaybeError.pure({rest: tokens, result: vals});
         });
     };
     
@@ -247,12 +185,12 @@ var ParserCombs = (function () {
         var self = this;
         return new Parser(function(xs) {
             var r = self.parse(xs);
-            if(r.type === 'error') {
+            if(r.status === 'error') {
                 return r;
-            } else if(r.type === 'success') {
-                return Result.zero;
+            } else if(r.status === 'success') {
+                return MaybeError.zero;
             } else {
-                return Result.pure({rest: xs, result: null}); // or undefined?  ???
+                return MaybeError.pure({rest: xs, result: null}); // or undefined?  ???
             }
         });
     };
@@ -296,11 +234,11 @@ var ParserCombs = (function () {
     // [Parser t a] -> Parser t a
     Parser.any = function (ps) {
         return new Parser(function(xs) {
-            var r = Result.zero,
+            var r = MaybeError.zero,
                 i;
             for(i = 0; i < ps.length; i++) {
                 r = ps[i].parse(xs);
-                if(r.type === 'success' || r.type === 'error') {
+                if(r.status === 'success' || r.status === 'error') {
                     return r;
                 }
             }
@@ -308,10 +246,6 @@ var ParserCombs = (function () {
         });
     };
 
-
-    return {
-        Result:  Result,
-        Parser:  Parser
-    };
-
-})();
+    return Parser;
+    
+})(MaybeError);
