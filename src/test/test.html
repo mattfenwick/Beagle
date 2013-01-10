@@ -13,12 +13,14 @@
   <script type="text/javascript" src="../javascript/tokenizer.js"></script>
   <script type="text/javascript" src="../javascript/parsetree.js"></script>
   <script type="text/javascript" src="../javascript/parsercombs.js"></script>
+  <script type="text/javascript" src="../javascript/parser.js"></script>
 
   <script type="text/javascript" src="test_maybeerror.js"></script>
   <script type="text/javascript" src="test_tokens.js"></script>
   <script type="text/javascript" src="test_tokenizer.js"></script>
   <script type="text/javascript" src="test_parsetree.js"></script>
   <script type="text/javascript" src="test_parsercombs.js"></script>
+  <script type="text/javascript" src="test_parser.js"></script>
  </head>
 
 
@@ -34,6 +36,8 @@
   testParseTree(ParseTree, TestHelper);
   
   testParserCombs(ParserCombs, MaybeError);
+  
+  testParser(PParser, ParseTree, Tokens, MaybeError);
   
   });
 </script>

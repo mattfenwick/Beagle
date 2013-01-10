@@ -1,96 +1,84 @@
-function testParser(parser, pc, tokens, testHelper) {
+function testParser(parser, ptree, tokens, maybeerror) {
 
     module("parser");
     
-    var p   =  parser.parse,
+    var pp  =  parser.parse,
         t   =  tokens.Token,
-        ti  =  t('integer', '33', 14, 79),
-        tf  =  t('float', '21.2', 3, 22),
-        ts  =  t('string', 'hi there', 8, 5),
-        tc  =  t('comment', 'blargh', 27, 28),
-        tsy =  t('symbol', 'abc', 19, 41),
-        tsy2 = t('symbol', 'x', 19, 3),
-        toc =  t('open-curly', '{', 22, 53),
-        tcc =  t('close-curly', '}', 8, 17),
-        tos =  t('open-square', '[', 9, 17),
-        tcs =  t('close-square', ']', 15, 82),
-        tosp = t('open-special', ',(', 79, 13),
-        tcsp = t('close-special', ',)', 102, 11),
-        top  = t('open-paren', '(', 21, 44),
-        tcp  = t('close-paren', ')', 29, 18),
-        pure = pc.Result.pure;
+        p   =  ptree,
+        ti  =  t('integer', '33', 14),
+        pi  =  p.number(33, 14),
+        tf  =  t('float', '21.2', 3),
+        pf  =  p.number(21.2, 3),
+        ts  =  t('string', 'hi there', 8),
+        ps  =  p.string('hi there', 8),
+        ts2 =  t('string', 'oops', 49),
+        tc  =  t('comment', 'blargh', 27),
+        tsy =  t('symbol', 'abc', 19),
+        psy =  p.symbol('abc', 19),
+        tsy2 = t('symbol', 'x', 19),
+        psy2 = p.symbol('x', 19),
+        toc =  t('open-curly', '{', 22),
+        tcc =  t('close-curly', '}', 8),
+        tos =  t('open-square', '[', 9),
+        tcs =  t('close-square', ']', 15),
+        tosp = t('open-special', ',(', 79),
+        tcsp = t('close-special', ',)', 102),
+        top  = t('open-paren', '(', 21),
+        tcp  = t('close-paren', ')', 29),
+        pure = maybeerror.pure;
     
-    test("simple", function() {
-        deepEqual(p.parse([ti, tf, ts, tsy]), 
+    test("simple tokens -> simple parse nodes", function() {
+        deepEqual(pp.parse([ti, tf, ts, tsy]), 
             pure({'rest': [],
-                  'result': [ti, tf, ts, tsy]},
-            'simple tokens are easy to parse'));
+                  'result': [pi, pf, ps, psy]}));
     });
     
     test("complex", function() {
-        deepEqual(parser.list.parse([tos, tsy, ti, tcs, tos]), // maybe doesn't make sense to reuse tos token ... lazy!
+        // not sure if it's important whether I use the 'form' or 'list' parser
+        deepEqual(parser.form.parse([tos, tsy, ti, tcs, tos]),
             pure({'rest': [tos],
-                  'result': {type: 'listliteral', 
-                             line: 9, column: 17,
-                             elements: [tsy, ti]}}),
+                  'result': p.list([psy, pi], 9)}),
             'simple list literal');
-        deepEqual(parser.special.parse([tosp, tsy, tsy2, ti, tcsp, tsy]),
+        deepEqual(parser.form.parse([tosp, tsy, tsy2, ti, tcsp, tsy]),
             pure({'rest': [tsy],
-                  'result': {type: 'special',
-                             operator: tsy, 
-                             'arguments':[tsy2, ti],
-                             line: 79, column: 13}}),
+                  'result': p.special('abc', [psy2, pi], 79)}),
             'simple special form application');
-        deepEqual(parser.object.parse([toc, ts, tsy, ts, tsy2, tcc, ti]),
+        deepEqual(parser.object.parse([toc, ts, tsy, tcc, ti]),
             pure({'rest': [ti],
-                  'result': {type: 'objectliteral',
-                            entries: [[ts, tsy], [ts, tsy2]],
-                            line: 22, column: 53}}),
+                  'result': p.object({'hi there': psy}, 22)}),
             'simple object literal');
         deepEqual(parser.app.parse([top, tsy, ti, tf, tcp, ts]),
             pure({'rest': [ts],
-                  'result': {type: 'application',
-                             operator: tsy,
-                             'arguments': [ti, tf],
-                             line: 21, column: 44}}),
+                  'result': p.app(psy, [pi, pf], 21)}),
             'simple function application');
         // probably not a great unit test ... vvv
-/*        deepEqual(p.parse([toc, ts, tos, ti, tcs, ts, top, tsy, tosp, tsy2, tf, tcsp, tcp, tcc]),
+        deepEqual(parser.form.parse([toc, ts, tos, ti, tcs, ts2, top, tsy, tosp, tsy2, tf, tcsp, tcp, tcc]),
             pure({'rest': [],
-                  'result': [{type: 'objectliteral',
-                              line:  22, column: 53,
-                              entries: [[ts, {type: 'listliteral', elements: [ti],
-                                              line: 9, column: 17}],
-                                        [ts,
-                                         {type: 'application',
-                                          line: 79, column: 13,
-                                          operator: tsy,
-                                          'arguments': [{type: 'special', 
-                                                         line: 21, column: 44, 
-                                                         operator: tsy2,
-                                                         'arguments': [tf]}]}]]}]}),
-            'nested example');*/
+                  'result': p.object({'hi there': p.list([pi], 9),
+                                      'oops': p.app(psy, [p.special('x', [pf], 79)], 21)}, 22)}),
+            'nested example');
     });
 
     test("error messages", function() {
-        var err = pc.Result.error;
-        deepEqual(p.parse([toc, tsy, ti]),
-            err({'rule': 'object literal', line: 22, column: 53}),
+        var err = maybeerror.error,
+            q = parser.parse.parse;
+        deepEqual(q([toc, tsy, ti]),
+            err({'rule': 'object literal', meta: 22}),
             'object literal');
-        deepEqual(p.parse([tos, tsy, ti, tos, tcs]),
-            err({'rule': 'list literal', line: 9, column: 17}),
+        deepEqual(q([tos, tsy, ti, tos, tcs]),
+            err({'rule': 'list literal', meta: 9}),
             'list literal');
-        deepEqual(p.parse([top, tsy, ti, tos, tcs]),
-            err({'rule': 'application', line: 21, column: 44}),
+        deepEqual(q([top, tsy, ti, tos, tcs]),
+            err({'rule': 'application', meta: 21}),
             'function application');
-        deepEqual(p.parse([tosp, tsy, tos, tcs]),
-            err({'rule': 'special-form application', line: 79, column: 13}),
+        deepEqual(q([tosp, tsy, tos, tcs]),
+            err({'rule': 'special-form application', meta: 79}),
             'special-form application');
-        deepEqual(p.parse([top, tos, tsy, ti]),
-            err({'rule': 'list literal', line: 9, column: 17}),
+        deepEqual(q([top, tos, tsy, ti]),
+            err({'rule': 'list literal', meta: 9}),
             'innermost error wins');
-        deepEqual(p.parse([tos, top, tsy, ti]),
-            err({'rule': 'application', line: 21, column: 44}),
+        deepEqual(q([tos, top, tsy, ti]),
+            err({'rule': 'application', meta: 21}),
             'innermost wins again');
     });
 

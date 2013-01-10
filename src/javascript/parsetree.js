@@ -98,7 +98,7 @@ var ParseTree = (function() {
         'number'  :  myNumber,
         'symbol'  :  mySymbol,
         'string'  :  myString,
-        'app'     :  myApp,
+        'app'     :  myApp, // not sure if I like the 'app' abbreviation
         'list'    :  myList,
         'object'  :  myObject,
         'special' :  mySpecial
