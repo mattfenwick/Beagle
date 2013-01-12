@@ -1,16 +1,10 @@
 ## Implementation Code ##
 -----
 
- - improve js error messages:  include all relevant information, such as the arguments that
-   caused the problem
-
- - test primitive data types (and error-check in their constructors)
-
- - require whitespace before comment?
-
- - `tokenization` postcondition:  never consecutive comments or whitespace tokens
-
-
+ - replace 'expectException' helper with a version that 
+   actually deepEquals the thrown object to an expected
+   object -- so a **real** test for the exception data,
+   then they're really part of the contract
 
 ## Beagle code ##
 --------
