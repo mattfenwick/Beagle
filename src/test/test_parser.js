@@ -58,6 +58,14 @@ function testParser(parser, ptree, tokens, maybeerror) {
                                       'oops': p.app(psy, [p.special('x', [pf], 79)], 21)}, 22)}),
             'nested example');
     });
+    
+    test("special", function() {
+        deepEqual(
+            parser.form.parse([tosp, ti, tsy, tcsp]),
+            maybeerror.error({'rule': 'special-form application', meta: 79}),
+            'special form requires symbol as operator'
+        );
+    });
 
     test("error messages", function() {
         var err = maybeerror.error,

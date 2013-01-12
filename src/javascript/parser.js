@@ -75,7 +75,7 @@ var PParser = (function(ParseTree, P, MaybeError) {
     
     var pSpec = delimited(
         tokentype('open-special'),
-        P.app(mySpecial, pForm, pForm.many0()),
+        P.app(mySpecial, pSymbol, pForm.many0()),
         tokentype('close-special'),
         'special-form application');
     
