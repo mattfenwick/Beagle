@@ -139,7 +139,7 @@ var AST = (function() {
     }
 
     function myLambda(params, bodies, returnValue, meta) {
-        var names = {}, s;
+        var names = {}, s, i;
         if(params.length === undefined || typeof params === 'string') {
             throw myError('TypeError', 'lambda', 'array', typeof params);
         }
