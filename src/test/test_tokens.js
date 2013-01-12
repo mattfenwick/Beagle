@@ -35,7 +35,7 @@ function testTokens(tokens, testHelper) {
     test("invalid token construction", function() {    
         expectExc(function() {
             tokens.Token('blargh?', 'hi');
-        }, '?', 'invalid token type causes exception');
+        }, 'ValueError', 'invalid token type causes exception');
     });
     
     test("number regex", function () {

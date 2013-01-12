@@ -20,6 +20,10 @@ function testAST(ast, testHelper) {
         exp(function() {
             ast.char([1]);
         }, 'TypeError');
+        
+        exp(function() {
+            ast.char('abc');
+        }, 'ValueError');
     });
     
     

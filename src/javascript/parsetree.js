@@ -1,9 +1,19 @@
 var ParseTree = (function() {
     "use strict";
     
+    function myError(type, func, expected, actual) {
+        return {
+            type    : type,
+            module  : 'parsetree',
+            'function': func,
+            expected : expected,
+            actual  : actual
+        };
+    }
+    
     function myNumber(num, meta) {
         if(typeof num !== 'number') {
-            throw new Error('type error -- expected number');
+            throw myError('TypeError', 'number', 'number', typeof num);
         }
         return {
             type     :  'parsenode',
@@ -15,7 +25,7 @@ var ParseTree = (function() {
     
     function mySymbol(sym, meta) {
         if(typeof sym !== 'string') {
-            throw new Error('type error -- expected string');
+            throw myError('TypeError', 'symbol', 'string', typeof sym);
         }
         return {
             type     :  'parsenode',
@@ -27,7 +37,7 @@ var ParseTree = (function() {
     
     function myString(str, meta) {
         if(typeof str !== 'string') {
-            throw new Error('type error -- expected string');
+            throw myError('TypeError', 'string', 'string', typeof str);
         }
         return {
             type      :  'parsenode',
@@ -39,7 +49,7 @@ var ParseTree = (function() {
 
     function myObject(table, meta) {
         if(typeof table !== 'object') {
-            throw new Error('type error -- expected object');
+            throw myError('TypeError', 'object', 'object', typeof table);
         }
         return {
             type     :  'parsenode',
@@ -50,8 +60,8 @@ var ParseTree = (function() {
     }
     
     function myList(elements, meta) {
-        if(elements.length === undefined) {
-            throw new Error('type error -- expected array');
+        if(elements.length === undefined || typeof elements === 'string') {
+            throw myError('TypeError', 'list', 'array', typeof elements);
         };
         return {
             type      :  'parsenode',
@@ -63,10 +73,10 @@ var ParseTree = (function() {
     
     function myApp(op, args, meta) {
         if(op.type !== 'parsenode') {
-            throw new Error('type error -- expected parsenode');
+            throw myError('TypeError', 'application', 'parsenode', op.type);
         }
-        if(args.length === undefined) {
-            throw new Error('type error -- expected array');
+        if(args.length === undefined || typeof args === 'string') {
+            throw myError('TypeError', 'application', 'array', typeof args);
         }
         return {
             type       :  'parsenode',
@@ -79,10 +89,10 @@ var ParseTree = (function() {
     
     function mySpecial(op, args, meta) {
         if(typeof op !== 'string') {
-            throw new Error('type error -- expected string');
+            throw myError('TypeError', 'special', 'string', typeof op);
         }
-        if(args.length === undefined) {
-            throw new Error('type error -- expected array');
+        if(args.length === undefined || typeof args === 'string') {
+            throw myError('TypeError', 'special', 'array', typeof args);
         }
         return {
             type       :  'parsenode',

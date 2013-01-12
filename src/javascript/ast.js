@@ -1,8 +1,18 @@
 var AST = (function() {
 
+    function myError(type, func, expected, actual) {
+        return {
+            type: type,
+            'function': func,
+            expected: expected,
+            actual: actual,
+            module: 'ast'
+        };
+    }
+
     function myNumber(num, meta) {
         if(typeof num !== 'number') {
-            throw new Error('type error -- expected number');
+            throw myError('TypeError', 'number', 'number', typeof num);
         }
         return {
             type     :  'astnode',
@@ -14,7 +24,7 @@ var AST = (function() {
     
     function mySymbol(str, meta) {
         if(typeof str !== 'string') {
-            throw new Error('type error -- expected string');
+            throw myError('TypeError', 'symbol', 'string', typeof str);
         }
         return {
             type     :  'astnode',
@@ -26,10 +36,10 @@ var AST = (function() {
     
     function myChar(chr, meta) {
         if(typeof chr !== 'string') {
-            throw new Error('type error -- expected string');
+            throw myError('TypeError', 'char', 'string', typeof chr);
         }
         if(chr.length !== 1) {
-            throw new Error('value error -- expected length of 1');
+            throw myError('ValueError', 'char', 'length of 1', chr.length);
         }
         return {
             type     :  'astnode',
@@ -41,7 +51,7 @@ var AST = (function() {
     
     function myList(elems, meta) {
         if(elems.length === undefined || typeof(elems) === 'string') {
-            throw new Error('type error -- expected array');
+            throw myError('TypeError', 'list', 'array', typeof elems);
         }
         return {
             type:  'astnode',
@@ -53,10 +63,10 @@ var AST = (function() {
     
     function myApplication(op, args, meta) {
         if(op.type !== 'astnode') {
-            throw new Error('type error -- expected astnode');
+            throw myError('TypeError', 'application', 'astnode', op.type);
         }
         if(args.length === undefined || typeof args === 'string') {
-            throw new Error('type error -- expected array');
+            throw myError('TypeError', 'application', 'array', typeof args);
         }
         return {
             type       :  'astnode',
@@ -69,7 +79,7 @@ var AST = (function() {
     
     function myObject(table, meta) {
         if(typeof table !== 'object') {
-            throw new Error('type error -- expected object');
+            throw myError('TypeError', 'object', 'object', typeof table);
         }
         return {
             type     :  'astnode',
@@ -81,7 +91,7 @@ var AST = (function() {
 
     function myDefine(symbol, value, meta) {
         if(typeof(symbol) !== 'string') {
-            throw new Error('type error -- expected string');
+            throw myError('TypeError', 'define', 'string', typeof symbol);
         }
         return {
             type    : 'astnode',
@@ -94,7 +104,7 @@ var AST = (function() {
 
     function mySetBang(symbol, value, meta) {
         if(typeof(symbol) !== 'string') {
-            throw new Error('type error -- expected string');
+            throw myError('TypeError', 'set!', 'string', typeof symbol);
         }
         return {
             type    : 'astnode',
@@ -108,15 +118,15 @@ var AST = (function() {
     function myCond(branches, elseValue, meta) {
         var i, br;
         if(branches.length === undefined || typeof branches === 'string') {
-            throw new Error('type error -- expected array');
+            throw myError('TypeError', 'cond', 'array', typeof branches);
         }
         for(i = 0; i < branches.length; i++) {
             br = branches[i];
             if(br.length === undefined || typeof br === 'string') {
-                throw new Error('type error -- expected array');
+                throw myError('TypeError', 'cond', 'array', typeof br);
             }
             if(br.length !== 2) {
-                throw new Error('value error -- expected array of length 2');
+                throw myError('ValueError', 'cond', 'length of 2', br.length);
             }
         }
         return {
@@ -131,20 +141,20 @@ var AST = (function() {
     function myLambda(params, bodies, returnValue, meta) {
         var names = {}, s;
         if(params.length === undefined || typeof params === 'string') {
-            throw new Error('type error -- expected array of parameters');
+            throw myError('TypeError', 'lambda', 'array', typeof params);
         }
         for(i = 0; i < params.length; i++) {
             s = params[i];
-            if(typeof(s) !== 'string') {
-                throw new Error('type error -- expected string');
+            if(typeof s !== 'string') {
+                throw myError('TypeError', 'lambda', 'string', typeof s);
             }
             if(s in names) {
-                throw new Error("value error -- duplicate parameter name (" + s + ")");
+                throw myError('ValueError', 'lambda', 'unique parameter names', s);
             }
             names[s] = 1;
         }
         if(bodies.length === undefined || typeof bodies === 'string') {
-            throw new Error('type error -- expected array of bodies');
+            throw myError('TypeError', 'lambda', 'array', typeof bodies);
         }
         return {
             type: 'astnode',

@@ -33,7 +33,7 @@ var Tokens = (function () {
 
     function token(tokentype, value, meta) {
         if(!(tokentype in REGEXES)) {
-            throw new Error("invalid token type: " + tokentype);
+            throw {type: 'ValueError', expected: 'valid token type', actual: tokentype};
         }
         return {
             type       :  'token',
