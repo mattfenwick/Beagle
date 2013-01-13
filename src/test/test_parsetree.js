@@ -56,16 +56,28 @@ function testParseTree(pt, helper) {
         }, 'TypeError', 'application arguments must be an array');
     });
 
-    test("object", function() {
+    test("object literal", function() {
         deepEqual(
             {type: 'parsenode', nodetype: 'objectliteral',
-             table: {'abc': 123}, meta: {q: 'rs'}},
-            pt.object({'abc': 123}, {q: 'rs'})
+             entries: [['abc', 123]], meta: {q: 'rs'}},
+            pt.object([['abc', 123]], {q: 'rs'})
         );
         
         exp(function() {
             pt.object(123);
-        }, 'TypeError');
+        }, 'TypeError', 'needs array ...');
+        
+        exp(function() {
+            pt.object([123]);
+        }, 'TypeError', '... of arrays ... ');
+        
+        exp(function() {
+            pt.object([[1]]);
+        }, 'ValueError', '... of length 2 ...');
+        
+        exp(function() {
+            pt.object([[123, 'abc']]);
+        }, 'TypeError', '... where the first element is a string');
     });
 
     test("special form", function() {

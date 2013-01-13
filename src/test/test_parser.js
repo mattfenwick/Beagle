@@ -45,7 +45,7 @@ function testParser(parser, ptree, tokens, maybeerror) {
             'simple special form application');
         deepEqual(parser.object.parse([toc, ts, tsy, tcc, ti]),
             pure({'rest': [ti],
-                  'result': p.object({'hi there': psy}, 22)}),
+                  'result': p.object([['hi there', psy]], 22)}),
             'simple object literal');
         deepEqual(parser.app.parse([top, tsy, ti, tf, tcp, ts]),
             pure({'rest': [ts],
@@ -54,8 +54,8 @@ function testParser(parser, ptree, tokens, maybeerror) {
         // probably not a great unit test ... vvv
         deepEqual(parser.form.parse([toc, ts, tos, ti, tcs, ts2, top, tsy, tosp, tsy2, tf, tcsp, tcp, tcc]),
             pure({'rest': [],
-                  'result': p.object({'hi there': p.list([pi], 9),
-                                      'oops': p.app(psy, [p.special('x', [pf], 79)], 21)}, 22)}),
+                  'result': p.object([['hi there', p.list([pi], 9)],
+                                      ['oops', p.app(psy, [p.special('x', [pf], 79)], 21)]], 22)}),
             'nested example');
     });
     

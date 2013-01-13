@@ -37,23 +37,13 @@ var PParser = (function(ParseTree, P, MaybeError) {
             });
     };
     
-    // [(string, form)] -> Parser t Object ... etc.
-    function myObject(pairs) {
-        return new P(function(xs) {
-            var table = {};
-            for(var i = 0; i < pairs.length; i++) {
-                if(pairs[i][0].value in table) {
-                    return MaybeError.error('duplicate key ' + pairs[i][0].value);
-                }
-                table[pairs[i][0].value] = pairs[i][1];
-            }
-            return MaybeError.pure({result: ParseTree.object(table), rest: xs});
-        });
-    }
+    var bareString = pString.fmap(function(t) {
+        return t.value;
+    });
     
     var pObject = delimited(
         tokentype('open-curly'),
-        P.all([pString, pForm]).many0().bind(myObject),
+        P.all([bareString, pForm]).many0().fmap(ParseTree.object),
         tokentype('close-curly'),
         'object literal');
     
