@@ -1,244 +1,181 @@
-var AST = (function() {
+var ASTBuilder = (function(AST, MaybeError) {
 
-
+    /* responsibilities:
+      1. ParseTree -> MaybeError AST
+      2. accurate error reporting
+      3. keep track of meta-data of ast nodes
+    */
     
-    function ParseError(errortype, message, value) {
-        this.type = 'ParseError';
-        this.errortype = errortype;
-        this.message = message;
-        this.value = value;
+    var pure = MaybeError.pure,
+        error = MaybeError.error;
+    
+    function buildNumber(num) {
+        return pure(AST.number(num.value));
     }
     
+    function buildString(str) {
+        return pure(AST.list(str.value.split('').map(AST.char)));
+    }
+
+    function buildSymbol(sym) {
+        return pure(AST.symbol(sym.value));
+    }
     
-    ParseError.prototype = new Error();
-    ParseError.prototype.constructor = ParseError;
-
-
-    ParseError.prototype.toString = function() {
-        return this.type + " during AST construction: " + this.message + JSON.stringify(this.value);
+    // [MaybeError a] -> MaybeError [a]
+    function commute(items) {
+        var i,
+            cleaned = [];
+        for(i = 0; i < items.length; i++) {
+            if(items[i].status === 'success') {
+                cleaned.push(items[i].value);
+            } else {
+                return items[i];
+            }
+        }
+        return pure(cleaned);
+    }
+    
+    function buildApplication(app) {
+        var op = build(app.operator),
+            args = commute(app.arguments.map(build));
+        if(op.status !== 'success') {
+            return op;
+        } else if(args.status !== 'success') {
+            return args;
+        }
+        return pure(AST.application(op.value, args.value));
+    }
+    
+    function buildList(list) { // TODO unchecked ... obviously
+        return commute(list.elements.map(build))
+            .fmap(function(es) {
+                return AST.list(es);
+            });
+    }
+    
+    function buildObject(obj) {
+        var i, pair, key, val;
+        for(i = 0; i < obj.elements.length; i++) {
+            pair = obj.elements[i];
+            key = pair[0];
+            val = build(pair[1]);
+            if(val.status !== 'success') {
+                return val;
+            }
+            table[key] = val;
+        }
+        return pure(AST.object(table));
+    }
+    
+    function buildLambda() {
+    
+    }
+    
+    // 1. 2 args
+    // 2a. build branches
+    // 2b. build else-val
+    // 2. 1st arg is list
+    // 3. of lists
+    // 4. of length 2
+    function buildCond(node) { // TODO clean up these 30 lines of pure, unadulterated ugliness
+        if(node.arguments.length !== 2) {
+            return error('cond needs 2 arguments');
+        }
+        var branches = build(node.arguments[0]),
+            elseValue = build(node.arguments[1]),
+            bC, evC, pair, i, brs;
+        if(branches.status !== 'success') {
+            return branches;
+        }
+        if(elseValue.status !== 'success') {
+            return elseValue;
+        }
+        bC = branches.value;
+        evC = elseValue.value;
+        if(bC.asttype !== 'listliteral') {
+            return error('1st arg to cond must be list');
+        }
+        for(i = 0; i < bC.elements.length; i++) {
+            pair = bC.elements[i];
+            if(pair.asttype !== 'listliteral') {
+                return error('if/else branches must be lists of length 2');
+            }
+            if(pair.elements.length !== 2) {
+                return error('if/else branches must be lists of length 2');
+            }
+            brs.push(pair.elements);// strip out the rest, leaving just the js arrays, right?
+        }
+        return pure(AST.cond(brs, evC));
+    }
+    
+    function buildDefine() {
+        throw new Error('oops');
+    }
+    
+    // error possibilities:
+    //  1. more/less than 2 arguments
+    //  2. build-ing the operator returns an error
+    //  3. build-ing the value returns an error
+    //  4. operator is not a symbol
+    function buildSetBang(node) {
+        if(node.arguments.length !== 2) {
+            return error('set! needs 2 arguments, got ' + node.arguments.length);
+        }
+        var sym = build(node.arguments[0]),
+            val = build(node.arguments[1]),
+            symC, valC; // 'symbol Cleaned', 'value Cleaned' 
+        if(sym.status !== 'success') {
+            return sym;
+        }
+        symC = sym.value;
+        if(val.status !== 'success') {
+            return val;
+        }
+        valC = val.value;
+        if(symC.asttype !== 'symbol') {
+            return error("set!'s 1st argument must be a symbol");
+        }
+        return pure(AST.setBang(symC.value, valC));
+    }
+    
+    var SPECIALS = {
+        'lambda' :  buildLambda,
+        'define' :  buildDefine,
+        'set!'   :  buildSetBang,
+        'cond'   :  buildCond
     };
     
-    
-    function ASTNumber(value) {
-        if(typeof(value) !== 'string') {
-            throw new ParseError("TypeError", "ASTNumber needs a string", value);
-        };
-        this.asttype = 'number';
-        this.value = Number(value);
-    }
-    
-    function Symbol(value) {
-        if(typeof(value) !== 'string') {
-            throw new ParseError("TypeError", "Symbol needs a string", value);
-        };
-        this.asttype = 'symbol';
-        this.value = value;
-    }
-    
-    function ASTChar(value) {
-        if(typeof(value) !== 'string') {
-            throw new ParseError("TypeError", "ASTChar needs a string", value);
-        };
-        this.asttype = 'char';
-        this.value = value;
-    }
-    
-    function ASTList(elems) {
-        if(elems.length === undefined) {
-            throw new ParseError("TypeError", "ASTList needs an array", elems);
+    function buildSpecial(node) {
+        if(!(node.operator in SPECIALS)) {
+            return error('unrecognized special form -- ' + node.operator); // TODO what data belongs in this error?  what about the metadata?
         }
-        elems.map(function(arg, ix) {
-            if(!isExpression(arg)) {
-                throw new ParseError("TypeError", "all elements in a list must be expressions", [arg, ix + 1]);
-            }
+        return SPECIALS[node.operator](node);
+    }
+    
+    var ACTIONS = {
+        'number'  :  buildNumber,
+        'string'  :  buildString,
+        'symbol'  :  buildSymbol,
+        'application':  buildApplication,
+        'list'    :  buildList,
+        'object'  :  buildObject,
+        'special' :  buildSpecial
+    };
+    
+    function build(node) {
+        if(!(node.nodetype in ACTIONS)) {
+            throw new Error('unrecognized parsetree node type -- ' + node.nodetype);
+        }
+        var astNode = ACTIONS[node.nodetype](node);
+        return astNode.fmap(function(a) { // TODO not really sure if this is right; just kind of hacked it together
+            a.meta = node.meta;
+            return a; // the intent here is to copy the metadata just once in this source file to avoid having to do it in each function
         });
-        this.asttype = 'list';
-        this.elements = elems;
-    }
-
-    function isExpression(astnode) {
-        var EXPRESSIONS = {
-            'symbol'     :  1,
-            'number'     :  1,
-            'char'       :  1,
-            'list'       :  1,
-            'application':  1,
-            'cond'       :  1,
-            'lambda'     :  1
-        };
-        
-        return EXPRESSIONS[astnode.asttype];
     }
     
-    function Application(args) {
-        var opTypes = {'application': 1, 'cond': 1, 
-                'lambda': 1, 'symbol': 1};
-        if(!args[0]) {
-            throw new ParseError("ValueError", "application needs operator", args);            
-        } else if(!opTypes[args[0].asttype]) {
-            throw new ParseError("TypeError", "application needs app/cond/lambda/symbol for operator", args);
-        }
-        args.slice(1).map(function(arg, ix) {
-            if(!isExpression(arg)) {
-                throw new ParseError("TypeError", "all arguments to application must be expressions", [arg, ix + 1]);
-            }
-        });
-        this.asttype = 'application';
-        this.operator = args[0];
-        this.arguments = args.slice(1);
-    }
-
-    function Define(args) {
-        if(args.length !== 2) {
-            throw new ParseError("NumArgsError", "'define' needs two args", args);
-        }
-        var symbol = args[0],
-            astnode = args[1];
-
-        if(symbol.asttype !== 'symbol') {
-            throw new ParseError("TypeError", "'define' needs a symbol as 1st argument", symbol);
-        }
-
-        if(!isExpression(astnode)) {
-            throw new ParseError("TypeError", "2nd arg to 'define' must be an expression", astnode);
-        }
-
-        this.asttype = 'define';
-        this.symbol = symbol;
-        this.astnode = astnode;
-    }
-
-    function SetBang(args) {
-        if(args.length !== 2) {
-            throw new ParseError("NumArgsError", "'set!' needs two args", args);
-        }
-        var symbol = args[0],
-            astnode = args[1];
-
-        if(symbol.asttype !== 'symbol') {
-            throw new ParseError("TypeError", "'set!' needs a symbol as 1st argument", symbol);
-        }
-
-        if(!isExpression(astnode)) {
-            throw new ParseError("TypeError", "2nd arg to 'set!' must be an expression", astnode);
-        }
-
-        this.asttype = 'set!';
-        this.symbol = symbol;
-        this.astnode = astnode;
-    }
-
-    function Cond(args) {
-        if(args.length !== 2) {
-            throw new ParseError('NumArgsError', "'cond' needs two args " + args.length, args);
-        }
-        var pairs = args[0],
-            elseValue = args[1];
-        if(pairs.asttype !== 'list') {
-            throw new ParseError('TypeError', '1st arg to cond must be a list', args);
-        }
-        pairs.elements.map(function(p, ix) {
-            if(p.asttype !== 'list') {
-                throw new ParseError("TypeError", "in 1st arg: 'cond' needs lists", ix + 1);
-            } else if(p.elements.length !== 2) {
-                throw new ParseError("ValueError", "'cond' lists must be of length 2", ix + 1);
-            }
-        });
-        if(!isExpression(elseValue)) {
-            throw new ParseError("TypeError", "cond else-value must be an expression", elseValue);
-        }
-        this.asttype = 'cond';
-        this.pairs = pairs;
-        this.elseValue = elseValue;
-    }
-
-    function Lambda(args) {
-        if(args.length < 2) {
-            throw new ParseError("NumArgsError", "'lambda' needs at least two args", args);
-        }
-        var params = args[0],
-            bodies = args.slice(1),
-            names = {};
-        if(params.asttype !== 'list') {
-            throw new ParseError("TypeError", 'lambda needs a list as 1st arg', params.asttype);
-        }
-        params.elements.map(function(s, ix) {
-            if(s.asttype !== 'symbol') {
-                throw new ParseError("TypeError", 'lambda needs symbols in its parameter list', ix + 1);
-            }
-            if(s.value in names) {
-                throw new ParseError("ValueError", "duplicate parameter name in 'lambda'", args);
-            }
-            names[s.value] = 1;
-        });
-        this.lastForm = bodies.pop();
-        if(!isExpression(this.lastForm)) {
-            throw new ParseError("TypeError", "last 'lambda' body form must be an expression", args);
-        }
-        this.asttype = 'lambda';
-        this.parameters = params;
-        this.bodyForms = bodies;
-    }
-    
-    ///////
-    
-        // String -> ASTList ASTChar
-    function expandString(str) {
-        // this assumes that 'abcd'.split('') returns
-        //   an array of length 4
-        var chars = str.split('').map(function (x) {
-            return new ASTChar(x);
-        });
-        
-        return new ASTList(chars);
-    }
-    
-    function makeAST() {
-        throw new Error("unimplemented");
-    }
-    
-    ///////// 
-    
-
 
     return {
-        // data
-        'ParseError': function (m, v) {
-            return new ParseError(m, v);
-        },
-        'ASTNumber': function(x) {
-            return new ASTNumber(x);
-        },
-        'ASTChar': function(x) {
-            return new ASTChar(x);
-        },
-        'ASTList': function(xs) {
-            return new ASTList(xs);
-        },
-        'Symbol': function(x) {
-            return new Symbol(x);
-        },
-        'Application': function(op, args) {
-            return new Application(op, args);
-        },
-        'Define': function(args) {
-            return new Define(args);
-        },
-        'SetBang': function(args) {
-            return new SetBang(args);
-        },
-        'Lambda': function(args) {
-            return new Lambda(args);
-        },
-        'Cond': function(args) {
-            return new Cond(args);
-        },
-        
-        // helper functions
-        'expandString'   : expandString,
-
-        // the public function
-        'makeAST'        : makeAST
+        build            :  build
     };
 
-})();
+})(AST, MaybeError);
