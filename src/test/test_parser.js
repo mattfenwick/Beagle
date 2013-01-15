@@ -1,22 +1,21 @@
-function testParser(parser, ptree, tokens, maybeerror) {
+function testParser(parser, ast, tokens, maybeerror) {
 
     module("parser");
     
     var pp  =  parser.parse,
         t   =  tokens.Token,
-        p   =  ptree,
         ti  =  t('integer', '33', 14),
-        pi  =  p.number(33, 14),
+        pi  =  ast.number(33, 14),
         tf  =  t('float', '21.2', 3),
-        pf  =  p.number(21.2, 3),
+        pf  =  ast.number(21.2, 3),
         ts  =  t('string', 'hi there', 8),
-        ps  =  p.string('hi there', 8),
+        ps  =  ast.list('hi there'.split('').map(ast.char), 8),
         ts2 =  t('string', 'oops', 49),
         tc  =  t('comment', 'blargh', 27),
         tsy =  t('symbol', 'abc', 19),
-        psy =  p.symbol('abc', 19),
+        psy =  ast.symbol('abc', 19),
         tsy2 = t('symbol', 'x', 19),
-        psy2 = p.symbol('x', 19),
+        psy2 = ast.symbol('x', 19),
         toc =  t('open-curly', '{', 22),
         tcc =  t('close-curly', '}', 8),
         tos =  t('open-square', '[', 9),
@@ -33,38 +32,48 @@ function testParser(parser, ptree, tokens, maybeerror) {
                   'result': [pi, pf, ps, psy]}));
     });
     
-    test("complex", function() {
+    test("simple list, object, application", function() {
         // not sure if it's important whether I use the 'form' or 'list' parser
         deepEqual(parser.form.parse([tos, tsy, ti, tcs, tos]),
             pure({'rest': [tos],
-                  'result': p.list([psy, pi], 9)}),
+                  'result': ast.list([psy, pi], 9)}),
             'simple list literal');
-        deepEqual(parser.form.parse([tosp, tsy, tsy2, ti, tcsp, tsy]),
-            pure({'rest': [tsy],
-                  'result': p.special('abc', [psy2, pi], 79)}),
-            'simple special form application');
-        deepEqual(parser.object.parse([toc, ts, tsy, tcc, ti]),
+
+        deepEqual(parser.object.parse([toc, ti, tsy, tcc, ti]),
             pure({'rest': [ti],
-                  'result': p.object([['hi there', psy]], 22)}),
+                  'result': ast.object([[pi, psy]], 22)}),
             'simple object literal');
+
         deepEqual(parser.app.parse([top, tsy, ti, tf, tcp, ts]),
             pure({'rest': [ts],
-                  'result': p.app(psy, [pi, pf], 21)}),
+                  'result': ast.application(psy, [pi, pf], 21)}),
             'simple function application');
-        // probably not a great unit test ... vvv
-        deepEqual(parser.form.parse([toc, ts, tos, ti, tcs, ts2, top, tsy, tosp, tsy2, tf, tcsp, tcp, tcc]),
-            pure({'rest': [],
-                  'result': p.object([['hi there', p.list([pi], 9)],
-                                      ['oops', p.app(psy, [p.special('x', [pf], 79)], 21)]], 22)}),
-            'nested example');
     });
     
-    test("special", function() {
+    test("special forms: define/set!/lambda/cond", function() {
+        deepEqual(parser.form.parse([tosp, t('symbol', 'define'), tsy, ti, tcsp, ti]),
+            pure({'rest': [ti],
+                  'result': ast.define('abc', pi, 79)}),
+            'define');
+    
+        deepEqual(parser.form.parse([tosp, t('symbol', 'set!'), tsy, ti, tcsp, ti]),
+            pure({'rest': [ti],
+                  'result': ast.setBang('abc', pi, 79)}),
+            'set!');
+        
+        ok(0, 'lambda');
+        
+        ok(0, 'cond');
+        
+        deepEqual(
+            parser.form.parse([tosp, t('symbol', 'oops'), ti, tcsp]),
+            maybeerror.error({'rule': 'special-form application', meta: 79}),
+            'invalid special form name');
+    
         deepEqual(
             parser.form.parse([tosp, ti, tsy, tcsp]),
             maybeerror.error({'rule': 'special-form application', meta: 79}),
-            'special form requires symbol as operator'
-        );
+            'special form requires symbol as operator');
     });
 
     test("error messages", function() {

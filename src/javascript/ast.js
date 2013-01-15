@@ -89,9 +89,6 @@ var AST = (function() {
             if(pair.length !== 2) {
                 throw myError('ValueError', 'object', 'length of 2', pair.length);
             }
-            if(typeof pair[0] !== 'string') {
-                throw myError('TypeError', 'object', 'string', typeof pair[0]);
-            }
         });
         return {
             type     :  'astnode',

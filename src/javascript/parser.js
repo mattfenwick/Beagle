@@ -56,15 +56,19 @@ var PParser = (function(AST, P, MaybeError) {
     
     var pApp = delimited(
         tokentype('open-paren'),
-        P.app(AST.app, pForm, pForm.many0()),
+        P.app(AST.application, pForm, pForm.many0()),
         tokentype('close-paren'),
         'application');
     
+    var bareSymbol = pSymbol.fmap(function(s) {
+        return s.value;
+    });
+    
     var pDefine = pSymbol.check(function(s) {return s.value === 'define';})
-        .seq2R(P.app(AST.define, pSymbol, pForm));
+        .seq2R(P.app(AST.define, bareSymbol, pForm)); // TODO needs to pull .value out of symbol
 
     var pSetBang = pSymbol.check(function(s) {return s.value === 'set!';})
-        .seq2R(P.app(AST.setBang, pSymbol, pForm));
+        .seq2R(P.app(AST.setBang, bareSymbol, pForm));
         
     var condBranches =
         tokentype('open-square')
