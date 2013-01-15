@@ -12,15 +12,15 @@
   <script type="text/javascript" src="../javascript/tokens.js"></script>
   <script type="text/javascript" src="../javascript/tokenizer.js"></script>
   <script type="text/javascript" src="../javascript/parsercombs.js"></script>
-  <script type="text/javascript" src="../javascript/parser.js"></script>
   <script type="text/javascript" src="../javascript/ast.js"></script>
+  <script type="text/javascript" src="../javascript/parser.js"></script>
 
   <script type="text/javascript" src="test_maybeerror.js"></script>
   <script type="text/javascript" src="test_tokens.js"></script>
   <script type="text/javascript" src="test_tokenizer.js"></script>
   <script type="text/javascript" src="test_parsercombs.js"></script>
-  <script type="text/javascript" src="test_parser.js"></script>
   <script type="text/javascript" src="test_ast.js"></script>
+  <script type="text/javascript" src="test_parser.js"></script>
  </head>
 
 
@@ -35,9 +35,9 @@
   
   testParserCombs(ParserCombs, MaybeError);
   
-  testParser(PParser, ParseTree, Tokens, MaybeError);
-  
   testAST(AST, TestHelper);
+  
+  testParser(PParser, AST, Tokens, MaybeError);
   
   });
 </script>

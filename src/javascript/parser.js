@@ -1,10 +1,10 @@
-var PParser = (function(ParseTree, P, MaybeError) {
+var PParser = (function(AST, P, MaybeError) {
     "use strict";
     
     /* parser tasks:
-      1. [Token] -> MaybeError ParseTree
+      1. [Token] -> MaybeError AST
       2. accurate error reporting
-      3. keep track of 'metadata' of parsenodes
+      3. keep track of 'metadata' of astnodes
     */
     
     function tokentype(type) {
@@ -16,13 +16,18 @@ var PParser = (function(ParseTree, P, MaybeError) {
 
     var pNumber = tokentype('integer')
         .plus(tokentype('float'))
-        .fmap(function(t) {return ParseTree.number(parseFloat(t.value), t.meta);});
+        .fmap(function(t) {return AST.number(parseFloat(t.value), t.meta);});
+    
+    function stringAction(t) {
+        var newList = t.value.split('').map(AST.char);
+        return AST.list(newList, t.meta);
+    }
     
     var pString = tokentype('string')
-        .fmap(function(t) {return ParseTree.string(t.value, t.meta);});
+        .fmap(stringAction);
 
     var pSymbol = tokentype('symbol')
-        .fmap(function(t) {return ParseTree.symbol(t.value, t.meta);});
+        .fmap(function(t) {return AST.symbol(t.value, t.meta);});
 
     var pForm = P.error("javascript hack to allow mutual recursion -- still need to set function");    
 
@@ -37,35 +42,88 @@ var PParser = (function(ParseTree, P, MaybeError) {
             });
     };
     
-    var bareString = pString.fmap(function(t) {
-        return t.value;
-    });
-    
     var pObject = delimited(
         tokentype('open-curly'),
-        P.all([bareString, pForm]).many0().fmap(ParseTree.object),
+        P.all([pForm, pForm]).many0().fmap(AST.object),
         tokentype('close-curly'),
         'object literal');
     
     var pList = delimited(
         tokentype('open-square'),
-        pForm.many0().fmap(ParseTree.list),
+        pForm.many0().fmap(AST.list),
         tokentype('close-square'),
         'list literal');
     
     var pApp = delimited(
         tokentype('open-paren'),
-        P.app(ParseTree.app, pForm, pForm.many0()),
+        P.app(AST.app, pForm, pForm.many0()),
         tokentype('close-paren'),
         'application');
     
-    function mySpecial(op, args) {
-        return ParseTree.special(op.value, args);
+    var pDefine = pSymbol.check(function(s) {return s.value === 'define';})
+        .seq2R(P.app(AST.define, pSymbol, pForm));
+
+    var pSetBang = pSymbol.check(function(s) {return s.value === 'set!';})
+        .seq2R(P.app(AST.setBang, pSymbol, pForm));
+        
+    var condBranches =
+        tokentype('open-square')
+        .seq2R(tokentype('open-square').seq2R(P.all([pForm, pForm])).seq2L(tokentype('close-square')).many0())
+        .seq2L(tokentype('close-square'));
+    
+    /* alternatives for comparison (intended to be equivalent)
+    var condBranches2 =
+        P.all([
+            tokentype('open-square'),
+            P.all([tokentype('open-square'), pForm, pForm, tokentype('close-square')]).many0(),
+            tokentype('close-square')])
+        .fmap(function(v) {
+            return v[1].map(function(w) {return [w[1], w[2]];});
+        });
+    
+    var condBranches3 = pList
+        .check(function(es) {
+            for(var i = 0; i < es.elements.length; i++) {
+                if(es.elements[i].asttype !== 'listliteral') {
+                    return false;
+                }
+            }
+            return true;
+        });
+    */
+
+    var pCond = pSymbol.check(function(s) {return s.value === 'cond';})
+        .seq2R(P.app(AST.cond, condBranches, pForm));
+    
+    // ignore _'s -- is this bad js??
+    function myLambda(_1, _2, params, _3, bodies) {
+        var lastBody = bodies.pop();
+        return AST.lambda(params.map(function(p) {return p.value;}), bodies, lastBody);
     }
     
+    // true if no name appears more than once, false otherwise
+    function uniqueNames(params) {
+        var names = {};
+        for(i = 0; i < params.length; i++) {
+            if(params[i].value in names) {
+                return false;
+            }
+            names[params[i]] = 1;
+        }
+        return true;
+    }
+            
+    var pLambda = P.app(
+        myLambda,
+        pSymbol.check(function(s) {return s.value === 'lambda';}),
+        tokentype('open-square'),
+        pSymbol.many0().check(uniqueNames),
+        tokentype('close-square'),
+        pForm.many1());
+        
     var pSpec = delimited(
         tokentype('open-special'),
-        P.app(mySpecial, pSymbol, pForm.many0()),
+        P.any([pDefine, pSetBang, pCond, pLambda]),
         tokentype('close-special'),
         'special-form application');
     
@@ -82,8 +140,12 @@ var PParser = (function(ParseTree, P, MaybeError) {
         'list'    :  pList,
         'object'  :  pObject,
         'special' :  pSpec,
+        'define'  :  pDefine,
+        'setBang' :  pSetBang,
+        'cond'    :  pCond,
+        'lambda'  :  pLambda,
         'form'    :  pForm,
         'parse'   :  parser
     };
 
-})(ParseTree, ParserCombs, MaybeError);
+})(AST, ParserCombs, MaybeError);

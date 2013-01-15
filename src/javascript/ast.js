@@ -96,7 +96,7 @@ var AST = (function() {
         return {
             type     :  'astnode',
             asttype  :  'objectliteral',
-            table    :  table,
+            entries  :  pairs,
             meta     :  meta
         };
     }
