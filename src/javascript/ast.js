@@ -77,10 +77,22 @@ var AST = (function() {
         };
     }
     
-    function myObject(table, meta) {
-        if(typeof table !== 'object') {
-            throw myError('TypeError', 'object', 'object', typeof table);
+    function myObject(pairs, meta) {
+        if(pairs.length === undefined || typeof pairs === 'string') {
+            throw myError('TypeError', 'object', 'array', typeof pairs);
         }
+        var i, pair;
+        pairs.map(function(pair) {
+            if(pair.length === undefined || typeof pair === 'string') {
+                throw myError('TypeError', 'object', 'array', typeof pair);
+            }
+            if(pair.length !== 2) {
+                throw myError('ValueError', 'object', 'length of 2', pair.length);
+            }
+            if(typeof pair[0] !== 'string') {
+                throw myError('TypeError', 'object', 'string', typeof pair[0]);
+            }
+        });
         return {
             type     :  'astnode',
             asttype  :  'objectliteral',

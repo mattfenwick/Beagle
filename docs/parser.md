@@ -7,14 +7,22 @@ Concrete syntax, loosely using [BNF](http://en.wikipedia.org/wiki/Backus%E2%80%9
     
     Form         :=  Special  |  Application  |  List  |  Object  |  SYMBOL  |  NUMBER  |  STRING
     
-    Special      :=  ',('  SYMBOL  Form(*)  ',)'
-    
+    Special      :=  ',('  ( Define  |  Set!  |  Cond  |  Lambda )  ',)'
+
     Application  :=  '('  Form(+)  ')' 
     
     List         :=  '['  Form(*)  ']'
     
-    Object       :=  '{'  ( STRING  Form )(*)  '}'
+    Object       :=  '{'  ( Form  Form )(*)  '}'
 
+    Define       :=  'define'  SYMBOL  Form
+
+    Set!         :=  'set!'  SYMBOL  Form
+
+    Cond         :=  'cond'  '['  ( '['  Form  Form  ']' )(*)  ']'  Form
+
+    Lambda       :=  'lambda'  '['  SYMBOL(*)  ']'  Form(+)
+    
 
 
 ## Tokens ##
