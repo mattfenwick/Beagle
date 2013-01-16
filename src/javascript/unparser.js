@@ -26,7 +26,7 @@ var Unparser = (function() {
             'cond'       :  cond,
             'lambda'     :  lambda,
             'define'     :  function(node) {return '{define ' + unparse(node.symbol) + " " + unparse(node.astnode) + "}";},
-            'set!'       :  function(node) {return '{set! ' + unparse(node.symbol) + " " + unparse(node.astnode) + "}";}
+            'set'       :  function(node) {return '{set ' + unparse(node.symbol) + " " + unparse(node.astnode) + "}";}
         };
     
     function unparse(node) {

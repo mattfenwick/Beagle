@@ -8,7 +8,7 @@ function testUnparser(unparser, parser) {
         list = parser.ASTList,
         lam = parser.Lambda,
         def = parser.Define,
-        set = parser.SetBang,
+        set = parser.set,
         cond = parser.Cond,
         sym = parser.Symbol,
         app = parser.Application;
@@ -30,7 +30,7 @@ function testUnparser(unparser, parser) {
         
         deepEqual("{define x [1.1]}", unp(def([sym('x'), list([num('1.1')])])), 'a define');
         
-        deepEqual("{set! zyx 'm'}", unp(set([sym('zyx'), char('m')])), 'a set!');
+        deepEqual("{set zyx 'm'}", unp(set([sym('zyx'), char('m')])), 'a set');
         
         deepEqual("{cond [[m n] [o p]] hjkl}", unp(cond([list([
                                                             list([sym('m'), sym('n')]),

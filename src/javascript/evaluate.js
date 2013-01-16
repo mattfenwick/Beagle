@@ -46,12 +46,12 @@ var Evaluate = (function (Data, Functions, Environment) {
     }
     
     
-    function setBang(form, env) {
+    function set(form, env) {
         var value = evaluate(form.astnode, env);
         
         if( !env.hasBinding(form.symbol.value) ) {
             throw new SpecialFormError('ValueError', 'bound symbol', 
-                    'unbound symbol ' + form.symbol.value, 'set!', 'cannot set! undefined symbol');
+                    'unbound symbol ' + form.symbol.value, 'set', 'cannot set undefined symbol');
         }
         
         env.setBinding(form.symbol.value, value);
@@ -199,7 +199,7 @@ var Evaluate = (function (Data, Functions, Environment) {
                 'application':  evaluateApplication,
                 'list'       :  evaluateList,
                 'define'     :  define,
-                'set!'       :  setBang,
+                'set'       :  set,
                 'cond'       :  cond,
                 'lambda'     :  lambda,
                 'char'       :  function(form, e) {return Data.Char(form.value);},
@@ -221,7 +221,7 @@ var Evaluate = (function (Data, Functions, Environment) {
         'eval'         :  evaluate,
         'getDefaultEnv':  getDefaultEnv,
         'define'       :  define,
-        'set!'         :  setBang,
+        'set'         :  set,
         'lambda'       :  lambda,
         'cond'         :  cond
     };

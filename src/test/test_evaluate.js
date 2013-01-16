@@ -62,14 +62,14 @@ function testEvaluate(evaluate, parser, data, envir, testHelper) {
     });
     
     
-    test("set!", function() {
-        var set = ev['set!'],
-            s = parser.SetBang,
+    test("set", function() {
+        var set = ev['set'],
+            s = parser.set,
             par = envir.Environment(false, {'a': 3}),
             env = envir.Environment(par, {'b': 4});
         
         set(s([sym('b'), anum('12')]), env);
-        deepEqual(num(12), env.getBinding('b'), "set! takes two arguments, a symbol and a value");
+        deepEqual(num(12), env.getBinding('b'), "set takes two arguments, a symbol and a value");
         
         set(s([sym('a'), anum('32')]), par);
         deepEqual(num(32), par.getBinding('a'), "and sets binding for the symbol to the value");
@@ -83,7 +83,7 @@ function testEvaluate(evaluate, parser, data, envir, testHelper) {
         
         expectExc(function() {
             set(s([sym('e'), anum('88')]), env);
-        }, 'ValueError', "set! may not be used on undefined symbols");
+        }, 'ValueError', "set may not be used on undefined symbols");
     });
     
     

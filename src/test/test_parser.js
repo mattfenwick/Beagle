@@ -70,12 +70,12 @@ function testParser(parser, ast, tokens, maybeerror) {
             'extra arguments');
     });
     
-    test("special forms: set!", function() {
-        var set = t('symbol', 'set!');
+    test("special forms: set", function() {
+        var set = t('symbol', 'set');
         deepEqual(parser.form.parse([tosp, set, tsy, ti, tcsp, ti]),
             pure({'rest': [ti],
-                  'result': ast.setBang('abc', pi, 79)}),
-            'set!');
+                  'result': ast.set('abc', pi, 79)}),
+            'set');
         
         deepEqual(parser.form.parse([tosp, set, ti, tf, tcsp]),
             maybeerror.error({rule: 'special-form application', meta: 79}),

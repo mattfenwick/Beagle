@@ -67,8 +67,8 @@ var PParser = (function(AST, P, MaybeError) {
     var pDefine = pSymbol.check(function(s) {return s.value === 'define';})
         .seq2R(P.app(AST.define, bareSymbol, pForm)); // TODO needs to pull .value out of symbol
 
-    var pSetBang = pSymbol.check(function(s) {return s.value === 'set!';})
-        .seq2R(P.app(AST.setBang, bareSymbol, pForm));
+    var pSet = pSymbol.check(function(s) {return s.value === 'set';})
+        .seq2R(P.app(AST.set, bareSymbol, pForm));
         
     var condBranches =
         tokentype('open-square')
@@ -127,7 +127,7 @@ var PParser = (function(AST, P, MaybeError) {
         
     var pSpec = delimited(
         tokentype('open-special'),
-        P.any([pDefine, pSetBang, pCond, pLambda]),
+        P.any([pDefine, pSet, pCond, pLambda]),
         tokentype('close-special'),
         'special-form application');
     
@@ -145,7 +145,7 @@ var PParser = (function(AST, P, MaybeError) {
         'object'  :  pObject,
         'special' :  pSpec,
         'define'  :  pDefine,
-        'setBang' :  pSetBang,
+        'set' :  pSet,
         'cond'    :  pCond,
         'lambda'  :  pLambda,
         'form'    :  pForm,

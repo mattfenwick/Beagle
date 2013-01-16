@@ -89,14 +89,14 @@ function testAST(ast, testHelper) {
     });
 
 
-    test("set!", function() {
+    test("set", function() {
         deepEqual(
-            {type: 'astnode', asttype: 'set!', symbol: 'q', value: ast.number(14), meta: 'hi there'},
-            ast.setBang('q', ast.number(14), 'hi there')
+            {type: 'astnode', asttype: 'set', symbol: 'q', value: ast.number(14), meta: 'hi there'},
+            ast.set('q', ast.number(14), 'hi there')
         );
         
         exp(function() {
-            ast.setBang(14, 'oops');
+            ast.set(14, 'oops');
         }, 'TypeError');
     });
 

@@ -111,13 +111,13 @@ var AST = (function() {
         };
     }
 
-    function mySetBang(symbol, value, meta) {
+    function set(symbol, value, meta) {
         if(typeof(symbol) !== 'string') {
-            throw myError('TypeError', 'set!', 'string', typeof symbol);
+            throw myError('TypeError', 'set', 'string', typeof symbol);
         }
         return {
             type    : 'astnode',
-            asttype : 'set!',
+            asttype : 'set',
             symbol  : symbol, 
             value   : value,
             meta    : meta
@@ -184,7 +184,7 @@ var AST = (function() {
         'object'     :  myObject,
         'application':  myApplication,
         'define'     :  myDefine,
-        'setBang'    :  mySetBang,
+        'set'    :  set,
         'cond'       :  myCond,
         'lambda'     :  myLambda
     };
