@@ -54,7 +54,7 @@ var Tokenizer = (function (Tokens, MaybeError) {
                 newLine = line + count[0];
                 newCol = ((count[0] > 0) ? 1 : column) + count[1];
                 return MaybeError.pure({
-                    'token' : Tokens.Token(name, match[1], line, column),
+                    'token' : Tokens.Token(name, match[1], {line: line, column: column}),
                     'rest'  : string.substring(match[0].length),
                     'line'  : newLine,
                     'column': newCol
