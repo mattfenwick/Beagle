@@ -7,7 +7,7 @@ For more information about the evaluation rules for these forms, see [here](eval
 
  - `define`
  
- - `set!`
+ - `set`
  
  - `cond` 
  

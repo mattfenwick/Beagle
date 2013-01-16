@@ -7,7 +7,7 @@ Concrete syntax, loosely using [BNF](http://en.wikipedia.org/wiki/Backus%E2%80%9
     
     Form         :=  Special  |  Application  |  List  |  Object  |  SYMBOL  |  NUMBER  |  STRING
     
-    Special      :=  ',('  ( Define  |  Set!  |  Cond  |  Lambda )  ',)'
+    Special      :=  ',('  ( Define  |  Set  |  Cond  |  Lambda )  ',)'
 
     Application  :=  '('  Form(+)  ')' 
     
@@ -17,7 +17,7 @@ Concrete syntax, loosely using [BNF](http://en.wikipedia.org/wiki/Backus%E2%80%9
 
     Define       :=  'define'  SYMBOL  Form
 
-    Set!         :=  'set!'  SYMBOL  Form
+    Set          :=  'set'  SYMBOL  Form
 
     Cond         :=  'cond'  '['  ( '['  Form  Form  ']' )(*)  ']'  Form
 
@@ -60,6 +60,3 @@ Concrete syntax, loosely using [BNF](http://en.wikipedia.org/wiki/Backus%E2%80%9
  1. tokenization
 
  2. assembly of tokens to form the AST
-
- 3. AST specialization
-    - special form syntax:  check special forms' syntax subtrees

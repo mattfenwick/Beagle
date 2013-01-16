@@ -7,11 +7,11 @@
     
     Form          :=  Statement  |  Expr 
     
-    Statement     :=  Define  |  Set!
+    Statement     :=  Define  |  Set
     
     Define        :=  Symbol  Expr
     
-    Set!          :=  Symbol  Expr
+    Set           :=  Symbol  Expr
     
     Expr          :=  Application  |  Cond  |  Lambda  |  List(Expr)(*)  |  Symbol  |  Number  |  Char
     
@@ -60,7 +60,7 @@
  
  - `Expr[[Char]]`: a character object is constructed with the value of the char node
  
- - `Statement[[Define | Set!]](env)`:  statements are solely for modifying the lexically enclosing
+ - `Statement[[Define | Set]](env)`:  statements are solely for modifying the lexically enclosing
    environments.  They have no return values, and are not expressions.
    
  - `Define[[Symbol Expr]]`:  if the symbol is not bound in the current environment, the expression is 
@@ -68,6 +68,6 @@
    can shadow bindings of identical names in lexically enclosing environments; this enables safe and
    easy to understand alpha-substitution of lambda expressions.
    
- - `Set![[Symbol Expr]]`:  if the symbol is bound in **any** lexically enclosing environment (including
+ - `Set[[Symbol Expr]]`:  if the symbol is bound in **any** lexically enclosing environment (including
    the current one), the expression is evaluated and the 'closest' enclosing binding is modified to
    that new value.  If it's not bound, that is an error.
