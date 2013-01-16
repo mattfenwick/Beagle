@@ -44,7 +44,7 @@ function testParser(parser, ast, tokens, maybeerror) {
                   'result': ast.object([[pi, psy]], 22)}),
             'simple object literal');
 
-        deepEqual(parser.app.parse([top, tsy, ti, tf, tcp, ts]),
+        deepEqual(parser.application.parse([top, tsy, ti, tf, tcp, ts]),
             pure({'rest': [ts],
                   'result': ast.application(psy, [pi, pf], 21)}),
             'simple function application');

@@ -54,7 +54,7 @@ var PParser = (function(AST, P, MaybeError) {
         tokentype('close-square'),
         'list literal');
     
-    var pApp = delimited(
+    var pApplication = delimited(
         tokentype('open-paren'),
         P.app(AST.application, pForm, pForm.many0()),
         tokentype('close-paren'),
@@ -65,7 +65,7 @@ var PParser = (function(AST, P, MaybeError) {
     });
     
     var pDefine = pSymbol.check(function(s) {return s.value === 'define';})
-        .seq2R(P.app(AST.define, bareSymbol, pForm)); // TODO needs to pull .value out of symbol
+        .seq2R(P.app(AST.define, bareSymbol, pForm));
 
     var pSet = pSymbol.check(function(s) {return s.value === 'set';})
         .seq2R(P.app(AST.set, bareSymbol, pForm));
@@ -75,31 +75,9 @@ var PParser = (function(AST, P, MaybeError) {
         .seq2R(tokentype('open-square').seq2R(P.all([pForm, pForm])).seq2L(tokentype('close-square')).many0())
         .seq2L(tokentype('close-square'));
     
-    /* alternatives for comparison (intended to be equivalent)
-    var condBranches2 =
-        P.all([
-            tokentype('open-square'),
-            P.all([tokentype('open-square'), pForm, pForm, tokentype('close-square')]).many0(),
-            tokentype('close-square')])
-        .fmap(function(v) {
-            return v[1].map(function(w) {return [w[1], w[2]];});
-        });
-    
-    var condBranches3 = pList
-        .check(function(es) {
-            for(var i = 0; i < es.elements.length; i++) {
-                if(es.elements[i].asttype !== 'listliteral') {
-                    return false;
-                }
-            }
-            return true;
-        });
-    */
-
     var pCond = pSymbol.check(function(s) {return s.value === 'cond';})
         .seq2R(P.app(AST.cond, condBranches, pForm));
     
-    // ignore _'s -- is this bad js??
     function myLambda(_1, _2, params, _3, bodies) {
         var lastBody = bodies.pop();
         return AST.lambda(params.map(function(p) {return p.value;}), bodies, lastBody);
@@ -132,24 +110,24 @@ var PParser = (function(AST, P, MaybeError) {
         'special-form application');
     
     // written this way to allow mutual recursion
-    pForm.parse = P.any([pSpec, pApp, pList, pObject, pSymbol, pNumber, pString]).parse;
+    pForm.parse = P.any([pSpec, pApplication, pList, pObject, pSymbol, pNumber, pString]).parse;
     
     var parser = pForm.many0();
     
     return {
-        'number'  :  pNumber,
-        'symbol'  :  pSymbol,
-        'string'  :  pString,
-        'app'     :  pApp,
-        'list'    :  pList,
-        'object'  :  pObject,
-        'special' :  pSpec,
-        'define'  :  pDefine,
-        'set' :  pSet,
-        'cond'    :  pCond,
-        'lambda'  :  pLambda,
-        'form'    :  pForm,
-        'parse'   :  parser
+        'number'       :  pNumber,
+        'symbol'       :  pSymbol,
+        'string'       :  pString,
+        'application'  :  pApplication,
+        'list'         :  pList,
+        'object'       :  pObject,
+        'special'      :  pSpec,
+        'define'       :  pDefine,
+        'set'          :  pSet,
+        'cond'         :  pCond,
+        'lambda'       :  pLambda,
+        'form'         :  pForm,
+        'parse'        :  parser
     };
 
 })(AST, ParserCombs, MaybeError);
