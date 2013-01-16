@@ -107,12 +107,12 @@ var PParser = (function(AST, P, MaybeError) {
     
     // true if no name appears more than once, false otherwise
     function uniqueNames(params) {
-        var names = {};
+        var names = {}, i;
         for(i = 0; i < params.length; i++) {
             if(params[i].value in names) {
                 return false;
             }
-            names[params[i]] = 1;
+            names[params[i].value] = 1;
         }
         return true;
     }
