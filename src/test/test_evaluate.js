@@ -1,5 +1,5 @@
 
-function testEvaluate(evaluate, parser, data, envir, testHelper) {
+function testEvaluate(evaluate, ast, data, envir, testHelper) {
 
     var ev = evaluate,
         expectExc = testHelper.expectException,
@@ -7,11 +7,10 @@ function testEvaluate(evaluate, parser, data, envir, testHelper) {
         lis = data.List,
         empty = lis([]),
         str = data.makeCharList,
-        anum = parser.ASTNumber,
-        sym = parser.Symbol,
-        alist = parser.ASTList,
-        app = parser.Application,
-        astr = parser.expandString;
+        anum = ast.number,
+        sym = ast.symbol,
+        alist = ast.list,
+        app = ast.application;
     
     module("Evaluate");
     
@@ -40,23 +39,23 @@ function testEvaluate(evaluate, parser, data, envir, testHelper) {
     
     test("define", function() {
         var def = ev.define,
-            d = parser.Define,
+            d = ast.define,
             par = envir.Environment(false, {'a': 3}),
             env = envir.Environment(par, {'b': 4});
 
         ok(!env.hasBinding('e'), 'define takes two arguments, a symbol and a string,');
-        def(d([sym('e'), anum('14')]), env);
+        def(d('e', anum(14)), env);
         deepEqual(env.getBinding('e'), num(14), 'and creates a binding for that symbol');
       
         expectExc(function() {
-            def(d([sym('b'), anum('13')]), env);
+            def(d('b', anum(13)), env);
         }, 'ValueError', "once created, bindings cannot be changed");
         equal(4, env.getBinding('b'), 'the previous value is still visible');
         
         equal(3, env.getBinding('a'), 'bindings are visible in nested scopes');
 
-        def(d([sym('a'), astr("derr")]), env);
-        deepEqual(str("derr"), env.getBinding('a'), "unless they're shadowed:");
+        def(d('a', ast.char('x')), env);
+        deepEqual(data.Char('x'), env.getBinding('a'), "unless they're shadowed:");
         ok(env.hasOwnBinding('a'), 'shadowing occurs when both the nested scope ...');
         ok(par.hasOwnBinding('a'), '*and* the parent scope have bindings for the same symbol');
     });
@@ -64,17 +63,17 @@ function testEvaluate(evaluate, parser, data, envir, testHelper) {
     
     test("set", function() {
         var set = ev['set'],
-            s = parser.set,
+            s = ast.set,
             par = envir.Environment(false, {'a': 3}),
             env = envir.Environment(par, {'b': 4});
         
-        set(s([sym('b'), anum('12')]), env);
+        set(s('b', anum(12)), env);
         deepEqual(num(12), env.getBinding('b'), "set takes two arguments, a symbol and a value");
         
-        set(s([sym('a'), anum('32')]), par);
+        set(s('a', anum(32)), par);
         deepEqual(num(32), par.getBinding('a'), "and sets binding for the symbol to the value");
         
-        set(s([sym('a'), anum('64')]), env);
+        set(s('a', anum(64)), env);
         deepEqual(
             [num(64), num(64)], 
             [par.getBinding('a'), env.getBinding('a')], 
@@ -82,14 +81,14 @@ function testEvaluate(evaluate, parser, data, envir, testHelper) {
         );
         
         expectExc(function() {
-            set(s([sym('e'), anum('88')]), env);
+            set(s('e', anum(88)), env);
         }, 'ValueError', "set may not be used on undefined symbols");
     });
     
     
     test("cond", function() {
       var cond = ev['cond'],
-          c = parser.Cond,
+          c = ast.cond,
           env = ev.getDefaultEnv(),
           ts = sym('true'),
           fs = sym('false'),
@@ -100,48 +99,52 @@ function testEvaluate(evaluate, parser, data, envir, testHelper) {
       
       deepEqual(
           num(4), // {cond [[true 4] [true "huh?"]] 2}
-          cond(c([alist([alist([ts, anum('4')]), 
-                         alist([ts, astr("huh?")])]), 
-                  anum('2')]), env), 
+          cond(c([[ts, anum(4)], 
+                  [ts, anum(5)]], 
+                 anum(2)), 
+               env), 
           "'cond' looks through its arguments for a list whose first element evaluates to true"
       );
       
       deepEqual(
           num(5), // {cond [[false false][true 5]] "huh?"}
-          cond(c([alist([alist([sym('fsym'), sym('fsym')]),
-                         alist([ts, anum('5')])]), 
-                  astr("huh?")]), env), 
+          cond(c([[sym('fsym'), sym('fsym')],
+                  [ts, anum(5)]], 
+                 anum(8)),
+               env), 
           'and evaluates and returns the second element of that list'
       );
       
       deepEqual(
           num(16),  // {cond [] 16} => 16
-          cond(c([alist([]), anum('16')]), env),
+          cond(c([], anum(16)), env),
           'an empty list of pairs is okay -- it will always evaluate to the else value'
       );
       
       expectExc(function() {
-          cond(c([alist([alist([anum('13'), anum('8')])]), anum('1')]), env);
+          cond(c([[anum(13), anum(8)]], 
+                 anum(1)), 
+               env);
       }, 'TypeError', 'the conditions *must* evaluate to a boolean');
     });
     
     
     test("lambda", function() {
         var lam = ev.lambda,
-            l = parser.Lambda,
+            l = ast.lambda,
             env = ev.getDefaultEnv(),
-            args1 = alist([]),
-            body1 = anum('4'),
-            args2 = alist([sym('abc')]),
+            args1 = [],
+            body1 = anum(4),
+            args2 = ['abc'],
             body2 = sym('abc'),
-            args3 = alist([sym('q'), sym('r')]),
-            body3 = app([sym('+'), sym('q'), anum('4')]);
-        
-        var a = lam(l([args1, body1]), env);
+            args3 = ['q', 'r'],
+            body3 = app(sym('+'), [sym('q'), anum(4)]);
+
+        var a = lam(l(args1, [body1]), env);
         deepEqual(
             'function',
             a.type,
-            'lambda takes a list of symbols and a body, and returns a closure'
+            'lambda takes an array of symbols and an array of body forms, and returns a function which is a lexical closure'
         );
         deepEqual(
             num(4),
@@ -185,7 +188,7 @@ function testEvaluate(evaluate, parser, data, envir, testHelper) {
           l3 = app([sym('neg'),  anum('4')]),
           l4 = alist([anum('13'), astr('duh'), sym('true')]),
           ts = sym('true'),
-          appSf = parser.Cond([alist([alist([ts, ts])]), int_]),
+          appSf = ast.Cond([alist([alist([ts, ts])]), int_]),
           ts = sym('true'),
           t = data.Boolean(true);
           
@@ -219,7 +222,7 @@ function testEvaluate(evaluate, parser, data, envir, testHelper) {
 
       deepEqual(
           t,
-          ev.eval(parser.Cond([alist([alist([ts, ts]), alist([ts, sym('couldblowup')])]), sym('xyz')]), env),
+          ev.eval(ast.Cond([alist([alist([ts, ts]), alist([ts, sym('couldblowup')])]), sym('xyz')]), env),
           " ... but might not do so for special forms that don't always evaluate all their arguments"
       );
     });

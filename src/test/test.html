@@ -15,12 +15,25 @@
   <script type="text/javascript" src="../javascript/ast.js"></script>
   <script type="text/javascript" src="../javascript/parser.js"></script>
 
+  <script type="text/javascript" src="../javascript/environment.js"></script>
+  <script type="text/javascript" src="../javascript/data.js"></script>
+  <script type="text/javascript" src="../javascript/functions.js"></script>
+  <script type="text/javascript" src="../javascript/evaluate.js"></script>
+  <script type="text/javascript" src="../javascript/beagle.js"></script>
+  
   <script type="text/javascript" src="test_maybeerror.js"></script>
   <script type="text/javascript" src="test_tokens.js"></script>
   <script type="text/javascript" src="test_tokenizer.js"></script>
   <script type="text/javascript" src="test_parsercombs.js"></script>
   <script type="text/javascript" src="test_ast.js"></script>
   <script type="text/javascript" src="test_parser.js"></script>
+
+  <script type="text/javascript" src="test_environment.js"></script>
+  <script type="text/javascript" src="test_data.js"></script>
+  <script type="text/javascript" src="test_functions.js"></script>
+  <script type="text/javascript" src="test_evaluate.js"></script>
+  <script type="text/javascript" src="test_beagle.js"></script>
+  
  </head>
 
 
@@ -38,6 +51,17 @@
   testAST(AST, TestHelper);
   
   testParser(PParser, AST, Tokens, MaybeError);
+  
+  
+  testEnvironment(Environment);
+  
+  testData(Data);
+  
+  testFunctions(Functions, Data, TestHelper);
+  
+  testEvaluate(Evaluate, AST, Data, Environment, TestHelper);
+  
+  testBeagle(Beagle, Data, Tokenizer, Parser);
   
   });
 </script>

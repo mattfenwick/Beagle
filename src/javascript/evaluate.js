@@ -34,54 +34,46 @@ var Evaluate = (function (Data, Functions, Environment) {
     //////// Special forms
 
     function define(form, env) {
-        var value = evaluate(form.astnode, env);
-        
-        if( env.hasOwnBinding(form.symbol.value) ) {
+        if( env.hasOwnBinding(form.symbol) ) {
             throw new SpecialFormError('ValueError', 'unbound symbol', 
-                    'bound symbol ' + form.symbol.value, 'define', 'cannot redefine symbol');
+                    'bound symbol ' + form.symbol, 'define', 'cannot redefine symbol');
         }
         
-        env.addBinding(form.symbol.value, value);
+        var value = evaluate(form.value, env);
+        
+        env.addBinding(form.symbol, value);
         return Data.Null();
     }
     
     
     function set(form, env) {
-        var value = evaluate(form.astnode, env);
-        
-        if( !env.hasBinding(form.symbol.value) ) {
+        if( !env.hasBinding(form.symbol) ) {
             throw new SpecialFormError('ValueError', 'bound symbol', 
-                    'unbound symbol ' + form.symbol.value, 'set', 'cannot set undefined symbol');
+                    'unbound symbol ' + form.symbol, 'set', 'cannot set undefined symbol');
         }
         
-        env.setBinding(form.symbol.value, value);
+        var value = evaluate(form.value, env);
+        
+        env.setBinding(form.symbol, value);
         return Data.Null();
     }
     
     
     function cond(form, env) {
-        var pairs = form.pairs.elements,
+        var pairs = form.branches,
             test, i;
         
         for(i = 0; i < pairs.length; i++) {
-            test = evaluate(pairs[i].elements[0], env);
+            test = evaluate(pairs[i][0], env);
             typeCheck('boolean', test.type, 'cond', "condition of argument " + (i + 1));
             
             if(test.value) {
-                return evaluate(pairs[i].elements[1], env);
+                return evaluate(pairs[i][1], env);
             }
         }
         
         // if we didn't find a true condition
         return evaluate(form.elseValue, env);
-    }
-    
-    
-    // ASTList Symbol -> [Symbol]
-    function extractArgNames(args) {
-        return args.elements.map(function(sym) {
-            return sym;
-        });
     }
     
     
@@ -95,10 +87,9 @@ var Evaluate = (function (Data, Functions, Environment) {
 
 
     function lambda(form, env) {
-        var args = form.parameters,
-            bodies = form.bodyForms,
-            last   = form.lastForm,
-            names = extractArgNames(args);
+        var names = form.parameters,
+            bodies = form.bodies,
+            last   = form.returnValue;
 
         // create the closure,
         //   which stores a reference to the environment,
@@ -186,6 +177,11 @@ var Evaluate = (function (Data, Functions, Environment) {
             throw new SpecialFormError('UndefinedVariableError', '', '', 'evaluateAtom', 'symbol ' + sexpr.value + ' is not defined');
         }
     }
+    
+    
+    function evaluateObject(sexpr, env) {
+        throw new Error('unimplemented');
+    }
 
 
     function evaluate(form, env) {
@@ -196,15 +192,16 @@ var Evaluate = (function (Data, Functions, Environment) {
         }
         
         var actions = {
-                'application':  evaluateApplication,
-                'list'       :  evaluateList,
-                'define'     :  define,
-                'set'       :  set,
-                'cond'       :  cond,
-                'lambda'     :  lambda,
-                'char'       :  function(form, e) {return Data.Char(form.value);},
-                'number'     :  function(form, e) {return Data.Number(form.value);},
-                'symbol'     :  evaluateSymbol
+                'application' :  evaluateApplication,
+                'list'        :  evaluateList,
+                'object'      :  evaluateObject,
+                'define'      :  define,
+                'set'         :  set,
+                'cond'        :  cond,
+                'lambda'      :  lambda,
+                'char'        :  function(form, e) {return Data.Char(form.value);},
+                'number'      :  function(form, e) {return Data.Number(form.value);},
+                'symbol'      :  evaluateSymbol
             },
             action = actions[form.asttype];
         
@@ -221,7 +218,7 @@ var Evaluate = (function (Data, Functions, Environment) {
         'eval'         :  evaluate,
         'getDefaultEnv':  getDefaultEnv,
         'define'       :  define,
-        'set'         :  set,
+        'set'          :  set,
         'lambda'       :  lambda,
         'cond'         :  cond
     };
