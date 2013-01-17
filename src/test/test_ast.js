@@ -37,7 +37,7 @@ function testAST(ast, testHelper) {
     
     
     test("object", function() {
-        deepEqual({type: 'astnode', asttype: 'objectliteral', entries: [['abcd', 13]], meta: -4}, ast.object([['abcd', 13]], -4));
+        deepEqual({type: 'astnode', asttype: 'object', entries: [['abcd', 13]], meta: -4}, ast.object([['abcd', 13]], -4));
         
         exp(function() {
             ast.object('memememe');
@@ -67,7 +67,7 @@ function testAST(ast, testHelper) {
     
     test("list", function() {
         deepEqual(
-            {type: 'astnode', asttype: 'listliteral', elements: [ast.number(2), ast.symbol('xyz')], meta: 9},
+            {type: 'astnode', asttype: 'list', elements: [ast.number(2), ast.symbol('xyz')], meta: 9},
             ast.list([ast.number(2), ast.symbol('xyz')], 9)
         );
         

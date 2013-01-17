@@ -55,7 +55,7 @@ var AST = (function() {
         }
         return {
             type:  'astnode',
-            asttype: 'listliteral',
+            asttype: 'list',
             elements: elems,
             meta: meta
         };
@@ -92,7 +92,7 @@ var AST = (function() {
         });
         return {
             type     :  'astnode',
-            asttype  :  'objectliteral',
+            asttype  :  'object',
             entries  :  pairs,
             meta     :  meta
         };
@@ -184,7 +184,7 @@ var AST = (function() {
         'object'     :  myObject,
         'application':  myApplication,
         'define'     :  myDefine,
-        'set'    :  set,
+        'set'        :  set,
         'cond'       :  myCond,
         'lambda'     :  myLambda
     };

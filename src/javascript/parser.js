@@ -46,13 +46,13 @@ var PParser = (function(AST, P, MaybeError) {
         tokentype('open-curly'),
         P.all([pForm, pForm]).many0().fmap(AST.object),
         tokentype('close-curly'),
-        'object literal');
+        'object');
     
     var pList = delimited(
         tokentype('open-square'),
         pForm.many0().fmap(AST.list),
         tokentype('close-square'),
-        'list literal');
+        'list');
     
     var pApplication = delimited(
         tokentype('open-paren'),

@@ -37,12 +37,12 @@ function testParser(parser, ast, tokens, maybeerror) {
         deepEqual(parser.form.parse([tos, tsy, ti, tcs, tos]),
             pure({'rest': [tos],
                   'result': ast.list([psy, pi], 9)}),
-            'simple list literal');
+            'simple list');
 
         deepEqual(parser.object.parse([toc, ti, tsy, tcc, ti]),
             pure({'rest': [ti],
                   'result': ast.object([[pi, psy]], 22)}),
-            'simple object literal');
+            'simple object');
 
         deepEqual(parser.application.parse([top, tsy, ti, tf, tcp, ts]),
             pure({'rest': [ts],
@@ -158,11 +158,11 @@ function testParser(parser, ast, tokens, maybeerror) {
         var err = maybeerror.error,
             q = parser.parse.parse;
         deepEqual(q([toc, tsy, ti]),
-            err({'rule': 'object literal', meta: 22}),
-            'object literal');
+            err({'rule': 'object', meta: 22}),
+            'object');
         deepEqual(q([tos, tsy, ti, tos, tcs]),
-            err({'rule': 'list literal', meta: 9}),
-            'list literal');
+            err({'rule': 'list', meta: 9}),
+            'list');
         deepEqual(q([top, tsy, ti, tos, tcs]),
             err({'rule': 'application', meta: 21}),
             'function application');
@@ -170,7 +170,7 @@ function testParser(parser, ast, tokens, maybeerror) {
             err({'rule': 'special-form application', meta: 79}),
             'special-form application');
         deepEqual(q([top, tos, tsy, ti]),
-            err({'rule': 'list literal', meta: 9}),
+            err({'rule': 'list', meta: 9}),
             'innermost error wins');
         deepEqual(q([tos, top, tsy, ti]),
             err({'rule': 'application', meta: 21}),
