@@ -12,9 +12,8 @@ There are two quick and easy ways to start using Beagle:
 
  1. try out the [online REPL](http://mattfenwick.github.com/Beagle/src/repl/repl.html)
 
- 2. pull the github repo, and set up a local REPL.  
-    The Javascript implementation can run from local files in any web browser;
-    once you've pulled all the files, just open up `src/repl/repl.html`
+ 2. pull the github repo, and start a local REPL by opening `src/repl/repl.html`
+    in a web browser
     
 
 ## Some key points ##
@@ -25,18 +24,20 @@ Beagle is similar to other Lisps:
 
  - prefix notation
  
- - first-class support for functions
- 
- - no distinction between operators, built-in functions and
-   user-defined functions
- 
-but it also lacks some characteristic features:
+ - first-class functions
+
+
+but also lacks some characteristic features:
 
  - macros
  
  - quote/eval
  
  - homoiconicity
- 
-Also, Beagle's concrete syntax differentiates between function application `()`,
-list literals `[]`, and special form application `{}`.
+
+Its concrete reduces syntax overloading by differentiating between:
+
+ - function application `(a b c)`,
+ - list literals `[a b c]`
+ - object literals `{a b c d}`
+ - special form application `,(define a b,)`.
