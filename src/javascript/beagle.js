@@ -1,47 +1,54 @@
-var Beagle = (function (tokens, parser, evaluate) {
+var Beagle = (function (tokenizer, parser, evaluate) {
     "use strict";
 
     var env = evaluate.getDefaultEnv();
-
 
     function evaler(p) {
         return evaluate.eval(p, env);
     }
 
-
-    // String -> [SExpression]
-    //   returns a list of s-expressions,
-    //   throws if strings and symbols aren't properly separated
-    //   throws if there are still tokens left in the token stream
-    function getTokens(str) {
-        var allTokens = tokens.tokenize(str),
-            toks;
-
-        // remove whitespace and comment tokens
-        toks = tokens.stripTokens(allTokens);
-
-        return toks;
+    function stripJunk(tokens) {
+        return tokens.filter(function(t) {
+            return t.tokentype !== 'comment' && t.tokentype !== 'whitespace';
+        });
     }
 
+    function beagle(string) {
+        if(typeof string !== 'string') {
+            throw new Error('input must be of type string');
+        }
 
-    function exec(str) {
-        var toks = getTokens(str),
-            trees = parser.makeAST(toks),
-            evaled = trees.map(evaler);
+        var output = {input: string},
+            tokens = Tokenizer.tokenize(string);
+        output.tokenization = tokens.value;
+        if(tokens.status !== 'success') {
+            output.status = 'token error';
+            return output;
+        }
 
-        return {
-            'string': str,
-            'result': evaled,
-            'tokens': toks,
-            'ast'   : trees
-        };
+        var asts = tokens.fmap(stripJunk).bind(PParser.parse.parse); // why not just PParser.parse.parse(tokens.value.map(stripJunk)) ????
+        output.asts = asts.value;
+        if(asts.status !== 'success') {
+            output.status = 'parse error';
+            return output;
+        }
+        var as = asts.value;
+        if(as.rest.length !== 0) {
+            output.status = 'parse error';
+            return output;
+        }
+
+        try {
+            var vals = as.result.map(evaler);
+            output.status = 'success';
+            output.results = vals;
+        } catch(e) {
+            output.status = 'execution error';
+            output.results = e;
+        }
+        return output;
     }
 
+    return beagle;
 
-    return {
-        'exec'        : exec,
-        'environment' : env,
-        'getTokens'   : getTokens
-    };
-
-})(Tokens, PParser, Evaluate);
+})(Tokenizer, PParser, Evaluate);
