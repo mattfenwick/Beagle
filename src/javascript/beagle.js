@@ -49,6 +49,9 @@ var Beagle = (function (tokenizer, parser, evaluate) {
         return output;
     }
 
-    return beagle;
+    return {
+        exec:  beagle,
+        environment: env
+    };
 
 })(Tokenizer, PParser, Evaluate);
