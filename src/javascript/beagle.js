@@ -44,4 +44,4 @@ var Beagle = (function (tokens, parser, evaluate) {
         'getTokens'   : getTokens
     };
 
-})(Tokens, Parser, Evaluate);
+})(Tokens, PParser, Evaluate);

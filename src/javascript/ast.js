@@ -165,6 +165,9 @@ var AST = (function() {
         if(bodies.length === undefined || typeof bodies === 'string') {
             throw myError('TypeError', 'lambda', 'array', typeof bodies);
         }
+        if(returnValue.type !== 'astnode') {
+            throw myError('ValueError', 'lambda', 'astnode', returnValue.type);
+        }
         return {
             type: 'astnode',
             asttype: 'lambda',

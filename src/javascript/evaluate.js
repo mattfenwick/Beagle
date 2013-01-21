@@ -102,7 +102,7 @@ var Evaluate = (function (Data, Functions, Environment) {
 
             // put parameter bindings into local environment
             for (j = 0; j < names.length; j++) {
-                newEnv.addBinding(names[j].value, c_args[j]);
+                newEnv.addBinding(names[j], c_args[j]);
             }
 
             // evaluate all the body forms ...
