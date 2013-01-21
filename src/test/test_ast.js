@@ -15,7 +15,7 @@ function testAST(ast, testHelper) {
     
     
     test("char", function() {
-        deepEqual({type: 'astnode', asttype: 'char', value: 'i', meta: 4}, ast.char('i', 4));
+        deepEqual({type: 'astnode', asttype: 'char', value: 'i'}, ast.char('i'), 'no meta-data on chars');
     
         exp(function() {
             ast.char([1]);

@@ -34,7 +34,7 @@ var AST = (function() {
         };
     }
     
-    function myChar(chr, meta) {
+    function myChar(chr) {
         if(typeof chr !== 'string') {
             throw myError('TypeError', 'char', 'string', typeof chr);
         }
@@ -44,8 +44,7 @@ var AST = (function() {
         return {
             type     :  'astnode',
             asttype  :  'char',
-            value    :  chr,
-            meta     :  meta
+            value    :  chr
         };
     }
     
