@@ -112,58 +112,13 @@ var Functions = (function (Data) {
             return Data.Boolean(args[0].value < args[1].value);
         }
     );
-    
-    
-    var object = Data.Function(
-        ['list'],
-        'object',
-        function(args) {
-            var table = {},
-                pairs = args[0];
-            pairs.value.map(function(pair) {
-                if(pair.type !== 'list') {
-                    throw new Data.FunctionError('TypeError', 'list', pair.type,
-                        'object', "'object' needs list of pairs");
-                }
-                if(pair.value.length !== 2) {
-                    throw new Data.FunctionError('ObjectError', 'key-value pairs',
-                          'list of length ' + pair.length, 'object', 'when building an object');
-                }
-                if(pair.value[0].type !== 'list') {
-                    throw new Data.FunctionError('TypeError', 'list', pair.value[0].type,
-                        'object', 'object keys must be lists of characters');
-                }
-                var key = pair.value[0].value.map(function(c) {
-                        if(c.type !== 'char') {
-                            throw Data.FunctionError('TypeError', "list of chars", 
-                                'list with ' + c.type, 'object', 'object key');
-                        }
-                        return c.value;
-                    }).join('');
-                table[key] = pair.value[1]; // what about duplicate keys?  what about empty keys?
-            });
-            return Data.Object(table);
-        }
-    );
-    
-    
-    // does this belong elsewhere? (in Data?)
-    var BUILT_INS = {
-        'number'      : 1,
-        'char'        : 1,
-        'boolean'     : 1,
-        'list'        : 1,
-        'function'    : 1,
-        'object'      : 1,
-        'null'        : 1  // not sure if I need this
-    };
 
-    
-    var type = Data.Function(
+
+    var primType = Data.Function(
         [null],
         'type',
         function(args) {
-            return Data.makeCharList(args[0].type);
+            return Data.makeCharList(args[0].type); // TODO this could even be 'intern'-ed for efficiency
         }
     );
     
@@ -174,11 +129,10 @@ var Functions = (function (Data) {
         'cdr'       :  cdr,
         'null?'     :  nullQ,
         '+'         :  plus,
-        'neg'       :  negate,
-        'number-<'  :  numberLessThan,
+        'neg'       :  negate, // TODO change to negate
+        'number-<'  :  numberLessThan, // TODO change to prim-< and implement for char also
         'eq?'       :  eqQ,
-        'object'    :  object,
-        'type'      :  type
+        'type'      :  primType // TODO change to prim-type
     };
 
 })(Data);

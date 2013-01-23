@@ -1,10 +1,4 @@
-
 function testFunctions(funcs, data, testHelper) {
-
-    if( !funcs || !data ) {
-      throw new Error("can't run tests without dependencies");
-    }
-    
 
     module("functions");
     
@@ -142,35 +136,8 @@ function testFunctions(funcs, data, testHelper) {
       }, 'TypeError', "'eq?' does not work on lists");
       
     });
-    
-    
-    test("object", function() {
-        deepEqual(
-            false, 
-            true,
-            "unimplemented"
-        );
-    });
-    
-    
-    test("get", function() {
-        deepEqual(
-            false, 
-            true,
-            "unimplemented -- looks up a key in an object"
-        );
-    });
-    
-    
-    test("entries", function() {
-        deepEqual(
-            false, 
-            true,
-            "unimplemented -- gets all key-value pairs from an object"
-        );
-    });
-    
-    
+
+
     test("type", function() {
     	var type = funcs.type;
 
@@ -250,8 +217,6 @@ function testFunctions(funcs, data, testHelper) {
                 }
             }
         }
-        
-        ok(false, "haven't tested all functions yet");
     });
     
 }
