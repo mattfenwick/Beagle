@@ -177,11 +177,6 @@ var Evaluate = (function (Data, Functions, Environment) {
             throw new SpecialFormError('UndefinedVariableError', '', '', 'evaluateAtom', 'symbol ' + sexpr.value + ' is not defined');
         }
     }
-    
-    
-    function evaluateObject(sexpr, env) {
-        throw new Error('unimplemented');
-    }
 
 
     function evaluate(form, env) {
@@ -194,7 +189,6 @@ var Evaluate = (function (Data, Functions, Environment) {
         var actions = {
                 'application' :  evaluateApplication,
                 'list'        :  evaluateList,
-                'object'      :  evaluateObject,
                 'define'      :  define,
                 'set'         :  set,
                 'cond'        :  cond,

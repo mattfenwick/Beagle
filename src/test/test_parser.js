@@ -32,17 +32,12 @@ function testParser(parser, ast, tokens, maybeerror) {
                   'result': [pi, pf, ps, psy]}));
     });
     
-    test("simple list, object, application", function() {
+    test("simple list and application", function() {
         // not sure if it's important whether I use the 'form' or 'list' parser
         deepEqual(parser.form.parse([tos, tsy, ti, tcs, tos]),
             pure({'rest': [tos],
                   'result': ast.list([psy, pi], 9)}),
             'simple list');
-
-        deepEqual(parser.object.parse([toc, ti, tsy, tcc, ti]),
-            pure({'rest': [ti],
-                  'result': ast.object([[pi, psy]], 22)}),
-            'simple object');
 
         deepEqual(parser.application.parse([top, tsy, ti, tf, tcp, ts]),
             pure({'rest': [ts],
@@ -157,9 +152,6 @@ function testParser(parser, ast, tokens, maybeerror) {
     test("error messages", function() {
         var err = maybeerror.error,
             q = parser.parse.parse;
-        deepEqual(q([toc, tsy, ti]),
-            err({'rule': 'object', meta: 22}),
-            'object');
         deepEqual(q([tos, tsy, ti, tos, tcs]),
             err({'rule': 'list', meta: 9}),
             'list');

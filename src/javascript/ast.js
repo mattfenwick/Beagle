@@ -75,27 +75,6 @@ var AST = (function() {
             meta       :  meta
         };
     }
-    
-    function myObject(pairs, meta) {
-        if(pairs.length === undefined || typeof pairs === 'string') {
-            throw myError('TypeError', 'object', 'array', typeof pairs);
-        }
-        var i, pair;
-        pairs.map(function(pair) {
-            if(pair.length === undefined || typeof pair === 'string') {
-                throw myError('TypeError', 'object', 'array', typeof pair);
-            }
-            if(pair.length !== 2) {
-                throw myError('ValueError', 'object', 'length of 2', pair.length);
-            }
-        });
-        return {
-            type     :  'astnode',
-            asttype  :  'object',
-            entries  :  pairs,
-            meta     :  meta
-        };
-    }
 
     function myDefine(symbol, value, meta) {
         if(typeof(symbol) !== 'string') {
@@ -183,7 +162,6 @@ var AST = (function() {
         'char'       :  myChar,
         'symbol'     :  mySymbol,
         'list'       :  myList,
-        'object'     :  myObject,
         'application':  myApplication,
         'define'     :  myDefine,
         'set'        :  set,

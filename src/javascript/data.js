@@ -79,12 +79,6 @@ var Data = (function () {
     }
     
     
-    function MyObject(table) {
-        this.type = 'object';
-        this.value = table;
-    }
-    
-    
     function makeCharList(jsString) {
         var list = [],
             i;
@@ -113,9 +107,6 @@ var Data = (function () {
         // composite types
         'List': function (x) {
             return new List(x);
-        },
-        'Object': function(table) {
-            return new MyObject(table);
         },
         
         // like () in Haskell??

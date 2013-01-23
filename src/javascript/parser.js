@@ -42,12 +42,6 @@ var PParser = (function(AST, P, MaybeError) {
             });
     };
     
-    var pObject = delimited(
-        tokentype('open-curly'),
-        P.all([pForm, pForm]).many0().fmap(AST.object),
-        tokentype('close-curly'),
-        'object');
-    
     var pList = delimited(
         tokentype('open-square'),
         pForm.many0().fmap(AST.list),
@@ -110,7 +104,7 @@ var PParser = (function(AST, P, MaybeError) {
         'special-form application');
     
     // written this way to allow mutual recursion
-    pForm.parse = P.any([pSpec, pApplication, pList, pObject, pSymbol, pNumber, pString]).parse;
+    pForm.parse = P.any([pSpec, pApplication, pList, pSymbol, pNumber, pString]).parse;
     
     var parser = pForm.many0();
     
@@ -120,7 +114,6 @@ var PParser = (function(AST, P, MaybeError) {
         'string'       :  pString,
         'application'  :  pApplication,
         'list'         :  pList,
-        'object'       :  pObject,
         'special'      :  pSpec,
         'define'       :  pDefine,
         'set'          :  pSet,

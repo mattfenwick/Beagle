@@ -36,23 +36,6 @@ function testAST(ast, testHelper) {
     });
     
     
-    test("object", function() {
-        deepEqual({type: 'astnode', asttype: 'object', entries: [['abcd', 13]], meta: -4}, ast.object([['abcd', 13]], -4));
-        
-        exp(function() {
-            ast.object('memememe');
-        }, 'TypeError');
-        
-        exp(function() {
-            ast.object([[1]]);
-        }, 'ValueError');
-        
-        exp(function() {
-            ast.object(['uh-oh']);
-        }, 'TypeError');
-    });
-    
-
     test("application", function () {
         deepEqual(
             {type: 'astnode', asttype: 'application', operator: ast.symbol('+'), 'arguments': [ast.number(2)], meta: 'add'},

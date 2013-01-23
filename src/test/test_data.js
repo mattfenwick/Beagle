@@ -25,9 +25,5 @@ function testData(data) {
     test("boolean", function() {
         propEqual({type: 'boolean', value: true}, data.Boolean(true));
     });
-    
-    test("object", function() {
-        propEqual({type: 'object', value: {abc: 123}}, data.Object({abc: 123}));
-    });
 
 }
