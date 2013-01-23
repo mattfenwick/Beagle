@@ -12,8 +12,6 @@ function testTokens(tokens, testHelper) {
             'close-curly'  : '}',
             'open-square'  : '[',
             'close-square' : ']',
-            'open-special' : ',(',
-            'close-special': ',)',
             'whitespace'   : ' \t\n',
             'comment'      : ';hi',
             'integer'      : '27',
@@ -82,11 +80,11 @@ function testTokens(tokens, testHelper) {
 
 
     test("Priorities", function() {
-        deepEqual(14, tokens.PRIORITIES.length, 'must be a priority for each of the 14 token types');
+        deepEqual(12, tokens.PRIORITIES.length, 'must be a priority for each of the 12 token types');
     });
     
     test("token regexes", function() {
-        expect(16);
+        expect(14);
         
         var testCases = [
                 ['open-paren',   "((duh",       ['(', '(']       ],
@@ -115,11 +113,7 @@ function testTokens(tokens, testHelper) {
                 
                 ['string',       '"ab cd" f',   ['"ab cd"', 'ab cd']    ],
                                  
-                ["symbol",       'wh;at',       ['wh', 'wh']       ],
-
-                ["open-special", ",(abc",       [',(', ',(']       ],
-
-                ["close-special",",))[]",       [',)', ',)']       ]
+                ["symbol",       'wh;at',       ['wh', 'wh']       ]
         ];
         
         testCases.map(function(data) {

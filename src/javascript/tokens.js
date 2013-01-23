@@ -11,8 +11,6 @@ var Tokens = (function () {
         'close-square' : /^(\])/,   // "]"
         'open-curly'   : /^(\{)/,   // "{"
         'close-curly'  : /^(\})/,   // "}"
-        'open-special' : /^(,\()/,  // ",("
-        'close-special': /^(,\))/,  // ",)"
         'comment'      : /^;(.*)/,  /* because: 1) * is greedy; 2) . doesn't match \n, so it consumes the rest of the line */
         'float'        : /^(\d*\.\d+|\d+\.\d*)/,
         'integer'      : /^(\d+)/,
@@ -25,9 +23,8 @@ var Tokens = (function () {
     var PRIORITIES = [
         'whitespace',    'open-paren',     'open-square', 
         'close-paren',   'close-square',   'open-curly', 
-        'close-curly',   'open-special',   'close-special',
-        'comment',       'string',         'float',
-        'integer',       'symbol'
+        'close-curly',   'comment',        'string',         
+        'float',         'integer',        'symbol'
     ];
 
 

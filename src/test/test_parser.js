@@ -20,8 +20,6 @@ function testParser(parser, ast, tokens, maybeerror) {
         tcc =  t('close-curly', '}', 8),
         tos =  t('open-square', '[', 9),
         tcs =  t('close-square', ']', 15),
-        tosp = t('open-special', ',(', 79),
-        tcsp = t('close-special', ',)', 102),
         top  = t('open-paren', '(', 21),
         tcp  = t('close-paren', ')', 29),
         pure = maybeerror.pure;
@@ -47,105 +45,105 @@ function testParser(parser, ast, tokens, maybeerror) {
     
     test("special forms: define", function() {
         var def = t('symbol', 'define');
-        deepEqual(parser.form.parse([tosp, def, tsy, ti, tcsp, ti]),
+        deepEqual(parser.form.parse([toc, def, tsy, ti, tcc, ti]),
             pure({'rest': [ti],
-                  'result': ast.define('abc', pi, 79)}),
+                  'result': ast.define('abc', pi, 22)}),
             'define');
             
-        deepEqual(parser.form.parse([tosp, def, ti, tf, tcsp]),
-            maybeerror.error({rule: 'special-form application', meta: 79}),
+        deepEqual(parser.form.parse([toc, def, ti, tf, tcc]),
+            maybeerror.error({rule: 'special-form application', meta: 22}),
             'non-symbol in 2nd position');
         
-        deepEqual(parser.form.parse([tosp, def, tsy, tcsp]),
-            maybeerror.error({rule: 'special-form application', meta: 79}),
+        deepEqual(parser.form.parse([toc, def, tsy, tcc]),
+            maybeerror.error({rule: 'special-form application', meta: 22}),
             'missing value');
         
-        deepEqual(parser.form.parse([tosp, def, tsy, ti, tf, tcsp]),
-            maybeerror.error({rule: 'special-form application', meta: 79}),
+        deepEqual(parser.form.parse([toc, def, tsy, ti, tf, tcc]),
+            maybeerror.error({rule: 'special-form application', meta: 22}),
             'extra arguments');
     });
     
     test("special forms: set", function() {
         var set = t('symbol', 'set');
-        deepEqual(parser.form.parse([tosp, set, tsy, ti, tcsp, ti]),
+        deepEqual(parser.form.parse([toc, set, tsy, ti, tcc, ti]),
             pure({'rest': [ti],
-                  'result': ast.set('abc', pi, 79)}),
+                  'result': ast.set('abc', pi, 22)}),
             'set');
         
-        deepEqual(parser.form.parse([tosp, set, ti, tf, tcsp]),
-            maybeerror.error({rule: 'special-form application', meta: 79}),
+        deepEqual(parser.form.parse([toc, set, ti, tf, tcc]),
+            maybeerror.error({rule: 'special-form application', meta: 22}),
             'non-symbol in 2nd position');
         
-        deepEqual(parser.form.parse([tosp, set, tsy, tcsp]),
-            maybeerror.error({rule: 'special-form application', meta: 79}),
+        deepEqual(parser.form.parse([toc, set, tsy, tcc]),
+            maybeerror.error({rule: 'special-form application', meta: 22}),
             'missing value');
         
-        deepEqual(parser.form.parse([tosp, set, tsy, ti, tf, tcsp]),
-            maybeerror.error({rule: 'special-form application', meta: 79}),
+        deepEqual(parser.form.parse([toc, set, tsy, ti, tf, tcc]),
+            maybeerror.error({rule: 'special-form application', meta: 22}),
             'extra arguments');
     });
     
     test("special forms: lambda", function() {
         var lam = t('symbol', 'lambda');
-        deepEqual(parser.form.parse([tosp, lam, tos, tsy, tcs, ti, tf, tcsp]),
+        deepEqual(parser.form.parse([toc, lam, tos, tsy, tcs, ti, tf, tcc]),
             pure({'rest': [],
-                  'result': ast.lambda(['abc'], [pi], pf, 79)}),
+                  'result': ast.lambda(['abc'], [pi], pf, 22)}),
             'lambda');
         
-        deepEqual(parser.form.parse([tosp, t('symbol', 'lambda'), tos, tsy, tsy, tcs, tf, tcsp]),
-            maybeerror.error({'rule': 'special-form application', meta: 79}),
+        deepEqual(parser.form.parse([toc, t('symbol', 'lambda'), tos, tsy, tsy, tcs, tf, tcc]),
+            maybeerror.error({'rule': 'special-form application', meta: 22}),
             'duplicate parameter names are forbidden');
         
-        deepEqual(parser.form.parse([tosp, lam, tos, tsy, tcs, tcsp]),
-            maybeerror.error({rule: 'special-form application', meta: 79}),
+        deepEqual(parser.form.parse([toc, lam, tos, tsy, tcs, tcc]),
+            maybeerror.error({rule: 'special-form application', meta: 22}),
             '0 body forms');
         
-        deepEqual(parser.form.parse([tosp, lam, tos, ti, tcs, tf, tcsp]),
-            maybeerror.error({rule: 'special-form application', meta: 79}),
+        deepEqual(parser.form.parse([toc, lam, tos, ti, tcs, tf, tcc]),
+            maybeerror.error({rule: 'special-form application', meta: 22}),
             'non-symbol parameters');
         
-        deepEqual(parser.form.parse([tosp, lam, ti, tf, tcsp]),
-            maybeerror.error({rule: 'special-form application', meta: 79}),
+        deepEqual(parser.form.parse([toc, lam, ti, tf, tcc]),
+            maybeerror.error({rule: 'special-form application', meta: 22}),
             'non-list in 2nd position');
     });
     
     test("special forms: cond", function() {
         var cond = t('symbol', 'cond');
-        deepEqual(parser.form.parse([tosp, cond, tos, tos, tsy, ti, tcs, tos, tsy2, tf, tcs, tcs, ti, tcsp, tf]),
+        deepEqual(parser.form.parse([toc, cond, tos, tos, tsy, ti, tcs, tos, tsy2, tf, tcs, tcs, ti, tcc, tf]),
             pure({'rest': [tf],
-                 'result': ast.cond([[psy, pi], [psy2, pf]], pi, 79)}),
+                 'result': ast.cond([[psy, pi], [psy2, pf]], pi, 22)}),
             'cond');
         
-        deepEqual(parser.form.parse([tosp, cond, tos, tcs, tcsp]),
-            maybeerror.error({rule: 'special-form application', meta: 79}),
+        deepEqual(parser.form.parse([toc, cond, tos, tcs, tcc]),
+            maybeerror.error({rule: 'special-form application', meta: 22}),
             'missing return value');
         
-        deepEqual(parser.form.parse([tosp, cond, ti, tf, tcsp]),
-            maybeerror.error({rule: 'special-form application', meta: 79}),
+        deepEqual(parser.form.parse([toc, cond, ti, tf, tcc]),
+            maybeerror.error({rule: 'special-form application', meta: 22}),
             'branches must be list');
         
-        deepEqual(parser.form.parse([tosp, cond, tos, ti, tcs, tf, tcsp]),
-            maybeerror.error({rule: 'special-form application', meta: 79}),
+        deepEqual(parser.form.parse([toc, cond, tos, ti, tcs, tf, tcc]),
+            maybeerror.error({rule: 'special-form application', meta: 22}),
             'of lists');
         
-        deepEqual(parser.form.parse([tosp, cond, tos, tos, ti, tcs, tcs, tf, tcsp]),
-            maybeerror.error({rule: 'special-form application', meta: 79}),
+        deepEqual(parser.form.parse([toc, cond, tos, tos, ti, tcs, tcs, tf, tcc]),
+            maybeerror.error({rule: 'special-form application', meta: 22}),
             'of length 2');
          
-        deepEqual(parser.form.parse([tosp, cond, tos, tcs, ti, tf, tcsp]),
-            maybeerror.error({rule: 'special-form application', meta: 79}),
+        deepEqual(parser.form.parse([toc, cond, tos, tcs, ti, tf, tcc]),
+            maybeerror.error({rule: 'special-form application', meta: 22}),
             'extra arguments');
     });
     
     test("special forms", function() {        
         deepEqual(
-            parser.form.parse([tosp, t('symbol', 'oops'), ti, tcsp]),
-            maybeerror.error({'rule': 'special-form application', meta: 79}),
+            parser.form.parse([toc, t('symbol', 'oops'), ti, tcc]),
+            maybeerror.error({'rule': 'special-form application', meta: 22}),
             'invalid special form name');
     
         deepEqual(
-            parser.form.parse([tosp, ti, tsy, tcsp]),
-            maybeerror.error({'rule': 'special-form application', meta: 79}),
+            parser.form.parse([toc, ti, tsy, tcc]),
+            maybeerror.error({'rule': 'special-form application', meta: 22}),
             'special form requires symbol as operator');
     });
 
@@ -158,8 +156,8 @@ function testParser(parser, ast, tokens, maybeerror) {
         deepEqual(q([top, tsy, ti, tos, tcs]),
             err({'rule': 'application', meta: 21}),
             'function application');
-        deepEqual(q([tosp, tsy, tos, tcs]),
-            err({'rule': 'special-form application', meta: 79}),
+        deepEqual(q([toc, tsy, tos, tcs]),
+            err({'rule': 'special-form application', meta: 22}),
             'special-form application');
         deepEqual(q([top, tos, tsy, ti]),
             err({'rule': 'list', meta: 9}),

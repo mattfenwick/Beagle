@@ -98,9 +98,9 @@ var PParser = (function(AST, P, MaybeError) {
         pForm.many1());
         
     var pSpec = delimited(
-        tokentype('open-special'),
+        tokentype('open-curly'),
         P.any([pDefine, pSet, pCond, pLambda]),
-        tokentype('close-special'),
+        tokentype('close-curly'),
         'special-form application');
     
     // written this way to allow mutual recursion
