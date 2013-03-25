@@ -25,6 +25,10 @@ Beagle is similar to other Lisps:
  - prefix notation
  
  - first-class functions
+ 
+ - dynamically typed
+ 
+ - lexically scoped
 
 
 but also lacks some characteristic features:
@@ -35,9 +39,9 @@ but also lacks some characteristic features:
  
  - homoiconicity
 
-Its concrete reduces syntax overloading by differentiating between:
+Its concrete syntax reduces token overloading by differentiating between:
 
- - function application `(a b c)`,
- - list literals `[a b c]`
- - object literals `{a b c d}`
- - special form application `,(define a b,)`.
+ - function application `(a b c)`
+ - list literals `[a b c]`]
+ - special form application `{define a b}`
+ 

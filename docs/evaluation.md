@@ -34,7 +34,7 @@
    to start off, an environment is passed in ... each expression may change the environment, which
    is then passed to the next one ... should probably add in concept of statements here
    
- - `Application[[Expr(+)]]`: The first expression must evaluate to a function; otherwise it's a type error.  
+ - `Application[[Expr(+)]]`: The first expression must evaluate to a function; otherwise it's a type error.
    The arguments are evaluated in order (possibly changing the environment, 
    which is passed sequentially), and then the function is applied to the arguments.  The return
    value is then the return value of the function.
@@ -71,3 +71,4 @@
  - `Set[[Symbol Expr]]`:  if the symbol is bound in **any** lexically enclosing environment (including
    the current one), the expression is evaluated and the 'closest' enclosing binding is modified to
    that new value.  If it's not bound, that is an error.
+

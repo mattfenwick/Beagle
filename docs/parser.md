@@ -5,16 +5,14 @@ Concrete syntax, loosely using [BNF](http://en.wikipedia.org/wiki/Backus%E2%80%9
 
     Beagle       :=  Form(+)
     
-    Form         :=  Special  |  Application  |  List  |  Object  |  SYMBOL  |  NUMBER  |  STRING
+    Form         :=  Special  |  Application  |  List  |  SYMBOL  |  NUMBER  |  STRING
     
-    Special      :=  ',('  ( Define  |  Set  |  Cond  |  Lambda )  ',)'
+    Special      :=  '{'  ( Define  |  Set  |  Cond  |  Lambda )  '}'
 
     Application  :=  '('  Form(+)  ')' 
     
     List         :=  '['  Form(*)  ']'
     
-    Object       :=  '{'  ( Form  Form )(*)  '}'
-
     Define       :=  'define'  SYMBOL  Form
 
     Set          :=  'set'  SYMBOL  Form
@@ -41,10 +39,6 @@ Concrete syntax, loosely using [BNF](http://en.wikipedia.org/wiki/Backus%E2%80%9
 
     CLOSE-CURLY    :=  }
     
-    OPEN-SPECIAL   :=  ,(
-    
-    CLOSE-SPECIAL  :=  ,)
-
     STRING         :=  "[^\"]*"
 
     COMMENT        :=  ;[^\n]*
@@ -53,10 +47,3 @@ Concrete syntax, loosely using [BNF](http://en.wikipedia.org/wiki/Backus%E2%80%9
 
     NUMBER         :=  \d*\.\d+  |  \d+\.\d*  |  \d+
 
-
-
-## Parsing stages ##
-
- 1. tokenization
-
- 2. assembly of tokens to form the AST
