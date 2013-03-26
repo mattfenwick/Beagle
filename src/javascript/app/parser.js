@@ -1,4 +1,4 @@
-define(["app/ast", "libs/parsercombinators", "libs/maybeerror"], function(AST, P, MaybeError) {
+define(["app/ast", "libs/parser", "libs/maybeerror"], function(AST, P, MaybeError) {
     "use strict";
     
     /* parser tasks:

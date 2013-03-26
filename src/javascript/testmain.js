@@ -6,8 +6,8 @@ var NEW_TESTS = [
     "test/data",
     "test/functions",
     "test/tokenizer",
-/*    "test/parser",
-    "test/evaluate",
+    "test/parser",
+/*    "test/evaluate",
     "test/beagle",*/
 //    "test/macros",
 //    "test/unparser" 
