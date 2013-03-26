@@ -90,8 +90,8 @@ define(["app/evaluate", "app/ast", "app/data", "app/environment", "test/helper"]
           env = ev.getDefaultEnv(),
           ts = sym('true'),
           fs = sym('false'),
-          t = Data.Boolean(true),
-          f = Data.Boolean(false);
+          t = data.Boolean(true),
+          f = data.Boolean(false);
       
       env.addBinding('fsym', f);
       

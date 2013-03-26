@@ -19,14 +19,14 @@ define(["app/tokenizer", "app/parser", "app/evaluate"], function (tokenizer, par
         }
 
         var output = {input: string},
-            tokens = Tokenizer.tokenize(string);
+            tokens = tokenizer.tokenize(string);
         output.tokenization = tokens.value;
         if(tokens.status !== 'success') {
             output.status = 'token error';
             return output;
         }
 
-        var asts = tokens.fmap(stripJunk).bind(PParser.parse.parse); // why not just PParser.parse.parse(tokens.value.map(stripJunk)) ????
+        var asts = tokens.fmap(stripJunk).bind(parser.parse.parse); // why not just PParser.parse.parse(tokens.value.map(stripJunk)) ????
         output.asts = asts.value;
         if(asts.status !== 'success') {
             output.status = 'parse error';
