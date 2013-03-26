@@ -112,7 +112,7 @@ define(["app/functions", "app/data", "test/helper"], function(funcs, data, testH
     test("eq?", function() {
       
       var eq = funcs['eq?'],
-          db = Data.Boolean,
+          db = data.Boolean,
           t = db(true),
           f = db(false),
           ch1 = ch('x'),
@@ -155,8 +155,8 @@ define(["app/functions", "app/data", "test/helper"], function(funcs, data, testH
             ],
             f, numArgs;
         
-        for(var fname in Functions) {
-            f = Functions[fname];
+        for(var fname in funcs) {
+            f = funcs[fname];
             numArgs = f.argTypes.length;
             expectException(function() {
                 f.fapply(n_args[numArgs - 1]);
@@ -180,7 +180,7 @@ define(["app/functions", "app/data", "test/helper"], function(funcs, data, testH
     
     
     test("function argument types", function() {
-        var funcs = {
+        var functions = {
                 'cons'     : [num(3), list([])],
                 'car'      : [list([num(4)])],
                 'cdr'      : [list([num(14)])],
@@ -192,18 +192,16 @@ define(["app/functions", "app/data", "test/helper"], function(funcs, data, testH
                 'type'     : [num(8)]
             },
             types = {
-                'number' : Data.Char('c'),
-                'char'   : Data.Boolean(true),
-                'boolean': Data.List([]),
-                'list'   : Data.Number(14)
+                'number' : data.Char('c'),
+                'char'   : data.Boolean(true),
+                'boolean': data.List([]),
+                'list'   : data.Number(14)
             },
             i, j, f, newArgs, fname, tempArgs;
         
-        // for each function
-        for(fname in funcs) {
-            f = Functions[fname];
-            newArgs = funcs[fname]; // should do this by reading the function's data instead
-            // for each argument to that function
+        for(fname in functions) {
+            f = funcs[fname];
+            newArgs = functions[fname]; // should do this by reading the function's data instead
             for(j = 0; j < newArgs.length; j++) {
                 if(f.argTypes[j] !== null) {
                     tempArgs = replace(newArgs, j, types[newArgs[j].type]);

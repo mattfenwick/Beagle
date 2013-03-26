@@ -37,12 +37,7 @@ define(["app/tokens", "app/tokenizer", "libs/maybeerror", "test/helper"], functi
     });
     
     test("tokenize", function() {
-        var tok = tokens.Token,
-            op = tok('open-paren', "("),
-            cp = tok('close-paren', ')'),
-            o = tok('integer', '1'),
-            p = tok('symbol', '+'),
-            s = tok('whitespace', ' ');
+        var tok = tokens.Token;
         
         deepEqual(
             tokenizer.tokenize("abc 123 4.5 \"hi\" ;bye\n [](){}"),
