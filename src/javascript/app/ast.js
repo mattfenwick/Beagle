@@ -1,4 +1,4 @@
-var AST = (function() {
+define([], function() {
 
     function myError(type, func, expected, actual) {
         return {
@@ -169,4 +169,4 @@ var AST = (function() {
         'lambda'     :  myLambda
     };
 
-})();
+});

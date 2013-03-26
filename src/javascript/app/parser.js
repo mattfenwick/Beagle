@@ -1,4 +1,4 @@
-var PParser = (function(AST, P, MaybeError) {
+define(["app/ast", "libs/parsercombinators", "libs/maybeerror"], function(AST, P, MaybeError) {
     "use strict";
     
     /* parser tasks:
@@ -123,4 +123,4 @@ var PParser = (function(AST, P, MaybeError) {
         'parse'        :  parser
     };
 
-})(AST, ParserCombs, MaybeError);
+});

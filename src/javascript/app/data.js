@@ -1,4 +1,4 @@
-var Data = (function () {
+define([], function () {
     "use strict";
 
 
@@ -124,4 +124,4 @@ var Data = (function () {
         
     };
 
-})();
+});

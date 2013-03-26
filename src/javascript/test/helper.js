@@ -1,5 +1,4 @@
-
-var TestHelper = (function() {
+define([], function() {
 
     if(!ok || !equal) {
         throw new Error("unable to load TestHelper -- maybe missing qunit dependency");
@@ -33,4 +32,4 @@ var TestHelper = (function() {
         'expectException': expectException
     };
     
-})();
+});

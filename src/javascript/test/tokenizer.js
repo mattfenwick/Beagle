@@ -1,5 +1,4 @@
-
-function testTokenizer(tokens, tokenizer, maybeerror, testHelper) {
+define(["app/tokens", "app/tokenizer", "libs/maybeerror", "test/helper"], function(tokens, tokenizer, maybeerror, testHelper) {
 
     module("tokenizer");    
     
@@ -59,4 +58,4 @@ function testTokenizer(tokens, tokenizer, maybeerror, testHelper) {
         );
     });
 
-}
+});

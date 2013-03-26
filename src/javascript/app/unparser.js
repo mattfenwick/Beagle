@@ -1,4 +1,4 @@
-var Unparser = (function() {
+define([], function() {
     
     function cond(node) {
         var pairs = node.pairs;
@@ -44,4 +44,4 @@ var Unparser = (function() {
         'unparse':  unparse
     };
     
-})();
+});

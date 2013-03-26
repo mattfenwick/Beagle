@@ -1,5 +1,4 @@
-
-function testBeagle(beagle, data, tokens, ast) {
+define(["app/beagle", "app/data", "app/tokens", "app/ast"], function(beagle, data, tokens, ast) {
 
     module("beagle");
     
@@ -43,4 +42,4 @@ function testBeagle(beagle, data, tokens, ast) {
                              {line: 2, column: 2})], r.asts.result);
     });
 
-}
+});

@@ -1,4 +1,4 @@
-var Tokenizer = (function (Tokens, MaybeError) {
+define(["app/tokens", "libs/maybeerror"], function (Tokens, MaybeError) {
     "use strict";
 
 /* tokenizer's missions:
@@ -99,4 +99,4 @@ var Tokenizer = (function (Tokens, MaybeError) {
         'tokenize'    : tokenize
     };
 
-})(Tokens, MaybeError);
+});

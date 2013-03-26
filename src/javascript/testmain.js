@@ -1,12 +1,22 @@
 
 var NEW_TESTS = [
-    "test/maybeerror", 
-    "test/parsercombinators"
+    "test/ast",
+    "test/tokens",
+    "test/environment",
+    "test/data",
+/*    "test/functions",
+    "test/tokenizer",
+    "test/parser",
+    "test/evaluate",
+    "test/beagle",*/
+//    "test/macros",
+//    "test/unparser" 
 ];
 
 require(NEW_TESTS, function() {
-    var mods = Array.prototype.slice.call(arguments);
-    mods.map(function(mod, ix) {
-        mod();
+    module("testmain");
+    
+    test("testmain", function() {
+        ok(1, "modules loaded");
     });
 });

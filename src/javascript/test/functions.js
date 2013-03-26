@@ -1,4 +1,4 @@
-function testFunctions(funcs, data, testHelper) {
+define(["app/functions", "app/data", "test/helper"], function(funcs, data, testHelper) {
 
     module("functions");
     
@@ -219,4 +219,4 @@ function testFunctions(funcs, data, testHelper) {
         }
     });
     
-}
+});

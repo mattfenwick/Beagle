@@ -1,4 +1,4 @@
-function testData(data) {
+define(["app/data"], function(data) {
 	
 	module("data");
 	
@@ -26,4 +26,4 @@ function testData(data) {
         propEqual({type: 'boolean', value: true}, data.Boolean(true));
     });
 
-}
+});

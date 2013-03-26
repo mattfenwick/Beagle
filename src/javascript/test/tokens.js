@@ -1,5 +1,4 @@
-
-function testTokens(tokens, testHelper) {
+define(["app/tokens", "test/helper"], function(tokens, testHelper) {
 
     module("tokens");
     var expectExc = testHelper.expectException;
@@ -121,4 +120,4 @@ function testTokens(tokens, testHelper) {
         });
     });
 
-}
+});

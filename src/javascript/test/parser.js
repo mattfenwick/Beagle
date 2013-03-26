@@ -1,4 +1,4 @@
-function testParser(parser, ast, tokens, maybeerror) {
+define(["app/parser", "app/ast", "app/tokens", "libs/maybeerror"], function(parser, ast, tokens, maybeerror) {
 
     module("parser");
     
@@ -167,4 +167,4 @@ function testParser(parser, ast, tokens, maybeerror) {
             'innermost wins again');
     });
 
-}
+});

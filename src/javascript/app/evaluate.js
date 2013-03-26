@@ -1,4 +1,4 @@
-var Evaluate = (function (Data, Functions, Environment) {
+define(["app/data", "app/functions", "app/environment"], function (Data, Functions, Environment) {
     "use strict";
 
 
@@ -217,4 +217,4 @@ var Evaluate = (function (Data, Functions, Environment) {
         'cond'         :  cond
     };
 
-})(Data, Functions, Environment);
+});

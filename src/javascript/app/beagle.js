@@ -1,4 +1,4 @@
-var Beagle = (function (tokenizer, parser, evaluate) {
+define(["app/tokenizer", "app/parser", "app/evaluate"], function (tokenizer, parser, evaluate) {
     "use strict";
 
     var env = evaluate.getDefaultEnv();
@@ -54,4 +54,4 @@ var Beagle = (function (tokenizer, parser, evaluate) {
         environment: env
     };
 
-})(Tokenizer, PParser, Evaluate);
+});

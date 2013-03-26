@@ -1,5 +1,6 @@
-
-function testEvaluate(evaluate, ast, data, envir, testHelper) {
+define(["app/evaluate", "app/ast", "app/data", "app/environment", "test/helper"], function(evaluate, ast, data, envir, testHelper) {
+    
+    module("Evaluate");
 
     var ev = evaluate,
         expectExc = testHelper.expectException,
@@ -11,8 +12,6 @@ function testEvaluate(evaluate, ast, data, envir, testHelper) {
         sym = ast.symbol,
         alist = ast.list,
         app = ast.application;
-    
-    module("Evaluate");
     
     
     test("default environment", function() {
@@ -212,4 +211,4 @@ function testEvaluate(evaluate, ast, data, envir, testHelper) {
       );
     });
 
-}
+});

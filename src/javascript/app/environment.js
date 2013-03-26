@@ -1,4 +1,4 @@
-var Environment = (function() {
+define([], function() {
 
     function Env(parent, bindings) {
         this._parent = parent;
@@ -72,4 +72,4 @@ var Environment = (function() {
         }
     };
 
-})();
+});

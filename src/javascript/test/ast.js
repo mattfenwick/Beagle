@@ -1,7 +1,7 @@
-function testAST(ast, testHelper) {
+define(["app/ast", "test/helper"], function(ast, testHelper) {
 
     module("AST data");
-
+    
     var exp = testHelper.expectException;
 
     
@@ -123,4 +123,4 @@ function testAST(ast, testHelper) {
         }, 'TypeError');
     });
 
-}
+});

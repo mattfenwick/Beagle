@@ -1,4 +1,4 @@
-function testUnparser(unparser, parser) {
+define(["app/unparser", "app/parser"], function(unparser, parser) {
 
     module("AST unparsing");
     
@@ -46,4 +46,4 @@ function testUnparser(unparser, parser) {
             "a lambda"
         );
     });
-}
+});

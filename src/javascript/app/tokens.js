@@ -1,4 +1,4 @@
-var Tokens = (function () {
+define([], function () {
     "use strict";
 
     // put capturing parentheses around that which should be saved
@@ -46,4 +46,4 @@ var Tokens = (function () {
         'PRIORITIES':  PRIORITIES
     };
 
-})();
+});

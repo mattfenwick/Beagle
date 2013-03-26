@@ -1,4 +1,4 @@
-function testMacros(macros, parser) {
+define(["app/macros", "app/parser"], function(macros, parser) {
 
     module("macros");
     
@@ -29,4 +29,4 @@ function testMacros(macros, parser) {
         
         deepEqual(i, o, "let-expansion");
     });
-}
+});

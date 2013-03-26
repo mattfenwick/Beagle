@@ -1,4 +1,4 @@
-var Macros = (function(Parser) {
+define(["parser"], function(Parser) {
     
     function Let(bindings, body) {
         this.bindings = bindings;
@@ -22,4 +22,4 @@ var Macros = (function(Parser) {
         }
     };
     
-})(Parser);
+});

@@ -1,4 +1,4 @@
-var Functions = (function (Data) {
+define(["app/data"], function (Data) {
     "use strict";
 
     
@@ -135,4 +135,4 @@ var Functions = (function (Data) {
         'type'      :  primType // TODO change to prim-type
     };
 
-})(Data);
+});

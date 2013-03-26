@@ -1,4 +1,4 @@
-function testEnvironment(Environment) {
+define(["app/environment"], function(Environment) {
 
     module("environment");
 
@@ -98,4 +98,4 @@ function testEnvironment(Environment) {
         
     });
 
-};
+});
