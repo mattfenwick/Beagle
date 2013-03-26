@@ -1,12 +1,7 @@
 var imports = [
-    "app/maybeerror",
-    "app/parser",
-    "app/example"
+    "repl/repl"
 ];
 
-require(imports, function(me, pc, eg) {
-
-    window.MaybeError = me;
-    window.Parser = pc;
-    window.Example = eg;
+require(imports, function(repl) {
+    // maybe do some stuff?
 });

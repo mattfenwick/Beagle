@@ -1,5 +1,7 @@
-var Repl = (function(_, Backbone, Beagle) {
+define(["app/beagle"], function(Beagle) {
     "use strict";
+    
+    // also uses global variables '_' and 'Backbone'
 
     function Evaluator() {
         this._history = [];
@@ -27,4 +29,4 @@ var Repl = (function(_, Backbone, Beagle) {
         'Evaluator': function() {return new Evaluator();}
     };
 
-})(_, Backbone, Beagle);
+});
