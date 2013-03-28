@@ -165,7 +165,12 @@ define(["app/ast", "libs/parser", "libs/maybeerror"], function(AST, P, MaybeErro
             return P.zero;
         }).not0()
         .seq2R(pForm)
-        .many0();
+        .many0()
+        .seq2L(P.get.bind(function(ts) { // victory or death
+            return P.item.not0()
+                .commit({message: 'unable to parse entire token stream', 
+                         'remaining tokens': ts});
+        }));
     
     return {
         'number'       :  pNumber,
