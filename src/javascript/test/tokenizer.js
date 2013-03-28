@@ -13,18 +13,14 @@ define(["app/tokens", "app/tokenizer", "libs/maybeerror", "test/helper"], functi
         var tok = tokens.Token;
         deepEqual(
             tokenizer.tokenize('"abc" \n "qrs\n;123'),
-            maybeerror.error({error: {message: 'end-of-string not found', line: 2, 
-                                      column: 2, rest: '"qrs\n;123'},
-                              tokens: [tok('string', 'abc', loc(1, 1)), tok('whitespace', ' \n ', loc(1, 6))]}),
+            maybeerror.error({message: 'end-of-string not found', line: 2, 
+                              column: 2, rest: '"qrs\n;123'}),
             "string error reporting"
         );
         deepEqual(
             tokenizer.tokenize("abc def,\n,("),
-            maybeerror.error({error: {message: "no tokens matched", line: 1,
-                                      column: 8, rest: ',\n,('},
-                              tokens: [tok('symbol', 'abc', loc(1, 1)), 
-                                       tok('whitespace', ' ', loc(1, 4)),
-                                       tok('symbol', 'def', loc(1, 5))]}),
+            maybeerror.error({message: "no tokens matched", line: 1,
+                              column: 8, rest: ',\n,('}),
             "no token found reporting"
         );
     });

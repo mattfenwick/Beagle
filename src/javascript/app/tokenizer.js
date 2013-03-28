@@ -1,12 +1,6 @@
 define(["app/tokens", "libs/maybeerror"], function (Tokens, MaybeError) {
     "use strict";
 
-/* tokenizer's missions:
-     1. use 'Tokens' module's data to do String -> MaybeError [Token]
-     2. keep track of input location
-     3. report errors usefully
-*/
-
     function tokenError(message, line, column, rest) {
         return MaybeError.error({
             message  :  message,
@@ -79,10 +73,7 @@ define(["app/tokens", "libs/maybeerror"], function (Tokens, MaybeError) {
         while (1) {
             next = nextToken(string, line, column);
             if(next.status === 'error') {
-                return MaybeError.error({
-                    error :  next.value,
-                    tokens:  tokens
-                });
+                return next;
             } else if(next.status === 'failure') {
                 break;
             }
