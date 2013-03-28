@@ -155,8 +155,17 @@ define(["app/ast", "libs/parser", "libs/maybeerror"], function(AST, P, MaybeErro
     // written this way to allow mutual recursion
     pForm.parse = P.any([pSpec, pApplication, pList, pSymbol, pNumber, pString]).parse;
     
-    // probably want to check for unmatched close braces here
-    var parser = pForm.many0();
+    var CLOSES = {'}': 1, ']': 1, ')': 1};
+    
+    var parser = 
+        P.item.bind(function(t) {
+            if ( t.value in CLOSES ) {
+                return P.error({'message': 'unmatched close brace', token: t});
+            }
+            return P.zero;
+        }).not0()
+        .seq2R(pForm)
+        .many0();
     
     return {
         'number'       :  pNumber,

@@ -169,7 +169,7 @@ define(["app/parser", "app/ast", "app/tokens", "libs/maybeerror"], function(pars
         propEqual(q([tos, tsy]),
             error({'message': 'unable to match list', open: tos}),
             'open brace without matching close');
-        propEqual(q([tsy, tcs]),
+        propEqual(q([top, tsy, ti, tf, tcp, ts, tcs]),
             error({'message': 'unmatched close brace', token: tcs}),
             'close brace without matching open');
         propEqual(q([tos, tsy, tcc]),
