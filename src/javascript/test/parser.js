@@ -22,7 +22,9 @@ define(["app/parser", "app/ast", "app/tokens", "libs/maybeerror"], function(pars
         tcs =  t('close-square', ']', 15),
         top  = t('open-paren', '(', 21),
         tcp  = t('close-paren', ')', 29),
-        pure = maybeerror.pure;
+        pure = maybeerror.pure,
+        error = maybeerror.error,
+        empty = {};
         
     function good(value, rest, state) {
         return pure({'result': value, 'rest': rest, 'state': state});
@@ -33,33 +35,47 @@ define(["app/parser", "app/ast", "app/tokens", "libs/maybeerror"], function(pars
             good([pi, pf, ps, psy], []));
     });
     
-    test("simple list and application", function() {
-        // not sure if it's important whether I use the 'form' or 'list' parser
-        propEqual(parser.form.parse([tos, tsy, ti, tcs, tos]),
-            good(ast.list([psy, pi], 9), [tos]),
+    test("list", function() {
+        propEqual(parser.form.parse([tos, tsy, ti, tcs, top], empty),
+            good(ast.list([psy, pi], 9), [top], empty),
             'simple list');
 
-        propEqual(parser.application.parse([top, tsy, ti, tf, tcp, ts]),
-            good(ast.application(psy, [pi, pf], 21), [ts]),
+        propEqual(parser.form.parse([tos, tsy], empty),
+            error({'message': 'unable to match list', 'open': tos}));
+            
+        propEqual(parser.form.parse([tos, tsy, tcc], empty),
+            error({'message': 'unable to match list', 'open': tos, 'expected close': tcc}));
+    });
+    
+    test("application", function() {
+        propEqual(parser.form.parse([top, tsy, ti, tf, tcp, ts], empty),
+            good(ast.application(psy, [pi, pf], 21), [ts], empty),
             'simple function application');
+        
+        propEqual(parser.form.parse([top, tsy, ti], empty),
+            error({'message': 'unable to match application', 'open': top}));
+            
+        propEqual(parser.form.parse([top, tsy, ti, tcc], empty),
+            error({'message': 'unable to match application', 'open': top, 'expected close': tcc}));
     });
     
     test("special forms: define", function() {
         var def = t('symbol', 'define');
-        propEqual(parser.form.parse([toc, def, tsy, ti, tcc, ti]),
-            good(ast.define('abc', pi, 22), [ti]),
+        propEqual(parser.form.parse([toc, def, tsy, ti, tcc, ti], empty),
+            good(ast.define('abc', pi, 22), [ti], empty),
             'define');
             
-        propEqual(parser.form.parse([toc, def, ti, tf, tcc]),
-            maybeerror.error({rule: 'special-form application', meta: 22}),
+        propEqual(parser.form.parse([toc, def, ti, tf, tcc], empty),
+            error({rule: 'define', open: toc, message: 'expected symbol'}),
             'non-symbol in 2nd position');
         
-        propEqual(parser.form.parse([toc, def, tsy, tcc]),
-            maybeerror.error({rule: 'special-form application', meta: 22}),
+        propEqual(parser.form.parse([toc, def, tsy, tcc], empty),
+            error({rule: 'define', message: 'expected form', open: toc}),
             'missing value');
         
-        propEqual(parser.form.parse([toc, def, tsy, ti, tf, tcc]),
-            maybeerror.error({rule: 'special-form application', meta: 22}),
+        propEqual(parser.form.parse([toc, def, tsy, ti, tf, tcc], empty),
+            error({message: 'unable to match special form', 
+                   'expected close': tf, open: toc}),
             'extra arguments');
     });
     
@@ -70,15 +86,16 @@ define(["app/parser", "app/ast", "app/tokens", "libs/maybeerror"], function(pars
             'set');
         
         propEqual(parser.form.parse([toc, set, ti, tf, tcc]),
-            maybeerror.error({rule: 'special-form application', meta: 22}),
+            error({rule: 'set', open: toc, message: 'expected symbol'}),
             'non-symbol in 2nd position');
         
         propEqual(parser.form.parse([toc, set, tsy, tcc]),
-            maybeerror.error({rule: 'special-form application', meta: 22}),
+            error({rule: 'set', message: 'expected form', open: toc}),
             'missing value');
         
         propEqual(parser.form.parse([toc, set, tsy, ti, tf, tcc]),
-            maybeerror.error({rule: 'special-form application', meta: 22}),
+            error({message: 'unable to match special form', 
+                   'expected close': tf, open: toc}),
             'extra arguments');
     });
     
@@ -89,19 +106,20 @@ define(["app/parser", "app/ast", "app/tokens", "libs/maybeerror"], function(pars
             'lambda');
         
         propEqual(parser.form.parse([toc, t('symbol', 'lambda'), tos, tsy, tsy, tcs, tf, tcc]),
-            maybeerror.error({'rule': 'special-form application', meta: 22}),
+            error({'rule': 'lambda', symbols: ["abc", "abc" ], 'message': 'repeated symbol in parameter list'}),
             'duplicate parameter names are forbidden');
         
         propEqual(parser.form.parse([toc, lam, tos, tsy, tcs, tcc]),
-            maybeerror.error({rule: 'special-form application', meta: 22}),
+            error({message: 'expected body forms', rule: 'lambda', open: toc}),
             '0 body forms');
         
         propEqual(parser.form.parse([toc, lam, tos, ti, tcs, tf, tcc]),
-            maybeerror.error({rule: 'special-form application', meta: 22}),
+            error({message: 'non-symbol in parameter list', token: ti,
+                   rule: 'lambda'}),
             'non-symbol parameters');
         
         propEqual(parser.form.parse([toc, lam, ti, tf, tcc]),
-            maybeerror.error({rule: 'special-form application', meta: 22}),
+            error({rule: 'lambda', 'message': 'expected parameter list', open: toc}),
             'non-list in 2nd position');
     });
     
@@ -112,56 +130,51 @@ define(["app/parser", "app/ast", "app/tokens", "libs/maybeerror"], function(pars
             'cond');
         
         propEqual(parser.form.parse([toc, cond, tos, tcs, tcc]),
-            maybeerror.error({rule: 'special-form application', meta: 22}),
+            error({rule: 'cond', message: 'expected else form', open: toc}),
             'missing return value');
         
         propEqual(parser.form.parse([toc, cond, ti, tf, tcc]),
-            maybeerror.error({rule: 'special-form application', meta: 22}),
+            error({rule: 'cond', message: 'expected predicate/result pairs', open: toc}),
             'branches must be list');
         
         propEqual(parser.form.parse([toc, cond, tos, ti, tcs, tf, tcc]),
-            maybeerror.error({rule: 'special-form application', meta: 22}),
+            error({rule: 'cond', message: 'expected predicate/result pairs', open: toc}),
             'of lists');
         
         propEqual(parser.form.parse([toc, cond, tos, tos, ti, tcs, tcs, tf, tcc]),
-            maybeerror.error({rule: 'special-form application', meta: 22}),
+            error({rule: 'cond', message: 'expected predicate/result pairs', open: toc}),
             'of length 2');
          
         propEqual(parser.form.parse([toc, cond, tos, tcs, ti, tf, tcc]),
-            maybeerror.error({rule: 'special-form application', meta: 22}),
+            error({message: 'unable to match special form', 
+                   open: toc, 'expected close': tf}),
             'extra arguments');
     });
     
     test("special forms", function() {        
         propEqual(
             parser.form.parse([toc, t('symbol', 'oops'), ti, tcc]),
-            maybeerror.error({'rule': 'special-form application', meta: 22}),
+            error({message: 'unable to match special form', open: toc}),
             'invalid special form name');
     
         propEqual(
             parser.form.parse([toc, ti, tsy, tcc]),
-            maybeerror.error({'rule': 'special-form application', meta: 22}),
+            error({message: 'unable to match special form', open: toc}),
             'special form requires symbol as operator');
     });
 
     test("error messages", function() {
-        var err = maybeerror.error,
-            q = parser.parse.parse;
-        propEqual(q([tos, tsy, ti, tos, tcs]),
-            err({'rule': 'list', meta: 9}),
-            'list');
-        propEqual(q([top, tsy, ti, tos, tcs]),
-            err({'rule': 'application', meta: 21}),
-            'function application');
-        propEqual(q([toc, tsy, tos, tcs]),
-            err({'rule': 'special-form application', meta: 22}),
-            'special-form application');
-        propEqual(q([top, tos, tsy, ti]),
-            err({'rule': 'list', meta: 9}),
-            'innermost error wins');
-        propEqual(q([tos, top, tsy, ti]),
-            err({'rule': 'application', meta: 21}),
-            'innermost wins again');
+        var q = parser.parse.parse;
+
+        propEqual(q([tos, tsy]),
+            error({'message': 'unable to match list', open: tos}),
+            'open brace without matching close');
+        propEqual(q([tsy, tcs]),
+            error({'message': 'unmatched close brace', token: tcs}),
+            'close brace without matching open');
+        propEqual(q([tos, tsy, tcc]),
+            error({'message': 'unable to match list', open: tos, 'expected close': tcc}),
+            'corresponding open and close braces of different types');
     });
 
 });
