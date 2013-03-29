@@ -1,4 +1,4 @@
-define(["app/tokenizer", "app/parser", "app/evaluate"], function (tokenizer, parser, evaluate) {
+define(["app/tokenizer", "app/parser", "app/evaluate", "libs/maybeerror"], function (tokenizer, parser, evaluate, me) {
     "use strict";
 
     var env = evaluate.getDefaultEnv();
@@ -12,43 +12,38 @@ define(["app/tokenizer", "app/parser", "app/evaluate"], function (tokenizer, par
             return t.tokentype !== 'comment' && t.tokentype !== 'whitespace';
         });
     }
-
-    function beagle(string) {
-        if(typeof string !== 'string') {
+    
+    function beagle(input) {
+        // success:  maybeerror.pure({input: ..., tokens: ..., asts: ..., results: ...});
+        // error:  maybeerror.error({cause: 'tokenization'/'parsing'/'evaluation', error: {...}})
+        if(typeof input !== 'string') {
             throw new Error('input must be of type string');
         }
-
-        var output = {input: string},
-            tokens = tokenizer.tokenize(string);
-        output.tokenization = tokens.value;
-        if(tokens.status !== 'success') {
-            output.status = 'token error';
-            return output;
+        
+        var tokens, asts, results;
+        
+        tokens = tokenizer.tokenize(input);
+        if ( tokens.status !== 'success' ) {
+            return me.error({cause: 'tokenization', error: tokens.value});
         }
-
-        var asts = tokens.fmap(stripJunk).bind(parser.parse.parse); // why not just PParser.parse.parse(tokens.value.map(stripJunk)) ????
-        output.asts = asts.value;
-        if(asts.status !== 'success') {
-            output.status = 'parse error';
-            return output;
+        
+        asts = parser.parse.parse(stripJunk(tokens.value));
+        if ( asts.status !== 'success' ) {
+            return me.error({cause: 'ast parsing', error: asts.value});
         }
-        var as = asts.value;
-        if(as.rest.length !== 0) {
-            output.status = 'parse error';
-            return output;
-        }
-
+        
+        // assumes: parsing consumes entire input and succeeds,
+        //   or fails with an error
+        
         try {
-            var vals = as.result.map(evaler);
-            output.status = 'success';
-            output.results = vals;
-        } catch(e) {
-            output.status = 'execution error';
-            output.results = e;
+            results = asts.value.result.map(evaler);
+        } catch (e) {
+            return me.error({cause: 'evaluation', error: e});
         }
-        return output;
+        
+        return me.pure({'tokens': tokens.value, 'asts': asts.value.result, 'results': results});
     }
-
+    
     return {
         exec:  beagle,
         environment: env
