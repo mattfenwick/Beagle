@@ -1,4 +1,12 @@
 define(function() {
+    "use strict";
+
+    function isString(obj) {
+        if(obj.type !== 'list') {
+            return false;
+        }
+        return obj.value.every(function(c) {return c.type === 'char';});
+    }
 
     function format(obj) {
         if(isString(obj)) {
@@ -34,5 +42,7 @@ define(function() {
         return obj;
     }
 
-    return format;
+    return {
+        'format': format
+    };
 });
