@@ -1,4 +1,4 @@
-define(["app/beagle", "repl/formatter", function(Beagle, Formatter) {
+define(["app/beagle", "libs/underscore-amd", "repl/formatter", function(Beagle, _, Formatter) {
     "use strict";
 
     function displayEnv(envi) {
