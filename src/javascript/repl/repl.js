@@ -14,16 +14,14 @@ define(["app/beagle", "repl/formatter"], function(Beagle, Formatter) {
     }
     
     function print(o) {
-        return JSON.stringify(Formatter.format(o));
+        return Formatter.format(o);
     }
 
-    function pushSuccess(obj) {
+    function pushSuccess(input, obj) {
         var h = $("#history");
-        // strategy:  zip the asts and results (or something),
-        //   then print each pair out together
+        h.append("<li><pre>" + "> " + input + "</pre></li>");
+        
         for(var i = 0; i < obj.asts.length; i++) {
-            // print the ast
-            h.append("<li><pre>" + "> " + print(obj.asts[i]) + "</pre></li>");
             // print the result
             h.append("<li>" + print(obj.results[i]) + "</li>");
         }
@@ -38,22 +36,22 @@ define(["app/beagle", "repl/formatter"], function(Beagle, Formatter) {
         h.scrollTop(h.prop("scrollHeight"));
     }
     
-    function onSuccess(result) {
-        pushSuccess(result);
+    function onSuccess(input, result) {
+        pushSuccess(input, result);
         clearInputArea();
         displayEnv(Beagle.environment);
         setScroll();
     }
 
-    function pushError(obj) {
+    function pushError(input, obj) {
         var h = $("#history"),
             sed = JSON.stringify(obj);
-        h.append("<li><pre>" + "> " + obj.input + "</pre></li>");
+        h.append("<li><pre>" + "> " + input + "</pre></li>");
         h.append("<li>" + "ERROR: " + sed + "</li>");
     }
     
-    function onError(result) {
-        pushError(result);
+    function onError(input, result) {
+        pushError(input, result);
         setScroll();
     }
 
@@ -67,9 +65,9 @@ define(["app/beagle", "repl/formatter"], function(Beagle, Formatter) {
                     var str = $("#expr").val();
                     var result = Beagle.exec(str, Beagle.environment);
                     if ( result.status === 'success' ) {
-                        onSuccess(result.value);
+                        onSuccess(str, result.value);
                     } else { // it's an error
-                        onError(result.value);
+                        onError(str, result.value);
                     }
                     return false;
                 }

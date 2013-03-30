@@ -22,7 +22,7 @@ define(function() {
         }
       
         if( obj.type === 'list' ) {
-            return '[' + obj.value.map(printer).join(', ') + ']';
+            return '[' + obj.value.map(format).join(', ') + ']';
         }
       
         if( obj.type === 'char' ) {
