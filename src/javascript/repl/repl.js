@@ -1,4 +1,4 @@
-define(["app/beagle", "libs/underscore-amd", "repl/formatter", function(Beagle, _, Formatter) {
+define(["app/beagle", "repl/formatter"], function(Beagle, Formatter) {
     "use strict";
 
     function displayEnv(envi) {
@@ -7,9 +7,14 @@ define(["app/beagle", "libs/underscore-amd", "repl/formatter", function(Beagle, 
         $("#env .envrow").remove();
         for(q in envi._bindings) {
             val = envi.getBinding(q);
-            tab.append('<tr class="envrow"><td>' + q + "</td><td>" 
-                + val.type + "</td><td>" + _.escape(printer(val)) + "</td></tr>");
+            console.log('binding: ' + JSON.stringify(val));
+            tab.append('<tr class="envrow"><td>' + q + "</td><td>" + val.type + 
+                "</td><td>" + Formatter.format(val) + "</td></tr>");
         }
+    }
+    
+    function print(o) {
+        return JSON.stringify(Formatter.format(o));
     }
 
     function pushSuccess(obj) {
@@ -18,23 +23,23 @@ define(["app/beagle", "libs/underscore-amd", "repl/formatter", function(Beagle, 
         //   then print each pair out together
         for(var i = 0; i < obj.asts.length; i++) {
             // print the ast
-            h.append("<li><pre>" + _.escape("> " + obj.input) + "</pre></li>");
+            h.append("<li><pre>" + "> " + print(obj.asts[i]) + "</pre></li>");
             // print the result
-            h.append("<li>" + _.escape(JSON.stringify(Formatter.format(x))) + "</li>");
+            h.append("<li>" + print(obj.results[i]) + "</li>");
         }
     }
   
-    function clearInputArea(obj) {
+    function clearInputArea() {
         $("#expr").val("");
-    };
+    }
   
     function setScroll() {
         var h = $("#history");
         h.scrollTop(h.prop("scrollHeight"));
-    };
+    }
     
     function onSuccess(result) {
-        pushSuccess(result.value);
+        pushSuccess(result);
         clearInputArea();
         displayEnv(Beagle.environment);
         setScroll();
@@ -43,9 +48,9 @@ define(["app/beagle", "libs/underscore-amd", "repl/formatter", function(Beagle, 
     function pushError(obj) {
         var h = $("#history"),
             sed = JSON.stringify(obj);
-        h.append("<li><pre>" + _.escape("> " + obj.input) + "</pre></li>");
-        h.append("<li>" + "ERROR: " + _.escape(sed) + "</li>"); // TODO need to stabilize up error interface to provide better messages
-    };
+        h.append("<li><pre>" + "> " + obj.input + "</pre></li>");
+        h.append("<li>" + "ERROR: " + sed + "</li>");
+    }
     
     function onError(result) {
         pushError(result);
@@ -58,7 +63,7 @@ define(["app/beagle", "libs/underscore-amd", "repl/formatter", function(Beagle, 
             //$("#runner").click(function(e) { //
             $("#expr").bind('keydown', function(e) {
                 var code = (e.keyCode ? e.keyCode : e.which);
-                if( code == 13 ) {
+                if( code == 13 ) { // why isn't this triple-equal?
                     var str = $("#expr").val();
                     var result = Beagle.exec(str, Beagle.environment);
                     if ( result.status === 'success' ) {
@@ -70,7 +75,13 @@ define(["app/beagle", "libs/underscore-amd", "repl/formatter", function(Beagle, 
                 }
                 return true;
             });
+            
+            displayEnv(Beagle.environment);
         });
     }
+    
+    return {
+        'setUp': setUp
+    };
 
 });

@@ -3,5 +3,7 @@ var imports = [
 ];
 
 require(imports, function(repl) {
-    // maybe do some stuff?
+    
+    repl.setUp();
+    
 });

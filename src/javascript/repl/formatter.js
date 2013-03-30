@@ -14,11 +14,11 @@ define(function() {
         }
       
         if( obj.type === 'function' ) {
-            return '<function>';
+            return 'function';
         }
       
         if( obj.type === 'null' ) {
-            return '<null>';
+            return 'null';
         }
       
         if( obj.type === 'list' ) {
