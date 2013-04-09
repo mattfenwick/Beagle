@@ -1,8 +1,5 @@
-var imports = [
-    "repl/repl"
-];
 
-require(imports, function(repl) {
+require(["repl/repl"], function(repl) {
     
     repl.setUp();
     
