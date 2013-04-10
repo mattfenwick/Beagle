@@ -101,37 +101,37 @@ define(["app/parser", "app/ast", "app/tokens", "libs/maybeerror"], function(pars
     
     test("special forms: lambda", function() {
         var lam = t('symbol', 'lambda');
-        propEqual(parser.form.parse([toc, lam, tos, tsy, tcs, ti, tf, tcc]),
+        propEqual(parser.form.parse([toc, lam, toc, tsy, tcc, ti, tf, tcc]),
             good(ast.lambda(['abc'], [pi], pf, 22), []),
             'lambda');
         
-        propEqual(parser.form.parse([toc, t('symbol', 'lambda'), tos, tsy, tsy, tcs, tf, tcc]),
+        propEqual(parser.form.parse([toc, t('symbol', 'lambda'), toc, tsy, tsy, tcc, tf, tcc]),
             error({'rule': 'lambda', symbols: ["abc", "abc" ], 'message': 'repeated symbol in parameter list'}),
             'duplicate parameter names are forbidden');
         
-        propEqual(parser.form.parse([toc, lam, tos, tsy, tcs, tcc]),
+        propEqual(parser.form.parse([toc, lam, toc, tsy, tcc, tcc]),
             error({message: 'expected body forms', rule: 'lambda', open: toc}),
             '0 body forms');
         
-        propEqual(parser.form.parse([toc, lam, tos, ti, tcs, tf, tcc]),
+        propEqual(parser.form.parse([toc, lam, toc, ti, tcc, tf, tcc]),
             error({message: 'non-symbol in parameter list', token: ti,
                    rule: 'lambda'}),
             'non-symbol parameters');
         
         propEqual(parser.form.parse([toc, lam, ti, tf, tcc]),
             error({rule: 'lambda', 'message': 'expected parameter list', open: toc}),
-            'non-list in 2nd position');
+            'non-parameter-list in 2nd position');
     });
     
     test("special forms: cond", function() {
         var cond = t('symbol', 'cond');
-        propEqual(parser.form.parse([toc, cond, tos, tos, tsy, ti, tcs, tos, tsy2, tf, tcs, tcs, ti, tcc, tf]),
+        propEqual(parser.form.parse([toc, cond, toc, toc, tsy, ti, tcc, toc, tsy2, tf, tcc, tcc, ti, tcc, tf]),
             good(ast.cond([[psy, pi], [psy2, pf]], pi, 22), [tf]),
             'cond');
         
-        propEqual(parser.form.parse([toc, cond, tos, tcs, tcc]),
+        propEqual(parser.form.parse([toc, cond, toc, tcc, tcc]),
             error({rule: 'cond', message: 'expected else form', open: toc}),
-            'missing return value');
+            'missing else value');
         
         propEqual(parser.form.parse([toc, cond, ti, tf, tcc]),
             error({rule: 'cond', message: 'expected predicate/result pairs', open: toc}),
@@ -145,7 +145,7 @@ define(["app/parser", "app/ast", "app/tokens", "libs/maybeerror"], function(pars
             error({rule: 'cond', message: 'expected predicate/result pairs', open: toc}),
             'of length 2');
          
-        propEqual(parser.form.parse([toc, cond, tos, tcs, ti, tf, tcc]),
+        propEqual(parser.form.parse([toc, cond, toc, tcc, ti, tf, tcc]),
             error({message: 'unable to match special form', 
                    open: toc, 'expected close': tf}),
             'extra arguments');

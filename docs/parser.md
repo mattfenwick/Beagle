@@ -17,9 +17,9 @@ Concrete syntax, loosely using [BNF](http://en.wikipedia.org/wiki/Backus%E2%80%9
 
     Set          :=  'set'  SYMBOL  Form
 
-    Cond         :=  'cond'  '['  ( '['  Form  Form  ']' )(*)  ']'  Form
+    Cond         :=  'cond'  '{'  ( '{'  Form  Form  '}' )(*)  '}'  Form
 
-    Lambda       :=  'lambda'  '['  SYMBOL(*)  ']'  Form(+)
+    Lambda       :=  'lambda'  '{'  SYMBOL(*)  '}'  Form(+)
     
 
 

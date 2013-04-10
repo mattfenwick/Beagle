@@ -87,12 +87,12 @@ define(["app/ast", "libs/parser", "libs/maybeerror"], function(AST, P, MaybeErro
     }
         
     var condBranches =
-        tokentype('open-square')
-        .seq2R(tokentype('open-square')
+        tokentype('open-curly')
+        .seq2R(tokentype('open-curly')
               .seq2R(P.all([pForm, pForm]))
-              .seq2L(tokentype('close-square'))
+              .seq2L(tokentype('close-curly'))
               .many0())
-        .seq2L(tokentype('close-square'));
+        .seq2L(tokentype('close-curly'));
     
     function pCond(open) {
         return symbol('cond')
@@ -121,7 +121,7 @@ define(["app/ast", "libs/parser", "libs/maybeerror"], function(AST, P, MaybeErro
     
     var onlySymbol = 
         bareSymbol.plus(P.item.bind(function(t) {
-                                        if ( t.tokentype === 'close-square' ) {
+                                        if ( t.tokentype === 'close-curly' ) {
                                             return P.zero;
                                         }
                                         return P.error({'message': 'non-symbol in parameter list',
@@ -132,9 +132,9 @@ define(["app/ast", "libs/parser", "libs/maybeerror"], function(AST, P, MaybeErro
         return P.app(
 	        myLambda,
 	        symbol('lambda'),
-	        tokentype('open-square').commit(error('lambda', 'parameter list', open)),
+	        tokentype('open-curly').commit(error('lambda', 'parameter list', open)),
 	        onlySymbol.many0().bind(uniqueNames),
-	        tokentype('close-square').commit(error('lambda', "']' to close parameter list", open)),
+	        tokentype('close-curly').commit(error('lambda', "'}' to close parameter list", open)),
 	        pForm.many1().commit(error('lambda', 'body forms', open)),
 	        P.pure(open.meta));
 	}
