@@ -10,9 +10,9 @@ lambda calculus, and
 
 There are two quick and easy ways to start using Beagle:
 
- 1. try out the [online REPL](http://mattfenwick.github.com/Beagle/src/repl/repl.html)
+ 1. try out the [online REPL](http://mattfenwick.github.com/Beagle)
 
- 2. pull the github repo, and start a local REPL by opening `src/repl/repl.html`
+ 2. pull the github repo, and start a local REPL by opening `src/javascript/index.html`
     in a web browser
     
 
@@ -41,7 +41,8 @@ but also lacks some characteristic features:
 
 Its concrete syntax reduces token overloading by differentiating between:
 
- - function application `(a b c)`
- - list literals `[a b c]`]
- - special form application `{define a b}`
- 
+ - function application uses parentheses: `(a b c)`
+ - list literals use square braces: `[a b c]`
+ - special form application, as in `{define a b}`, 
+   and syntactic grouping, as in `{cond {{(> x 3) [1]}} [1 2]}`
+   both use curly braces
