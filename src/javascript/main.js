@@ -1,6 +1,8 @@
 
-require(["repl/repl"], function(repl) {
+require(["repl/model", "repl/controller", "app/evaluate"], function(Model, Cont, evaluate) {
     
-    repl.setUp();
+    $(document).ready(function() {
+        new Cont(new Model(evaluate.getDefaultEnv()));
+    });
     
 });

@@ -9,6 +9,7 @@ var NEW_TESTS = [
     "test/parser",
     "test/evaluate",
     "test/beagle",
+    "test/model"
 //    "test/macros",
 //    "test/unparser" 
 ];

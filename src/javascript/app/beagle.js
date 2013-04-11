@@ -1,11 +1,5 @@
-define(["app/tokenizer", "app/parser", "app/evaluate", "libs/maybeerror"], function (tokenizer, parser, evaluate, me) {
+define(["app/tokenizer", "app/parser", "libs/maybeerror"], function (tokenizer, parser, me) {
     "use strict";
-
-    var env = evaluate.getDefaultEnv();
-
-    function evaler(p) {
-        return evaluate.eval(p, env);
-    }
 
     function stripJunk(tokens) {
         return tokens.filter(function(t) {
@@ -13,14 +7,14 @@ define(["app/tokenizer", "app/parser", "app/evaluate", "libs/maybeerror"], funct
         });
     }
     
-    function beagle(input) {
-        // success:  maybeerror.pure({input: ..., tokens: ..., asts: ..., results: ...});
-        // error:  maybeerror.error({cause: 'tokenization'/'parsing'/'evaluation', error: {...}})
+    function parse(input) {
+        // success:  maybeerror.pure(asts...);
+        // error:  maybeerror.error({cause: 'tokenization'/'parsing', error: {...}})
         if(typeof input !== 'string') {
             throw new Error('input must be of type string');
         }
         
-        var tokens, asts, results;
+        var tokens, asts;
         
         tokens = tokenizer.tokenize(input);
         if ( tokens.status !== 'success' ) {
@@ -35,18 +29,12 @@ define(["app/tokenizer", "app/parser", "app/evaluate", "libs/maybeerror"], funct
         // assumes: parsing consumes entire input and succeeds,
         //   or fails with an error
         
-        try {
-            results = asts.value.result.map(evaler);
-        } catch (e) {
-            return me.error({cause: 'evaluation', error: e});
-        }
-        
-        return me.pure({'tokens': tokens.value, 'asts': asts.value.result, 'results': results});
+        return me.pure(asts.value.result); // ditch the rest/state wrapper
     }
     
     return {
-        exec:  beagle,
-        environment: env
+        'stripJunk': stripJunk,
+        'parse'    : parse
     };
 
 });
