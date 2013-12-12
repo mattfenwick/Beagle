@@ -3,27 +3,30 @@
 
 Concrete syntax, loosely using [BNF](http://en.wikipedia.org/wiki/Backus%E2%80%93Naur_Form):
 
-    Beagle       :=  Form(+)
+    Beagle       :=  Form{+}
     
     Form         :=  Special  |  Application  |  List  |  SYMBOL  |  NUMBER  |  STRING
     
     Special      :=  '{'  ( Define  |  Set  |  Cond  |  Lambda )  '}'
 
-    Application  :=  '('  Form(+)  ')' 
+    Application  :=  '('  Form{+}  ')' 
     
-    List         :=  '['  Form(*)  ']'
+    List         :=  '['  Form{*}  ']'
     
     Define       :=  'define'  SYMBOL  Form
 
     Set          :=  'set'  SYMBOL  Form
 
-    Cond         :=  'cond'  '{'  ( '{'  Form  Form  '}' )(*)  '}'  Form
+    Cond         :=  'cond'  '{'  pair{*}  '}'  Form
+        pair     :=  '{'  Form  Form  '}'
 
-    Lambda       :=  'lambda'  '{'  SYMBOL(*)  '}'  Form(+)
+    Lambda       :=  'lambda'  '{'  SYMBOL{*}  '}'  Form{+}
     
 
 
 ## Tokens ##
+
+Whitespace and comments can occur in any amount between any tokens:
 
     WHITESPACE     :=  \s+
 
@@ -39,11 +42,10 @@ Concrete syntax, loosely using [BNF](http://en.wikipedia.org/wiki/Backus%E2%80%9
 
     CLOSE-CURLY    :=  }
     
-    STRING         :=  "[^\"]*"
+    STRING         :=  /"([^\\"]|\\")*"/
 
-    COMMENT        :=  ;[^\n]*
+    COMMENT        :=  /;[^\n]*/
 
-    SYMBOL         :=  [a-zA-Z!@#$%^&*-_=+?/<>][a-zA-Z0-9!@#$%^&*-_=+?/<>]*
+    SYMBOL         :=  /[a-zA-Z!@#$%^&*-_=+?/<>][a-zA-Z0-9!@#$%^&*-_=+?/<>]*/
 
-    NUMBER         :=  \d*\.\d+  |  \d+\.\d*  |  \d+
-
+    NUMBER         :=  /\d+(\.\d*)?/  |  /\.\d+/
