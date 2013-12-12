@@ -2,8 +2,6 @@ define([
   "app/ast",
   "app/buildast"
 ], function(A, BA) {
-
-    module("buildast");
     
     function number(pos, int, dec) {
         return {'_name': 'number', '_state': pos, 'int': int, 'decimal': dec};
@@ -14,6 +12,8 @@ define([
     }
     
     return function () {
+    
+        module("buildast");
 
         var in1 = number(3, ['1', '4'], null),
             is1 = {'_name': 'string', '_state': 'hi', 'body': []},

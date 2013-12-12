@@ -1,9 +1,11 @@
-define(["app/data"], function(data) {
-	
-	module("data");
+define([
+  "app/data"
+], function(data) {
 	
     return function () {
 
+    	module("data");
+    	
     	test("number", function() {
     		propEqual({type: 'number', value: 3}, data.Number(3));
     	});

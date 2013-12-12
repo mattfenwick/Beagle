@@ -5,10 +5,10 @@ define([
   'unparse-js/maybeerror'
 ], function(Evaluate, Model, data, me) {
 
-    module("model");
-    
     return function () {
 
+        module("model");
+        
         var model = new Model(Evaluate.getDefaultEnv());
         
         test("execution error", function() {

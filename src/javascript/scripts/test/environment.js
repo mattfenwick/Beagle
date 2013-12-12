@@ -1,9 +1,11 @@
-define(["app/environment"], function(Environment) {
-
-    module("environment");
+define([
+  "app/environment"
+], function(Environment) {
 
     return function () {
 
+        module("environment");
+    
         test("environment lookup", function () {
             var par = Environment.Environment(false, {
                     'a': 3,

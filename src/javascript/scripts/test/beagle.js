@@ -4,9 +4,9 @@ define([
   "unparse-js/maybeerror"
 ], function(beagle, ast, me) {
 
-    module("beagle");
-    
     return function () {
+        
+        module("beagle");
         
         test("tokenization error", function() {
             var r = beagle.parse('123 ",doit now');

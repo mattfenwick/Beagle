@@ -1,10 +1,14 @@
-define(["app/ast", "test/helper"], function(ast, testHelper) {
+define([
+  "app/ast", 
+  "test/helper"
+], function(ast, testHelper) {
 
-    module("AST data");
-    
     var exp = testHelper.expectException;
 
     return function () {
+
+        module("AST data");
+
         test("number", function() {
             deepEqual({type: 'astnode', asttype: 'number', value: 13, meta: 'abc'}, ast.number(13, 'abc'));
         

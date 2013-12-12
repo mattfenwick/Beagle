@@ -1,9 +1,15 @@
-define(["app/evaluate", "app/ast", "app/data", "app/environment", "test/helper"], function(evaluate, ast, data, envir, testHelper) {
+define([
+  "app/evaluate", 
+  "app/ast", 
+  "app/data", 
+  "app/environment", 
+  "test/helper"
+], function(evaluate, ast, data, envir, testHelper) {
     
-    module("Evaluate");
-
     return function () {
 
+        module("Evaluate");
+    
         var ev = evaluate,
             expectExc = testHelper.expectException,
             num = data.Number,

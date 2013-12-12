@@ -1,8 +1,12 @@
-define(["app/macros", "app/parser"], function(macros, parser) {
+define([
+  "app/macros", 
+  "app/parser"
+], function(macros, parser) {
 
-    module("macros");
-    
     return function () {
+
+        module("macros");
+    
         var list = parser.ASTList,
             lam = parser.Lambda,
             def = parser.Define,

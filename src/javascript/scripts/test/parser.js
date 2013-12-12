@@ -4,9 +4,10 @@ define([
   "unparse-js/maybeerror"
 ], function(P, A, M) {
 
-    module("parser");
-    
     return function () {
+
+        module("parser");
+        
         var pp  =  parser.parse,
             t   =  tokens.Token,
             ti  =  t('integer', '33', 14),

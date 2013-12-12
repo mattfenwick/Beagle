@@ -1,8 +1,13 @@
-define(["app/functions", "app/data", "test/helper"], function(funcs, data, testHelper) {
+define([
+  "app/functions", 
+  "app/data", 
+  "test/helper"
+], function(funcs, data, testHelper) {
 
-    module("functions");
-    
     return function () {
+
+        module("functions");
+        
         var list = data.List,
             ch = data.Char,
             str = data.makeCharList,

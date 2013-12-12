@@ -1,8 +1,12 @@
-define(["app/unparser", "app/parser"], function(unparser, parser) {
+define([
+  "app/unparser", 
+  "app/parser"
+], function(unparser, parser) {
 
-    module("AST unparsing");
-    
     return function () {
+
+        module("AST unparsing");
+        
         var unp = unparser.unparse,
             num = parser.ASTNumber,
             char = parser.ASTChar,
