@@ -9,7 +9,8 @@ define([
         satisfy = pos.satisfy, alt = C.alt, seq2L = C.seq2L,
         many0 = C.many0, many1 = C.many1, optional = C.optional,
         not1 = pos.not1, seq2R = C.seq2R, error = C.error,
-        node = Cst.node, cut = Cst.cut;
+        node = Cst.node, cut = Cst.cut, not0 = C.not0,
+        item = pos.item;
     
     var _digit = oneOf('0123456789'), // um, does that need to be an array?
 
@@ -116,7 +117,7 @@ define([
         
     // written this way to allow mutual recursion
     //   yes, `tok(string)` is odd ... avoids name conflict
-    form.parse = alt(spec, app, list, symbol, number, tok(string)).parse;
+    form.parse = alt(spec, app, list, symbol, number, tok(_string)).parse;
     
     var beagle = seq2L(seq2R(junk, many0(form)), 
                        cut('unparsed input remaining', not0(item)));

@@ -19,9 +19,14 @@ var NEW_TESTS = [
 ];
 
 require(NEW_TESTS, function() {
-    module("testmain");
-    
-    test("testmain", function() {
-        ok(1, "modules loaded");
+    var mods = Array.prototype.slice.call(arguments);
+    mods.map(function(mod, ix) {
+        try {
+            mod();
+        } catch (e) {
+            test("uncaught exception", function() {
+                deepEqual(0, e.message);
+            });
+        }
     });
 });
