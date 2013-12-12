@@ -1,4 +1,8 @@
-define(['app/beagle', 'app/evaluate', 'libs/maybeerror'], function(beagle, evaluate, me) {
+define([
+  'app/beagle', 
+  'app/evaluate', 
+  'unparse-js/maybeerror'
+], function(beagle, evaluate, me) {
     "use strict";
 
     function Model(env) {

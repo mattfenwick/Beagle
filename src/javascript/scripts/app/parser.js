@@ -1,186 +1,135 @@
-define(["app/ast", "libs/parser", "libs/maybeerror"], function(AST, P, MaybeError) {
+define([
+  "unparse-js/combinators", 
+  "unparse-js/cst"
+], function(C, Cst) {
     "use strict";
+    
+    var pos = C.position,
+        literal = pos.literal, oneOf = pos.oneOf, string = pos.string,
+        satisfy = pos.satisfy, alt = C.alt, seq2L = C.seq2L,
+        many0 = C.many0, many1 = C.many1, optional = C.optional,
+        not1 = pos.not1, seq2R = C.seq2R, error = C.error,
+        node = Cst.node, cut = Cst.cut;
+    
+    var _digit = oneOf('0123456789'), // um, does that need to be an array?
+
+        _decimal = node('decimal',
+                        ['dot'   , literal('.') ],
+                        ['digits', many0(_digit)]),
+
+        _number = node('number',
+                       ['int'    , many1(_digit)     ],
+                       ['decimal', optional(_decimal)]),
         
-    function tokentype(type) {
-        return P.satisfy(
-            function(t) {
-                return t.tokentype === type;
-            });
-    }
-
-    var pNumber = tokentype('integer')
-        .plus(tokentype('float'))
-        .fmap(function(t) {return AST.number(parseFloat(t.value), t.meta);});
-    
-    function stringAction(t) {
-        var newList = t.value.split('').map(AST.char);
-        return AST.list(newList, t.meta);
-    }
-    
-    var pString = tokentype('string')
-        .fmap(stringAction);
-
-    var pSymbol = tokentype('symbol')
-        .fmap(function(t) {return AST.symbol(t.value, t.meta);});
-
-    var pForm = P.error("javascript hack to allow mutual recursion -- still need to set function");
-    
-
-    var pList = tokentype('open-square')
-        .bind(function(open) {
-            return pForm.many0()
-                .fmap(function(xs) {return AST.list(xs, open.meta);})
-                .seq2L(P.item.bind(function(close) {
-                    if ( close.value === ']' ) {
-                        return P.pure(null);
-                    }
-                    return P.error({'message': 'unable to match list', 'open': open, 'expected close': close});
-                }))
-                .commit({'message': 'unable to match list', 'open': open});
-        });
-    
-    var pApplication = tokentype('open-paren')
-        .bind(function(open) {
-            return P.app(AST.application,
-                         pForm,
-                         pForm.many0(),
-                         P.pure(open.meta))
-                .seq2L(P.item.bind(function(close) {
-                    if ( close.value === ')' ) {
-                        return P.pure(null);
-                    }
-                    return P.error({'message': 'unable to match application', 'open': open, 'expected close': close});
-                }))
-                .commit({'message': 'unable to match application', 'open': open});
-        });
-    
-    var bareSymbol = pSymbol.fmap(function(s) {
-        return s.value;
-    });
-    
-    function symbol(name) {
-        return pSymbol.check(function(s) {return s.value === name;});
-    }
-    
-    function error(rule, expected, open) {
-        return {
-            'rule'   : rule,
-            'message': 'expected ' + expected,
-            'open'   : open
-        };
-    }
-    
-    function pDefine(open) {
-        return symbol('define')
-            .seq2R(P.app(AST.define, 
-                         bareSymbol.commit(error('define', 'symbol', open)),
-                         pForm.commit(error('define', 'form', open)),
-                         P.pure(open.meta)));
-    }
-
-    function pSet(open) {
-        return symbol('set')
-            .seq2R(P.app(AST.set, 
-                         bareSymbol.commit(error('set', 'symbol', open)),
-                         pForm.commit(error('set', 'form', open)),
-                         P.pure(open.meta)));
-    }
+        _simple = node('simple',
+                       ['char', not1(oneOf('\\"'))]),
         
-    var condBranches =
-        tokentype('open-curly')
-        .seq2R(tokentype('open-curly')
-              .seq2R(P.all([pForm, pForm]))
-              .seq2L(tokentype('close-curly'))
-              .many0())
-        .seq2L(tokentype('close-curly'));
-    
-    function pCond(open) {
-        return symbol('cond')
-            .seq2R(P.app(AST.cond, 
-                         condBranches.commit(error('cond', 'predicate/result pairs', open)),
-                         pForm.commit(error('cond', 'else form', open)),
-                         P.pure(open.meta)));
-    }
-    
-    function myLambda(_1, _2, params, _3, bodies, meta) {
-        var lastBody = bodies.pop();
-        return AST.lambda(params, bodies, lastBody, meta);
-    }
-    
-    function uniqueNames(params) {
-        var names = {}, i;
-        for(i = 0; i < params.length; i++) {
-            if(params[i] in names) {
-                return P.error({'message': 'repeated symbol in parameter list', 
-                                'rule': 'lambda', 'symbols': params});
-            }
-            names[params[i]] = 1;
-        }
-        return P.pure(params);
-    }
-    
-    var onlySymbol = 
-        bareSymbol.plus(P.item.bind(function(t) {
-                                        if ( t.tokentype === 'close-curly' ) {
-                                            return P.zero;
-                                        }
-                                        return P.error({'message': 'non-symbol in parameter list',
-                                                        'rule': 'lambda', token: t});
-                                    }));
-            
-    function pLambda(open) {
-        return P.app(
-	        myLambda,
-	        symbol('lambda'),
-	        tokentype('open-curly').commit(error('lambda', 'parameter list', open)),
-	        onlySymbol.many0().bind(uniqueNames),
-	        tokentype('close-curly').commit(error('lambda', "'}' to close parameter list", open)),
-	        pForm.many1().commit(error('lambda', 'body forms', open)),
-	        P.pure(open.meta));
-	}
+        _escape = node('escape',
+                       ['open', literal('\\')              ],
+                       ['char', cut('escape', oneOf('\\"'))]),
+                       
+        _string = node('string',
+                       ['open' , literal('"')                ],
+                       ['body' , many0(alt(_simple, _escape))],
+                       ['close', cut('"', literal('"'))      ]),
         
-    var pSpec = tokentype('open-curly')
-        .bind(function(open) {
-            return P.any([pDefine(open), pSet(open), pCond(open), pLambda(open)])
-                .commit({'message': 'unable to match special form', 'open': open})
-                .seq2L(P.item.bind(function(close) {
-                    if ( close.value === '}' ) {
-                        return P.pure(null);
-                    }
-                    return P.error({'message': 'unable to match special form',
-                                    'open': open, 'expected close': close});
-                }));
-        });
+        // not sure if the checks are right
+        //   or the argument order of `check` for that matter
+        _letter = satisfy(function(c) {return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');}),
+        
+        _special = oneOf('!@#$%^&*-_=+?/<>'),
+        
+        _symbol = node('symbol', 
+                       ['first', alt(_letter, _special)               ],
+                       ['rest' , many0(alt(_letter, _digit, _special))]),
+        
+        _comment = node('comment', 
+                        ['open', literal(';')],
+                        ['body', many0(not1(literal('\n')))]),
+
+        _whitespace = node('whitespace',
+                           ['value', many1(oneOf(' \t\n\r\f'))]),
+        
+        junk = many0(alt(_comment, _whitespace));
     
+    function tok(p) {
+        return seq2L(p, junk);
+    }
+    
+    var number = tok(_number),
+//        string = tok(_string), // nope -- would conflict with parser combinator
+        symbol = tok(_symbol),
+        os     = tok(literal('[')),
+        cs     = tok(literal(']')),
+        op     = tok(literal('(')),
+        cp     = tok(literal(')')),
+        oc     = tok(literal('{')),
+        cc     = tok(literal('}'));
+        
+    var form = error('undefined'), // for mutual recursion,
+    
+        list = node('list',
+                    ['open' , os          ],
+                    ['body' , many0(form) ],
+                    ['close', cut(']', cs)]),
+        
+        app = node('app',
+                   ['open'    , op          ],
+                   ['operator', form        ],
+                   ['args'    , many0(form) ],
+                   ['close'   , cut(')', cp)]),
+                    
+        define = node('define',
+                      ['def'   , tok(string('define'))],
+                      ['symbol', cut('symbol', symbol)],
+                      ['form'  , cut('form', form)    ]),
+        
+        set = node('set',
+                   ['set'   , tok(string('set'))   ],
+                   ['symbol', cut('symbol', symbol)],
+                   ['form'  , cut('form', form)    ]),
+        
+        _pair = node('pair',
+                     ['open'     , oc                    ],
+                     ['condition', cut('condition', form)],
+                     ['result'   , cut('result', form)   ],
+                     ['close'    , cut('}', cc)          ]),
+
+        cond = node('cond',
+                    ['cond' , tok(string('cond'))],
+                    ['open' , cut('{', oc)       ],
+                    ['pairs', many0(_pair)       ],
+                    ['close', cut('}', cc)       ],
+                    ['else' , cut('form', form)  ]),
+        
+        lambda = node('lambda',
+                      ['lambda'    , tok(string('lambda'))    ],
+                      ['open'      , cut('{', cc)             ],
+                      ['parameters', many0(_symbol)           ],
+                      ['close'     , cut('}', cc)             ],
+                      ['body'      , cut('forms', many1(form))]),
+        
+        spec = node('special', 
+                    ['open' , oc                                                 ], 
+                    ['value', cut('special form', alt(define, set, cond, lambda))],
+                    ['close', cc                                                 ]);
+        
     // written this way to allow mutual recursion
-    pForm.parse = P.any([pSpec, pApplication, pList, pSymbol, pNumber, pString]).parse;
+    //   yes, `tok(string)` is odd ... avoids name conflict
+    form.parse = alt(spec, app, list, symbol, number, tok(string)).parse;
     
-    var CLOSES = {'}': 1, ']': 1, ')': 1};
-    
-    var parser = 
-        P.item.bind(function(t) {
-            if ( t.value in CLOSES ) {
-                return P.error({'message': 'unmatched close brace', token: t});
-            }
-            return P.zero;
-        }).not0()
-        .seq2R(pForm)
-        .many0()
-        .seq2L(P.get.bind(function(ts) { // victory or death
-            return P.item.not0()
-                .commit({message: 'unable to parse entire token stream', 
-                         'remaining tokens': ts});
-        }));
+    var beagle = seq2L(seq2R(junk, many0(form)), 
+                       cut('unparsed input remaining', not0(item)));
     
     return {
-        'number'       :  pNumber,
-        'symbol'       :  pSymbol,
-        'string'       :  pString,
-        'application'  :  pApplication,
-        'list'         :  pList,
-        'special'      :  pSpec,
-        'form'         :  pForm,
-        'parse'        :  parser
+        'number'  :  number,
+        'symbol'  :  symbol,
+        'string'  :  string,
+        'app'     :  app,
+        'list'    :  list,
+        'special' :  spec,
+        'form'    :  form,
+        'beagle'  :  beagle
     };
 
 });

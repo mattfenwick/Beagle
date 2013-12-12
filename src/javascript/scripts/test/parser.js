@@ -1,4 +1,8 @@
-define(["app/parser", "app/ast", "app/tokens", "libs/maybeerror"], function(parser, ast, tokens, maybeerror) {
+define([
+  "app/parser",
+  "app/ast",
+  "unparse-js/maybeerror"
+], function(P, A, M) {
 
     module("parser");
     

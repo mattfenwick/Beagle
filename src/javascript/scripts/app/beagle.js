@@ -1,4 +1,7 @@
-define(["app/tokenizer", "app/parser", "libs/maybeerror"], function (tokenizer, parser, me) {
+define([
+  "app/parser", 
+  "unparse-js/maybeerror"
+], function (parser, me) {
     "use strict";
 
     function stripJunk(tokens) {

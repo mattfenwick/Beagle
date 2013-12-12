@@ -1,4 +1,8 @@
-define(["app/beagle", "app/ast", "libs/maybeerror"], function(beagle, ast, me) {
+define([
+  "app/beagle", 
+  "app/ast", 
+  "unparse-js/maybeerror"
+], function(beagle, ast, me) {
 
     module("beagle");
     
