@@ -5,22 +5,25 @@ Concrete syntax, loosely using [BNF](http://en.wikipedia.org/wiki/Backus%E2%80%9
 
     Beagle       :=  Form{+}
     
-    Form         :=  Special  |  Application  |  List  |  SYMBOL  |  NUMBER  |  STRING
+    Form         :=  Special  |  Application  |  Object  |  List  |  SYMBOL  |  NUMBER  |  STRING
     
-    Special      :=  '{'  ( Define  |  Set  |  Cond  |  Lambda )  '}'
+    Special      :=  '{'  ( Define  |  Set  |  Cond  |  Function )  '}'
 
     Application  :=  '('  Form{+}  ')' 
     
+    Object       :=  '{'  key/val(*)  '}'
+        key/val  :=  STRING  ':'  Form
+    
     List         :=  '['  Form{*}  ']'
     
-    Define       :=  'define'  SYMBOL  Form
+    Define       :=  'def'  SYMBOL  Form
 
     Set          :=  'set'  SYMBOL  Form
 
     Cond         :=  'cond'  '{'  pair{*}  '}'  Form
         pair     :=  '{'  Form  Form  '}'
 
-    Lambda       :=  'lambda'  '{'  SYMBOL{*}  '}'  Form{+}
+    Function     :=  'fn'  '{'  SYMBOL{*}  '}'  Form{+}
     
 
 
@@ -42,10 +45,13 @@ Whitespace and comments can occur in any amount between any tokens:
 
     CLOSE-CURLY    :=  }
     
-    STRING         :=  /"([^\\"]|\\")*"/
-
+    STRING         :=  '"'  ( simple  |  escape )(*)  '"'
+        simple     :=  [^\\"]
+        escape     :=  '\\'  [\\"]
+        
     COMMENT        :=  /;[^\n]*/
 
     SYMBOL         :=  /[a-zA-Z!@#$%^&*-_=+?/<>][a-zA-Z0-9!@#$%^&*-_=+?/<>]*/
 
-    NUMBER         :=  /\d+(\.\d*)?/  |  /\.\d+/
+    NUMBER         :=  /\d+/
+

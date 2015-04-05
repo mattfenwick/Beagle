@@ -10,15 +10,15 @@ var module = describe,
 
 module("parser", function() {
     
-    function number(pos, int, dec) {
-        return {'_name': 'number', '_state': pos, 'int': int, 'decimal': dec};
+    function number(pos, int) {
+        return {'_name': 'number', '_state': pos, 'int': int};
     }
     
     var pure = M.pure,
         error = M.error,
         empty = {},
         form = P.form,
-        on1 = number([1,1], ['0', '0', '4'], null); // can't really reuse since location-specific ... can we?
+        on1 = number([1,1], ['0', '0', '4']);
         
     function good(value, rest, state) {
         return pure({'result': value, 'rest': rest, 'state': state});
@@ -26,25 +26,24 @@ module("parser", function() {
     
     test("number", function() {
         deepEqual(form.parse('004', [1,1]), good(on1, '', [1,4]));
-        deepEqual(form.parse('3.'), {});
-        deepEqual(form.parse('13.21'), {});
-        deepEqual(form.parse('.89'), {});
+        deepEqual(form.parse('1321ab', [3,2]), good(number([3,2], '1321'.split('')), 'ab', [3,6]));
     });
     
-    test("string", function() {
+/*    test("string", function() {
     
     });
     
     test("symbol", function() {
     
     });
-    
-    test("list", function() {
+*/    
+/*    test("list", function() {
         deepEqual(form.parse('[]', [1,1]), good({}, '', [1,3]));
         deepEqual(form.parse('[a 123]', [1,1]), good({}, '', [1,8]));
         deepEqual(form.parse('[', [1,1]), error({}));
     });
-    
+/*
+/*    
     test("application", function() {
         deepEqual(form.parse('(f)', [1,1]), good({}, '', [1,3]));
         deepEqual(form.parse('(f x 2)', [1,1]), good({}, '', [1,3]));
@@ -89,6 +88,6 @@ module("parser", function() {
     test("special forms", function() {        
         deepEqual(form.parse('{blar x 3}', [1,1]), error({}));
     });
-
+*/
 });
 
