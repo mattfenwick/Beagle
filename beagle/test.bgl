@@ -1,0 +1,27 @@
+
+{def x 3}
+
+{set x 4}
+
+{def f {fn {g x y} (g x y)}}
+
+{def !
+  {fn {x}
+      {cond {{x false}}
+            true}}}
+
+{def some-constants
+     [true false null]}
+
+{def and
+  {fn {x y}
+    {cond {{x y}}
+          false}}}
+
+; this is a comment -- it shouldn't be parsed
+
+{def or
+  {fn {x y}
+    {cond {{x true}}
+          y}}}
+
