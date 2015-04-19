@@ -15,8 +15,7 @@ module("frontend", function() {
         console.log('parsed: ' + util.inspect(parsed, {'depth': null}));
         deepEqual(parsed.status, 'success');
     });
-
-/*
+    
     test("simple file", function() {
         var parsed = F.parseASTFromFile('beagle/test.bgl');
         console.log('parsed: ' + util.inspect(parsed, {'depth': null}));
