@@ -15,7 +15,7 @@ module("builder", function() {
     test("symbol", function() {
         var parsed = P.beagle.parse('xyz', [1,1]);
         console.log('parsed: ' + util.inspect(parsed, {'depth': null}));
-        var cst = parsed.value.result[0];
+        var cst = parsed.value.result;
         console.log('cst: ' + util.inspect(cst, {'depth': null}));
         var ast = B.buildAST(cst);
         console.log('ast: ' + util.inspect(ast, {'depth': null}));
