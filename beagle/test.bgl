@@ -11,7 +11,7 @@
             true}}}
 
 {def some-constants
-     [true false null]}
+     [true false nil]}
 
 {def and
   {fn {x y}

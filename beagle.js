@@ -2,6 +2,7 @@
 
 var frontend = require('./lib/frontend'),
     unparser = require('./lib/unparser'),
+    interpreter = require('./lib/interpreter'),
     util = require('util'),
     fs = require('fs');
 
@@ -14,7 +15,14 @@ var commands = {
                           return astErr;
                       }
                       return unparser.unparse(astErr.value);
-                  }
+                  },
+    'interpret' : function(input) {
+                      var astErr = frontend.parseAST(input);
+                      if (astErr.status !== 'success') {
+                          return astErr;
+                      }
+                      return interpreter.interpret(astErr.value);
+                  },
 };
 
 // console.log('args -- ' + process.argv);
