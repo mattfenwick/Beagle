@@ -3,6 +3,7 @@
 var frontend = require('./lib/frontend'),
     unparser = require('./lib/unparser'),
     interpreter = require('./lib/interpreter'),
+    staticanalysis = require('./lib/staticanalysis'),
     util = require('util'),
     fs = require('fs');
 
@@ -22,6 +23,13 @@ var commands = {
                           return astErr;
                       }
                       return interpreter.interpret(astErr.value);
+                  },
+    'analyze'   : function(input) {
+                      var astErr = frontend.parseAST(input);
+                      if (astErr.status !== 'success') {
+                          return astErr;
+                      }
+                      return staticanalysis.variableUsage(astErr.value);
                   },
 };
 
