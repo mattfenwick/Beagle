@@ -1,0 +1,19 @@
+{def length
+  {fn {xs}
+      {cond {{(null? xs) 0}}
+            (+ 1 (length (cdr xs)))}}}
+
+{def nums [1 2 3 4 5]}
+
+{def ln-nums (length nums)}
+
+[nums ln-nums]
+
+{set nums [3 4 5 6 7 8 9 10]}
+
+{def new-ln-nums (length nums)}
+
+{def stuff [(null? nums) (car nums) (cdr nums) (= 0 new-ln-nums) (cons nums nums) true false nil]}
+
+[nums ln-nums stuff]
+
