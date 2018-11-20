@@ -1,0 +1,186 @@
+
+{def test-ok
+  {fn {form message}
+   {cond {{form "ok"}}
+         message}}}
+
+{def test-not-ok
+  {fn {form message}
+   {cond {{form message}}
+         "ok"}}}
+
+
+{def not
+  {fn {x}
+   {cond {{x false}}
+         true}}}
+
+{def not-test
+  {fn {}
+   (test-ok
+    (and (equals? (not false) true)
+         (equals? (not true)  false)))}}
+
+
+{def and
+  {fn {x y}
+    {cond {{x y}}
+          false}}}
+
+{def and-test
+  {fn {}
+   (test-ok
+    (all [(and true true)
+          (not (and true false))
+          (not (and false true))
+          (not (and false false))])
+    "and-tests")}}
+
+
+{def or 
+  {fn {x y}
+    {cond {{x true}}
+          y}}}
+       
+{def or-test
+  {fn {}
+   (test-ok
+    (all [(or true true)
+          (or true false)
+          (or false true)
+          (not (and false false))])
+    "or-tests")}}
+
+
+{def compose
+  {fn {f g}
+   {fn {x}
+    (f (g x))}}}
+
+{def compose-list 
+  {fn {fs}
+   (reduce compose id fs)}}
+
+
+;; not written using `reduce` (for now)
+;; because that would reverse it
+{def map
+  {fn {f xs}
+    {cond {{(null? xs) []}}
+          (cons (f (car xs))
+                (map f (cdr xs)))}}}
+
+{def map-test
+  {fn {}
+   (test-ok
+    (all 
+     [(eq? (map id []) [])
+      (eq? (map id [1 2 3]) [1 2 3])
+      (eq? (map {fn {x} (cons 4 x)}
+                [[1] [] [3 4]])
+           [[4 1] [4] [4 3 4]])])
+    "map-tests")}}
+
+
+{def filter
+  {fn {f xs}
+    {cond {{(null? xs) []}
+           {(f (car xs))
+             (cons (car xs) (filter f (cdr xs)))}}
+          (filter f (cdr xs))}}}
+
+
+{def id 
+  {fn {x} x}}
+
+
+{def reduce
+  {fn {f b xs}
+    {cond {{(null? xs) b}}
+          (reduce f 
+             (f b (car xs)) 
+             (cdr xs))}}}
+                
+
+{def any 
+  {fn {vals}
+	(reduce or false vals)}}
+
+
+{def all 
+  {fn {vals}
+	(reduce and true vals)}}
+
+
+{def zip
+  {fn {l1 l2}
+    {cond {{(null? l1) []}
+           {(null? l2) []}}
+          (cons [(car l1) (car l2)]
+            (zip (cdr l1)
+                 (cdr l2)))}}}
+
+
+{def zip-map
+  {fn {f l1 l2}
+    (map {fn {p}
+           (f (car p) (car (cdr p)))}
+         (zip l1 l2))}}
+       
+       
+{def count
+  {fn {l}
+   (reduce 
+    {fn {b n} (+ b 1)}
+    0 
+    l)}}
+
+
+{def flip
+  {fn {f}
+   {fn {a b}
+    (f b a)}}}
+    
+    
+{def reverse
+  {fn {ls}
+   (reduce (flip cons) [] ls)}}
+
+
+{def ++
+  {fn {l1 l2}
+   (reduce (flip cons) l2 (reverse l1))}}
+
+
+{def join-lists
+  {fn {x y}
+   (reduce ++ []
+           (map {fn {e}
+                 (map {fn {f} (cons e f)} y)} 
+                x))}}
+                
+                
+{def join-many-lists
+  {fn {ls}
+   (reduce (flip join-lists) [[]] ls)}}
+   
+   
+{def error
+  {fn {type message trace}
+   (datum "error" [type message trace])}}
+   
+;; error-type :: Error -> String
+{def error-type
+  {fn {err}
+   (car (value err))}} ;; the 1st elem
+   
+;; error-message :: Error -> String
+{def error-message
+  {fn {err}
+   (car (cdr (value err)))}} ;; the 2nd elem
+   
+;; error-trace :: Error -> a
+{def error-trace
+  {fn {err}
+   (car (cdr (cdr (value err))))}} ;; the 3rd elem
+   

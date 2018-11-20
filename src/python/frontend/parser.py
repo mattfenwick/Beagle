@@ -1,25 +1,6 @@
 import unparse
 import unparse.cst as cst
 
-eg = """
-{define and-test
-  {lambda []
-   (test-ok
-    (all [(and true true)
-          (not (and true false))
-          (not (and false true))
-          (not (and false false))])
-    "and-tests")}}
-"""
-
-oops = """item = unparse.position.item
-literal = unparse.position.literal
-oneOf = unparse.position.oneOf
-
-op, cp, oc, cc, os, cs = map(literal, list('(){}[]'))
-
-number = unparse.many1(oneOf('0123456789'))
-"""
 
 pos = unparse.position
 literal = pos.literal
@@ -40,7 +21,7 @@ item = pos.item
 _digit = oneOf('0123456789')
 
 _number = node('number',
-              ['int'    , many1(_digit)     ])
+              ['int'    , many1(_digit)])
     
 _simple = node('simple',
                ['char', not1(oneOf('\\"'))])
@@ -63,7 +44,7 @@ _symbol = node('symbol',
                ['rest' , many0(alt(_letter, _digit, _special))])
 
 _comment = node('comment',
-                ['open', literal(';')],
+                ['open', literal(';')              ],
                 ['body', many0(not1(literal('\n')))])
 
 _whitespace = node('whitespace',
@@ -93,10 +74,10 @@ bg_list = node('list',
                ['close', cut(']', cs)])
 
 app = node('app',
-           ['open'    , op          ],
-           ['operator', form        ],
-           ['args'    , many0(form) ],
-           ['close'   , cut(')', cp)])
+           ['open'    , op                   ],
+           ['operator', cut('operator', form)],
+           ['args'    , many0(form)          ],
+           ['close'   , cut(')', cp)         ])
             
 bg_def = node('def',
               ['def'   , tok(string('def'))   ],
@@ -131,12 +112,12 @@ fn = node('fn',
 spec = node('special',
             ['open' , oc                                                ],
             ['value', cut('special form', alt(bg_def, bg_set, cond, fn))],
-            ['close', cc                                                ])
+            ['close', cut('{', cc)                                      ])
     
 # mutual recursion
 form.parse = alt(spec, app, bg_list, symbol, number, bg_string).parse
 
 beagle = node('beagle',
-              ['open', junk],
+              ['open', junk        ],
               ['forms', many0(form)],
               ['close', cut('unparsed input remaining', not0(item))])
