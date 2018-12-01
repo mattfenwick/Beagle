@@ -3,6 +3,28 @@ import json
 
 ## Beagle types
 
+class Boolean(object):
+    def __init__(self, value):
+        self.value = value
+    def bgl_type(self):
+        return "boolean"
+    def __str__(self):
+        return "bg-" + str(self.value)
+    def __repr__(self):
+        return self.__str__()
+    def is_true(self):
+        return self.value
+
+bgl_true = Boolean(True)
+bgl_false = Boolean(False)
+
+def bgl_if(pred):
+    if pred:
+#        print "returning bgl_true"
+        return bgl_true
+#    print "returning bgl_false"
+    return bgl_false
+
 class BuiltinFunc(object):
     def __init__(self, name, types, op):
         self.name = name
@@ -22,7 +44,7 @@ class BuiltinFunc(object):
     def bgl_type(self):
         return "func"
     def __str__(self):
-        return "builtin func {} ({})".format(self.name, self.types)
+        return "{{builtin func {} ({})}}".format(self.name, self.types)
     def __repr__(self):
         return self.__str__()
 
@@ -38,7 +60,7 @@ class Nil(object):
     def bgl_type(self):
         return "list"
     def __str__(self):
-        return "nil"
+        return "bg-nil"
     def __repr__(self):
         return self.__str__()
 
@@ -70,6 +92,10 @@ list_car = BuiltinFunc("car", ["list"], lambda l: l.car())
 list_cdr = BuiltinFunc("cdr", ["list"], lambda l: l.cdr())
 list_cons = BuiltinFunc("cons", [None, "list"], lambda h, t: List(h, t))
 list_snoc = BuiltinFunc("snoc", ["list", None], lambda t, h: List(h, t))
+def nilq_action(l):
+#    print "nilq arg:", l, l.is_empty()
+    return bgl_if(l.is_empty())
+list_nilq = BuiltinFunc("nil?", ["list"], nilq_action)
 
 class Closure(object):
     def __init__(self, env, func, name):
@@ -81,22 +107,9 @@ class Closure(object):
     def bgl_type(self):
         return "func"
     def __str__(self):
-        return "closure ({})".format(len(self.func.params))
+        return "{{closure ({})}}".format(len(self.func.params))
     def __repr__(self):
         return self.__str__()
-
-class Boolean(object):
-    def __init__(self, value):
-        self.value = value
-    def bgl_type(self):
-        return "boolean"
-    def __str__(self):
-        return str(self.value)
-    def __repr__(self):
-        return self.__str__()
-
-bgl_true = Boolean(True),
-bgl_false = Boolean(False)
 
 class Number(object):
     def __init__(self, value):
@@ -104,17 +117,12 @@ class Number(object):
     def bgl_type(self):
         return "number"
     def __str__(self):
-        return str(self.value)
+        return "bg-" + str(self.value)
     def __repr__(self):
         return self.__str__()
 
 #def unwrap_apply(f, a, b):
 #    return f(a.value, b.value)
-
-def bgl_if(pred):
-    if pred:
-        return bgl_true
-    return bgl_false
 
 plus  = BuiltinFunc("+" , ["number", "number"], lambda x, y: Number(x.value  + y.value))
 minus = BuiltinFunc("-" , ["number", "number"], lambda x, y: Number(x.value  - y.value))
@@ -135,10 +143,17 @@ class String(object):
     def bgl_type(self):
         return "string"
     def __str__(self):
-        return self.value
+        return "bg-" + self.value
     def __repr__(self):
         return self.__str__()
 
+def print_action(o):
+    """
+    TODO should this return a void/nil/None value or something?
+    """
+    print str(o)
+    return o
+bgl_print = BuiltinFunc("print", [None], print_action)
 
 
 ## Types to support execution, but which aren't directly visible from Beagle
@@ -193,15 +208,13 @@ class Env(object):
             raise TypeError("keys must be strings, got {}".format(type(key)))
     def set(self, key, value):
         self.bindings[key] = value
-    def __repr__(self):
-#        if self.parent is not None:
-#            print "Not none!", self.name
+    def __str__(self):
         s = str({'name': self.name, 'keys': list(self.bindings.iterkeys())})
         if self.parent is None:
             return s
         return "{} -> {}".format(s, repr(self.parent))
-#    def __str__(self):
-#        return json.dumps(self, default=lambda o: o.__dict__)
+    def __repr__(self):
+        return self.__str__()
 
 
 ## Compiler
@@ -249,14 +262,14 @@ def bgl_compile(tree):
     elif tree.type == "beagle":
         for f in tree.forms:
             instrs.extend(bgl_compile(f))
-            # TODO add instruction to ensure stack is empty?
+            instrs.append(("empty", None))
     elif tree.type == "fn":
         proc_instrs = []
         for f in tree.forms:
             proc_instrs.extend(bgl_compile(f))
-            # TODO add instruction to ensure stack is empty?
+            instrs.append(("empty", None))
         params = [p.value for p in tree.params]
-        print "params?", tree.params, params
+#        print "params?", tree.params, params
         instrs.append(("func", Func(params=params, instructions=proc_instrs)))
     elif tree.type == "list":
         instrs.append(("push", bgl_nil))
@@ -273,12 +286,14 @@ def bgl_compile(tree):
 ## Root environment
 
 bindings = {
+    "print": bgl_print,
     "true" : Boolean(True),
     "false": Boolean(False),
     "nil"  : bgl_nil,
     "cons" : list_cons,
     "car"  : list_car,
     "cdr"  : list_cdr,
+    "nil?" : list_nilq,
     "+"    : plus,
     "-"    : minus,
     "*"    : mul,
@@ -308,16 +323,18 @@ def evaluate(instructions, env):
             continue
         # continue executing the current subroutine
         ins, arg = frame.next_inst()
+#        print "instruction, arg, stack:", ins, arg, stack
         i = frame.i
         if ins == "read":
-            print "read env?", list(frame.get_env().bindings.iterkeys()), type(frame.get_env().parent)
-            print "name, parent name:", frame.get_env().name, frame.get_env().parent.name if frame.get_env().parent is not None else "<no parent>"
-            print "frame:", frame.get_env()
+#            print "read env?", list(frame.get_env().bindings.iterkeys()), type(frame.get_env().parent)
+#            print "name, parent name:", frame.get_env().name, frame.get_env().parent.name if frame.get_env().parent is not None else "<no parent>"
+#            print "frame:", frame.get_env()
             stack.append(frame.get_env().get(arg))
             i += 1
         elif ins == "ifn":
             val = stack.pop()
-            if not val:
+#            print "val?", val
+            if not val.is_true():
                 i += arg
             else:
                 i += 1
@@ -333,9 +350,16 @@ def evaluate(instructions, env):
             i += 1
         elif ins == "func":
             func = arg
-            print "func?", type(func), func
+#            print "func?", type(func), func
             stack.append(Closure(frame.get_env(), func, str(closure_counter)))
             closure_counter += 1
+            i += 1
+        elif ins == "empty":
+            if len(stack) > 1:
+                raise Exception("expected stack size of 0 or 1, found {}".format(len(stack)))
+#            print "length of stack (should be 0):", len(stack)
+            while len(stack) > 0:
+                print "popping for cleanup:", stack.pop()
             i += 1
         elif ins == "apply":
             op = stack.pop()
@@ -352,15 +376,7 @@ def evaluate(instructions, env):
                     bindings[key] = stack.pop()
                 code.append(ClosureFrame(0, bindings, op))
                 i += 1
-        elif ins == "print":
-            print stack.pop()
-            i += 1
         else:
             raise Exception("unrecognized instruction {}, arg {}".format(ins, arg))
         frame.i = i
-    if len(stack) > 1:
-        raise Exception("expected zero or one value on stack, found {} ({})".format(len(stack), stack))
-    elif len(stack) == 0:
-        return None
-    ret_val = stack.pop()
-    return ret_val
+    print "execution finished, {} values left on stack ({})".format(len(stack), stack)

@@ -7,13 +7,15 @@ from . import compiler
 
 def parse(input):
     ast_error = frontend.parse_ast(input)
-    print "ast:", ast_error, ast_error.__dict__, "\n", json.dumps(ast_error, default=lambda o: o.__dict__), "\n"
+#    print "ast:", ast_error, ast_error.__dict__, "\n", json.dumps(ast_error, default=lambda o: o.__dict__), "\n"
     if ast_error.status != "success":
         print "failed parse!"
         return
     ast = ast_error.value
     insts = compiler.bgl_compile(ast)
-    print "instructions:", insts
+    for i in insts:
+        print i
+#    print "instructions:", insts
     env = compiler.root_env
     val = compiler.evaluate(insts, env)
     print "eval:", val, env
@@ -55,5 +57,28 @@ flip
 (flip cons)
 {def snoc (flip cons)}
 (snoc xs 100)
+(print 117)
 """
-parse(b)
+# parse(b)
+
+c = """
+(+ 1 14)
+{def length
+  {fn {xs}
+    {cond {{(nil? xs) 0}}
+      (+ 1 (length (cdr xs)))}}}
+(length nil)
+(length [])
+(length [1])
+(length [1 2 3 4 5])
+{def pee
+  {fn {x} (* x 7)}}
+{def poop
+  {fn {x}
+    (+ x (pee 3))}}
+;(poop 9)
+(nil? [1])
+{cond {{(nil? [1]) 3}}
+  4}
+"""
+parse(c)
