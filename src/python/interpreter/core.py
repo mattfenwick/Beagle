@@ -248,7 +248,7 @@ def evalSet(node, env) {
     return beagleNil;
 }
 
-def evalCond(node, env) {
+def eval_cond(node, env, stack):
     var pairs = node.branches,
         test, i;
     
@@ -256,43 +256,36 @@ def evalCond(node, env) {
         test = evaluate(pairs[i][0], env);
         typeCheck('Boolean', test.datatype, 'cond', "condition of argument " + (i + 1));
         
-        if (test.value) {
-            return evaluate(pairs[i][1], env);
-        }
-    }
+        if test.value:
+            return evaluate(pairs[i][1], env)
     
-    // didn't find a true condition
-    return evaluate(node.elseValue, env);
-}
+    # didn't find a true condition
+    return evaluate(node.else_value, env, stack)
 
-def evalFn(node, env) {
-    // TODO could put the position into the name
-    var params = node.params.map(function(p) {return p.strValue;});
-    return constructors.UserFunc('user function', params, node.forms, env);
-}
+def eval_fn(node, env, stack):
+    # TODO could put the position into the name
+    params = list(p.value for p in node.params)
+    return UserFunc('user function', params, node.forms, env);
 
-def eval_beagle(node, env):
-    var evaled = [];
-    // using forEach to emphasize the side effects from passing `env`
-    node.forms.forEach(function(form) {
-        evaled.push(evaluate(form, env));
-    });
-    return evaled;
-}
+def eval_beagle(node, env, stack):
+    evaled = []
+    for form in node.forms:
+        evaled.append(evaluate(form, env, stack))
+    return evaled
 
 actions = {
-        'Number'     : evalNumber,
-        'Symbol'     : evalSymbol,
-        'String'     : evalString,
-        'List'       : evalList,
+        'Number'     : eval_number,
+        'Symbol'     : eval_symbol,
+        'String'     : eval_string,
+        'List'       : eval_list,
 #            'Dictionary'  : evalDictionary, // TODO
-        'Application': evalApplication,
-        'Def'        : evalDefine,
-        'Set'        : evalSet,
-        'Cond'       : evalCond,
-        'Fn'         : evalFn,
-        'Beagle'     : evalBeagle,
+        'Application': eval_application,
+        'Def'        : eval_define,
+        'Set'        : eval_set,
+        'Cond'       : eval_cond,
+        'Fn'         : eval_fn,
+        'Beagle'     : eval_beagle,
     }
 
-def evaluate(node, env):
-    return actions[node.asttype](node, env)
+def evaluate(node, env, stack):
+    return actions[node.asttype](node, env, stack)

@@ -24,7 +24,7 @@ class Env(object):
     
     def add_binding(self, key, value):
         if key in self.bindings:
-            raise Exception("environment %s already has binding for %s (%s)".format(self.name, key, self.bindings[key]))
+            raise Exception("environment {} already has binding for {} ({})".format(self.name, key, self.bindings[key]))
         self.bindings[key] = value
     
     def set_binding(self, key, value):
@@ -33,4 +33,4 @@ class Env(object):
         elif self.parent is not None:
             self.parent.set_binding(key, value)
         else:
-            raise Exception("environment %s does not have binding for %s, cannot set".format(self.name, key))
+            raise Exception("environment {} does not have binding for {}, cannot set".format(self.name, key))
