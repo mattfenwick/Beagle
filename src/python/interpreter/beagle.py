@@ -78,7 +78,11 @@ c = """
     (+ x (pee 3))}}
 ;(poop 9)
 (nil? [1])
-{cond {{(nil? [1]) 3}}
+{cond {{(nil? []) 3}}
   4}
+;z
+{def z 41}
+{def z 31}
+z
 """
 parse(c)

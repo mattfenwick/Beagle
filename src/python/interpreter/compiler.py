@@ -324,43 +324,36 @@ def evaluate(instructions, env):
         # continue executing the current subroutine
         ins, arg = frame.next_inst()
 #        print "instruction, arg, stack:", ins, arg, stack
-        i = frame.i
+        jump = 1
         if ins == "read":
 #            print "read env?", list(frame.get_env().bindings.iterkeys()), type(frame.get_env().parent)
 #            print "name, parent name:", frame.get_env().name, frame.get_env().parent.name if frame.get_env().parent is not None else "<no parent>"
 #            print "frame:", frame.get_env()
             stack.append(frame.get_env().get(arg))
-            i += 1
         elif ins == "ifn":
             val = stack.pop()
 #            print "val?", val
             if not val.is_true():
-                i += arg
-            else:
-                i += 1
+                jump = arg
         elif ins == "jump":
-            i += arg
+            jump = arg
         elif ins == "return":
             code.pop()
         elif ins == "push":
             stack.append(arg)
-            i += 1
         elif ins == "store":
             frame.get_env().set(arg, stack.pop())
-            i += 1
         elif ins == "func":
             func = arg
 #            print "func?", type(func), func
             stack.append(Closure(frame.get_env(), func, str(closure_counter)))
             closure_counter += 1
-            i += 1
         elif ins == "empty":
             if len(stack) > 1:
                 raise Exception("expected stack size of 0 or 1, found {}".format(len(stack)))
 #            print "length of stack (should be 0):", len(stack)
             while len(stack) > 0:
                 print "popping for cleanup:", stack.pop()
-            i += 1
         elif ins == "apply":
             op = stack.pop()
             if op.is_builtin():
@@ -368,15 +361,13 @@ def evaluate(instructions, env):
                 for _ in range(arg):
                     args.append(stack.pop())
                 stack.append(op.apply(args[::-1]))
-                i += 1
             else:
                 bindings = {}
 #                print "user-defined op:", dir(op), dir(op.__dict__), type(op.func), op.func
                 for key in op.func.params[::-1]:
                     bindings[key] = stack.pop()
                 code.append(ClosureFrame(0, bindings, op))
-                i += 1
         else:
             raise Exception("unrecognized instruction {}, arg {}".format(ins, arg))
-        frame.i = i
+        frame.i += jump
     print "execution finished, {} values left on stack ({})".format(len(stack), stack)
