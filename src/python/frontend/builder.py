@@ -68,7 +68,7 @@ def fn(cst):
         param = param_err.value
         if param.value in params_set:
             # TODO -- positions
-            return M.error({'message': 'duplicate parameter name', 'name': param.name, 'positions': null})
+            return M.error({'message': 'duplicate parameter name', 'name': param.name, 'positions': None})
         params.append(param)
         params_set.add(param.value)
     forms = []

@@ -190,7 +190,7 @@ def eval_Application(node, env):
     func = evaluate(node.operator, env)
     return applyFunction(func, env, node.arguments)
 
-def applyFunction(func, env, args) {
+def applyFunction(func, env, args):
     # TODO can this be cleaned up?
     fname = func.name if (func.datatype == 'BuiltinFunc') else 'user-defined function'
     expectedNumArgs = len(func.types) if (func.datatype == 'BuiltinFunc') else len(func.params)

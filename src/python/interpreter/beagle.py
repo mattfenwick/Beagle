@@ -3,8 +3,6 @@ from .. import frontend
 import unparse.maybeerror as me
 import json
 from . import compiler
-from . import stackvm
-from . import types
 
 
 def parse(input):
@@ -14,14 +12,14 @@ def parse(input):
         print "failed parse!"
         return
     ast = ast_error.value
-    insts = compiler.compile(ast)
+    insts = compiler.bgl_compile(ast)
     print "instructions:", insts
-    env = stackvm.root_env
-    val = stackvm.evaluate(insts, env)
+    env = compiler.root_env
+    val = compiler.evaluate(insts, env)
     print "eval:", val, env
 
 
-parse("""4
+a = """4
 {def x 31}
 {def f {fn {x} x}}
 (f x)
@@ -38,4 +36,24 @@ parse("""4
 (um true false 32 29)
 (um false true 27 74)
 (um false false 99 100)
-""")
+(+ 32 29)
+[1 2 3]
+"""
+
+# parse(a)
+
+b = """
+{def xs [1 2 3]}
+(car xs)
+(cdr xs)
+(cons 34 xs)
+cons
+{def flip
+  {fn {f}
+    {fn {x y} (f y x)}}}
+flip
+(flip cons)
+{def snoc (flip cons)}
+(snoc xs 100)
+"""
+parse(b)

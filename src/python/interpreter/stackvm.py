@@ -1,4 +1,5 @@
 from .types import Frame, ClosureFrame, Closure, Op, Env
+from . import runtime
 import operator
 
 
@@ -6,8 +7,10 @@ bindings = {
     # TODO use custom types?  wrapped bools, ints?
     "true": True,
     "false": False,
-    "+" : Op(operator.add),
-    "-" : Op(operator.sub),
+    "car": runtime.list_car,
+    "cdr": runtime.list_cdr,
+    "+" : runtime.plus,
+    "-" : runtime.minus,
     "*" : Op(operator.mul),
     "/" : Op(operator.div),
     "<" : Op(operator.lt),

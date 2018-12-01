@@ -75,8 +75,8 @@ class Env(object):
     def set(self, key, value):
         self.bindings[key] = value
     def __repr__(self):
-        if self.parent is not None:
-            print "Not none!", self.name
+#        if self.parent is not None:
+#            print "Not none!", self.name
         s = str({'name': self.name, 'keys': list(self.bindings.iterkeys())})
         if self.parent is None:
             return s
