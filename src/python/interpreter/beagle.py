@@ -12,13 +12,13 @@ def parse(input):
         print "failed parse!"
         return
     ast = ast_error.value
-    insts = compiler.bgl_compile(ast)
-    for i in insts:
-        print i
+    insts = compiler.bgl_compile_wrapper(ast)
+    for (ix, instruction) in enumerate(insts):
+        print "\t", ix, "\t", instruction
 #    print "instructions:", insts
     env = compiler.root_env
-    val = compiler.evaluate(insts, env)
-    print "eval:", val, env
+    compiler.evaluate(insts, env)
+    print "after eval:", env
 
 
 a = """4

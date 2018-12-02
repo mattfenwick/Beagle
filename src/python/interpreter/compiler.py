@@ -98,16 +98,16 @@ def nilq_action(l):
 list_nilq = BuiltinFunc("nil?", ["list"], nilq_action)
 
 class Closure(object):
-    def __init__(self, env, func, name):
-        self.env = env
-        self.func = func # TODO should this be a code pointer?
+    def __init__(self, parent_env, address, name):
+        self.parent_env = parent_env
+        self.address = address
         self.name = name
     def is_builtin(self):
         return False
     def bgl_type(self):
         return "func"
     def __str__(self):
-        return "{{closure ({})}}".format(len(self.func.params))
+        return "{{closure ({}@{})}}".format(self.name, self.address)
     def __repr__(self):
         return self.__str__()
 
@@ -158,37 +158,15 @@ bgl_print = BuiltinFunc("print", [None], print_action)
 
 ## Types to support execution, but which aren't directly visible from Beagle
 
-class Func(object):
-    def __init__(self, params, instructions):
-        self.params = params
-        self.instructions = instructions
-    def __repr__(self):
-        return json.dumps(self, default=lambda o: o.__dict__)
-
 class Frame(object):
-    def __init__(self, name, env, i, instructions):
+    def __init__(self, name, env, return_address):
         self.name = name
         self.env = env
-        self.i = i
-        self.instructions = instructions
-    def next_inst(self):
-        return self.instructions[self.i]
-    def is_done(self):
-        return self.i == len(self.instructions)
-    def get_env(self):
-        return self.env
-
-class ClosureFrame(object):
-    def __init__(self, i, bindings, closure):
-        self.i = i
-        self.env = Env(bindings, name="closure-{}".format(closure.name), parent=closure.env)
-        self.closure = closure
-    def next_inst(self):
-        return self.closure.func.instructions[self.i]
-    def is_done(self):
-        return self.i == len(self.closure.func.instructions)
-    def get_env(self):
-        return self.env
+        self.return_address = return_address
+    def __str__(self):
+        return str((len(list(self.env.bindings.iterkeys())), self.env.parent_count(), self.return_address))
+    def __repr__(self):
+        return self.__str__()
 
 class Env(object):
     def __init__(self, bindings, name, parent=None):
@@ -197,6 +175,13 @@ class Env(object):
         self.parent = parent
         for key in self.bindings:
             self._check_key_type(key)
+    def parent_count(self):
+        e = self
+        parents = 0
+        while e is not None:
+            parents += 1
+            e = e.parent
+        return parents
     def get(self, key):
         if key in self.bindings:
             return self.bindings[key]
@@ -219,15 +204,37 @@ class Env(object):
 
 ## Compiler
 
-def bgl_compile(tree):
+def bgl_compile_wrapper(tree):
+    ctx = {'funcs': []}
+    instrs = bgl_compile(tree, ctx)
+    instrs.append(("return", None))
+    offsets = {}
+    # calculate function addresses
+    for (label, func_instrs) in ctx['funcs']:
+        print "label:", label
+        offsets[label] = len(instrs)
+        instrs.extend(func_instrs)
+    # fill in function addresses
+    for i in range(len(instrs)):
+        inst, arg = instrs[i]
+        if inst == "func":
+            if arg in offsets:
+                instrs[i] = (inst, offsets[arg])
+            else:
+                raise Exception("couldn't find label {} in offset (keys {})".format(arg, list(offsets.iterkeys())))
+    return instrs
+
+def bgl_compile(tree, ctx):
     instrs = []
     if tree.type == "def":
         # TODO verify that not yet defined
-        instrs.extend(bgl_compile(tree.value))
+        # TODO distinguish between def and set
+        instrs.extend(bgl_compile(tree.value, ctx))
         instrs.append(("store", tree.symbol.value))
     elif tree.type == "set":
         # TODO verify that already defined
-        instrs.extend((bgl_compile(tree.value)))
+        # TODO distinguish between def and set
+        instrs.extend((bgl_compile(tree.value, ctx)))
         instrs.append(("store", tree.symbol.value))
     elif tree.type == "cond":
         labels = ["c" + str(i) for i in range(len(tree.branches))]
@@ -236,12 +243,12 @@ def bgl_compile(tree):
         conds = []
         for (i, (pred, result)) in enumerate(tree.branches):
             offsets[labels[i]] = len(conds)
-            conds.extend(bgl_compile(pred))
+            conds.extend(bgl_compile(pred, ctx))
             conds.append(("ifn", labels[i+1]))
-            conds.extend(bgl_compile(result))
+            conds.extend(bgl_compile(result, ctx))
             conds.append(("jump", "end"))
         offsets["else"] = len(conds)
-        conds.extend(bgl_compile(tree.else_value))
+        conds.extend(bgl_compile(tree.else_value, ctx))
         offsets["end"] = len(conds)
         cond_instrs = []
         for (i, (inst, arg)) in enumerate(conds):
@@ -252,8 +259,8 @@ def bgl_compile(tree):
         instrs.extend(cond_instrs)
     elif tree.type == "application":
         for a in tree.arguments:
-            instrs.extend(bgl_compile(a))
-        instrs.extend(bgl_compile(tree.operator))
+            instrs.extend(bgl_compile(a, ctx))
+        instrs.extend(bgl_compile(tree.operator, ctx))
         instrs.append(("apply", len(tree.arguments)))
     elif tree.type == "number":
         instrs.append(("push", Number(tree.value)))
@@ -261,20 +268,25 @@ def bgl_compile(tree):
         instrs.append(("read", tree.value))
     elif tree.type == "beagle":
         for f in tree.forms:
-            instrs.extend(bgl_compile(f))
+            instrs.extend(bgl_compile(f, ctx))
             instrs.append(("empty", None))
     elif tree.type == "fn":
         proc_instrs = []
-        for f in tree.forms:
-            proc_instrs.extend(bgl_compile(f))
-            instrs.append(("empty", None))
-        params = [p.value for p in tree.params]
-#        print "params?", tree.params, params
-        instrs.append(("func", Func(params=params, instructions=proc_instrs)))
+        for p in tree.params[::-1]:
+            proc_instrs.append(("store", p.value))
+        for (ix, f) in enumerate(tree.forms):
+            proc_instrs.extend(bgl_compile(f, ctx))
+            # ensure the stack has been emptied for all but the last form
+            if ix < (len(tree.forms) - 1):
+                proc_instrs.append(("empty", None))
+        proc_instrs.append(("return", None))
+        label = "f-{}".format(len(ctx['funcs']))
+        ctx['funcs'].append((label, proc_instrs))
+        instrs.append(("func", label))
     elif tree.type == "list":
         instrs.append(("push", bgl_nil))
         for e in tree.elems[::-1]:
-            instrs.extend(bgl_compile(e))
+            instrs.extend(bgl_compile(e, ctx))
             instrs.append(("push", list_snoc))
             instrs.append(("apply", 2))
     else:
@@ -313,23 +325,19 @@ def evaluate(instructions, env):
     closure_counter = 0
 
     stack = []
-    code = [Frame("root", env, 0, instructions)]
+    i = 0
+    code = [Frame("root", env, len(instructions))]
 
     while len(code) > 0:
         frame = code[-1]
-        # finished the current subroutine: pop its frame
-        if frame.is_done():
-            code.pop()
-            continue
-        # continue executing the current subroutine
-        ins, arg = frame.next_inst()
-#        print "instruction, arg, stack:", ins, arg, stack
+        ins, arg = instructions[i]
+        print "i, in, a, st, c:  ", i, "\t", ins, "\t", arg, "\t", stack, "\t", code
         jump = 1
         if ins == "read":
 #            print "read env?", list(frame.get_env().bindings.iterkeys()), type(frame.get_env().parent)
 #            print "name, parent name:", frame.get_env().name, frame.get_env().parent.name if frame.get_env().parent is not None else "<no parent>"
 #            print "frame:", frame.get_env()
-            stack.append(frame.get_env().get(arg))
+            stack.append(frame.env.get(arg))
         elif ins == "ifn":
             val = stack.pop()
 #            print "val?", val
@@ -338,15 +346,17 @@ def evaluate(instructions, env):
         elif ins == "jump":
             jump = arg
         elif ins == "return":
-            code.pop()
+            popped_frame = code.pop()
+            jump = popped_frame.return_address - i + 1
         elif ins == "push":
             stack.append(arg)
         elif ins == "store":
-            frame.get_env().set(arg, stack.pop())
+            frame.env.set(arg, stack.pop())
         elif ins == "func":
-            func = arg
+            address = arg
 #            print "func?", type(func), func
-            stack.append(Closure(frame.get_env(), func, str(closure_counter)))
+            name = "closure-{}".format(closure_counter)
+            stack.append(Closure(frame.env, address, name))
             closure_counter += 1
         elif ins == "empty":
             if len(stack) > 1:
@@ -362,12 +372,11 @@ def evaluate(instructions, env):
                     args.append(stack.pop())
                 stack.append(op.apply(args[::-1]))
             else:
-                bindings = {}
 #                print "user-defined op:", dir(op), dir(op.__dict__), type(op.func), op.func
-                for key in op.func.params[::-1]:
-                    bindings[key] = stack.pop()
-                code.append(ClosureFrame(0, bindings, op))
+                env = Env({}, name="closure-{}".format(op.name), parent=op.parent_env)
+                code.append(Frame("closure-{}".format(op.name), env, i))
+                jump = op.address - i
         else:
             raise Exception("unrecognized instruction {}, arg {}".format(ins, arg))
-        frame.i += jump
+        i += jump
     print "execution finished, {} values left on stack ({})".format(len(stack), stack)
