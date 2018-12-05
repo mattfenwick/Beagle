@@ -31,17 +31,17 @@ _escape = node('escape',
                ['char', cut('escape', oneOf('\\"'))])
                 
 _string = node('string',
-               ['open' , literal('"')                ],
-               ['chars', many0(alt(_simple, _escape))],
-               ['close', cut('"', literal('"'))      ])
+               ['open' , literal('"')                  ],
+               ['chars', many0(alt([_simple, _escape]))],
+               ['close', cut('"', literal('"'))        ])
 
 _letter = satisfy(lambda c: ('a' <= c <= 'z') or ('A' <= c <= 'Z'))
 
 _special = oneOf('!@#$%^&*-_=+?/<>')
 
 _symbol = node('symbol',
-               ['first', alt(_letter, _special)               ],
-               ['rest' , many0(alt(_letter, _digit, _special))])
+               ['first', alt([_letter, _special])               ],
+               ['rest' , many0(alt([_letter, _digit, _special]))])
 
 _comment = node('comment',
                 ['open', literal(';')              ],
@@ -50,7 +50,7 @@ _comment = node('comment',
 _whitespace = node('whitespace',
                    ['value', many1(oneOf(' \t\n\r\f'))])
 
-junk = many0(alt(_comment, _whitespace))
+junk = many0(alt([_comment, _whitespace]))
 
 def tok(p):
     return seq2L(p, junk)
@@ -109,13 +109,19 @@ fn = node('fn',
           ['close'     , cut('}', cc)             ],
           ['forms'     , cut('forms', many1(form))])
 
+macro = node('macro',
+             ['symbol', cut('symbol', symbol    )],
+             ['forms' , cut('forms', many1(form))])
+
+special_body = alt([bg_def, bg_set, cond, fn, macro])
+
 spec = node('special',
-            ['open' , oc                                                ],
-            ['value', cut('special form', alt(bg_def, bg_set, cond, fn))],
-            ['close', cut('{', cc)                                      ])
+            ['open' , oc                               ],
+            ['value', cut('special form', special_body)],
+            ['close', cut('{', cc)                     ])
     
 # mutual recursion
-form.parse = alt(spec, app, bg_list, symbol, number, bg_string).parse
+form.parse = alt([spec, app, bg_list, symbol, number, bg_string]).parse
 
 beagle = node('beagle',
               ['open', junk        ],
