@@ -1,22 +1,13 @@
-import unparse
-import unparse.cst as cst
+from unparse import (position, alt, seq2L, many0, many1, error, not0)
+from unparse.cst import (node, cut)
 
 
-pos = unparse.position
-literal = pos.literal
-oneOf = pos.oneOf
-string = pos.string
-satisfy = pos.satisfy
-alt = unparse.alt
-seq2L = unparse.seq2L
-many0 = unparse.many0
-many1 = unparse.many1
-not1 = pos.not1
-error = unparse.error
-node = cst.node
-cut = cst.cut
-not0 = unparse.not0
-item = pos.item
+literal = position.literal
+oneOf = position.oneOf
+string = position.string
+satisfy = position.satisfy
+not1 = position.not1
+item = position.item
 
 _digit = oneOf('0123456789')
 
