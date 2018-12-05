@@ -299,8 +299,8 @@ def bgl_compile(tree, ctx):
 
 bindings = {
     "print": bgl_print,
-    "true" : Boolean(True),
-    "false": Boolean(False),
+    "true" : bgl_true,
+    "false": bgl_false,
     "nil"  : bgl_nil,
     "cons" : list_cons,
     "car"  : list_car,
@@ -331,7 +331,7 @@ def evaluate(instructions, env):
     while len(code) > 0:
         frame = code[-1]
         ins, arg = instructions[i]
-        print "i, in, a, st, c:  ", i, "\t", ins, "\t", arg, "\t", stack, "\t", code
+        print "i, in, a, st, c:  ", i, "\t", ins, "\t", arg, "\t", stack #, "\t", code
         jump = 1
         if ins == "read":
 #            print "read env?", list(frame.get_env().bindings.iterkeys()), type(frame.get_env().parent)

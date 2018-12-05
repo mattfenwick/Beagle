@@ -1,3 +1,4 @@
+from __future__ import print_function
 from ..frontend import parser
 from .. import frontend
 import unparse.maybeerror as me
@@ -7,18 +8,18 @@ from . import compiler
 
 def parse(input):
     ast_error = frontend.parse_ast(input)
-#    print "ast:", ast_error, ast_error.__dict__, "\n", json.dumps(ast_error, default=lambda o: o.__dict__), "\n"
     if ast_error.status != "success":
-        print "failed parse!"
+        print("failed parse!")
+        print("ast:", ast_error, ast_error.__dict__, "\n", json.dumps(ast_error, default=lambda o: o.__dict__), "\n")
         return
     ast = ast_error.value
     insts = compiler.bgl_compile_wrapper(ast)
     for (ix, instruction) in enumerate(insts):
-        print "\t", ix, "\t", instruction
-#    print "instructions:", insts
+        print("\t", ix, "\t", instruction)
+#    print("instructions:", insts)
     env = compiler.root_env
     compiler.evaluate(insts, env)
-    print "after eval:", env
+    print("after eval:", env)
 
 
 a = """4
@@ -85,4 +86,21 @@ c = """
 {def z 31}
 z
 """
-parse(c)
+#parse(c)
+
+d = """
+{def last
+  {fn {xs prev}
+    {cond {{(nil? xs) prev}}
+      (last (cdr xs) (car xs))}}}
+(last [1 2 3 4] false)
+"""
+#parse(d)
+
+e = """
+{def plus {fn {x y} (+ x y)}}
+{if true 3 4}
+{if false 3 4}
+(plus 3) ; oops! missing arg -- how should this be detected and reported?
+"""
+parse(e)
