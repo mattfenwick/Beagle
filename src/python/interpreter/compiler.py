@@ -1,3 +1,4 @@
+from __future__ import print_function
 import json
 
 
@@ -20,9 +21,9 @@ bgl_false = Boolean(False)
 
 def bgl_if(pred):
     if pred:
-#        print "returning bgl_true"
+#        print("returning bgl_true")
         return bgl_true
-#    print "returning bgl_false"
+#    print("returning bgl_false")
     return bgl_false
 
 class BuiltinFunc(object):
@@ -93,7 +94,7 @@ list_cdr = BuiltinFunc("cdr", ["list"], lambda l: l.cdr())
 list_cons = BuiltinFunc("cons", [None, "list"], lambda h, t: List(h, t))
 list_snoc = BuiltinFunc("snoc", ["list", None], lambda t, h: List(h, t))
 def nilq_action(l):
-#    print "nilq arg:", l, l.is_empty()
+#    print("nilq arg:", l, l.is_empty())
     return bgl_if(l.is_empty())
 list_nilq = BuiltinFunc("nil?", ["list"], nilq_action)
 
@@ -151,7 +152,7 @@ def print_action(o):
     """
     TODO should this return a void/nil/None value or something?
     """
-    print str(o)
+    print(str(o))
     return o
 bgl_print = BuiltinFunc("print", [None], print_action)
 
@@ -194,7 +195,7 @@ class Env(object):
     def set(self, key, value):
         self.bindings[key] = value
     def __str__(self):
-        s = str({'name': self.name, 'keys': list(self.bindings.iterkeys())})
+        s = str({'name': self.name, 'keys': list(self.bindings.keys())})
         if self.parent is None:
             return s
         return "{} -> {}".format(s, repr(self.parent))
@@ -211,7 +212,7 @@ def bgl_compile_wrapper(tree):
     offsets = {}
     # calculate function addresses
     for (label, func_instrs) in ctx['funcs']:
-        print "label:", label
+        print("label:", label)
         offsets[label] = len(instrs)
         instrs.extend(func_instrs)
     # fill in function addresses
@@ -331,16 +332,16 @@ def evaluate(instructions, env):
     while len(code) > 0:
         frame = code[-1]
         ins, arg = instructions[i]
-        print "i, in, a, st, c:  ", i, "\t", ins, "\t", arg, "\t", stack #, "\t", code
+        print("i, in, a, st, c:  ", i, "\t", ins, "\t", arg, "\t", stack) #, "\t", code
         jump = 1
         if ins == "read":
-#            print "read env?", list(frame.get_env().bindings.iterkeys()), type(frame.get_env().parent)
-#            print "name, parent name:", frame.get_env().name, frame.get_env().parent.name if frame.get_env().parent is not None else "<no parent>"
-#            print "frame:", frame.get_env()
+#            print("read env?", list(frame.get_env().bindings.iterkeys()), type(frame.get_env().parent))
+#            print("name, parent name:", frame.get_env().name, frame.get_env().parent.name if frame.get_env().parent is not None else "<no parent>")
+#            print("frame:", frame.get_env())
             stack.append(frame.env.get(arg))
         elif ins == "ifn":
             val = stack.pop()
-#            print "val?", val
+#            print("val?", val)
             if not val.is_true():
                 jump = arg
         elif ins == "jump":
@@ -354,16 +355,16 @@ def evaluate(instructions, env):
             frame.env.set(arg, stack.pop())
         elif ins == "func":
             address = arg
-#            print "func?", type(func), func
+#            print("func?", type(func), func)
             name = "closure-{}".format(closure_counter)
             stack.append(Closure(frame.env, address, name))
             closure_counter += 1
         elif ins == "empty":
             if len(stack) > 1:
                 raise Exception("expected stack size of 0 or 1, found {}".format(len(stack)))
-#            print "length of stack (should be 0):", len(stack)
+#            print("length of stack (should be 0):", len(stack))
             while len(stack) > 0:
-                print "popping for cleanup:", stack.pop()
+                print("popping for cleanup:", stack.pop())
         elif ins == "apply":
             op = stack.pop()
             if op.is_builtin():
@@ -372,11 +373,11 @@ def evaluate(instructions, env):
                     args.append(stack.pop())
                 stack.append(op.apply(args[::-1]))
             else:
-#                print "user-defined op:", dir(op), dir(op.__dict__), type(op.func), op.func
+#                print("user-defined op:", dir(op), dir(op.__dict__), type(op.func), op.func)
                 env = Env({}, name="closure-{}".format(op.name), parent=op.parent_env)
                 code.append(Frame("closure-{}".format(op.name), env, i))
                 jump = op.address - i
         else:
             raise Exception("unrecognized instruction {}, arg {}".format(ins, arg))
         i += jump
-    print "execution finished, {} values left on stack ({})".format(len(stack), stack)
+    print("execution finished, {} values left on stack ({})".format(len(stack), stack))

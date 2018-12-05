@@ -1,4 +1,5 @@
-import ast
+from __future__ import print_function
+from . import ast
 from unparse.maybeerror import MaybeError as M
 
 
@@ -219,7 +220,7 @@ NODES = {
     }
 
 def build_ast(node):
-#    print "node:", node
+#    print("node:", node['_name'])
     if node['_name'] in NODES:
         ast = NODES[node['_name']](node)
 #        if (false) { // uncomment to get rid of debugging information

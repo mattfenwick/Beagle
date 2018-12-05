@@ -28,7 +28,7 @@ _string = node('string',
 
 _letter = satisfy(lambda c: ('a' <= c <= 'z') or ('A' <= c <= 'Z'))
 
-_special = oneOf('!@#$%^&*-_=+?/<>')
+_special = oneOf('!@#$%^&*-_=+?/<>|')
 
 _symbol = node('symbol',
                ['first', alt([_letter, _special])               ],
