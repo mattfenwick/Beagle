@@ -20,7 +20,8 @@ def parse_ast(text):
     return ast
 
 def parse_ast_from_file(path):
-    text = readFile(path) # TODO of course, this could fail
+    with open(path, 'r') as f:
+            text = f.read()
     return parse_ast(text)
 
 def dump(ast, indent=None):

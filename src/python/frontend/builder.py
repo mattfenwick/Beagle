@@ -96,6 +96,109 @@ def cond(cst):
         return else_form
     return M.pure(ast.Cond(branches, else_form.value))
 
+def macro(cst):
+    """
+    TODO build macro expansion into ... the parser or something?
+    add a `def-macro` to enable user-defined macros as well
+    """
+    symbol_err = build_ast(cst['symbol'])
+    if symbol_err.status != 'success':
+        return symbol_err
+    symbol = symbol_err.value
+    if symbol.value == 'let':
+        eg = """
+        {let {{x (* 5 3)} 
+              {y (/ 8 2)}}
+          (+ x y)}
+        {let [[x (* 5 3)]
+              [y (/ 8 2)]]
+          (+ x y)}
+
+        ({fn {x y} (+ x y)}
+          (* 5 3)
+          (/ 8 2))
+        """
+        if len(cst['forms']) < 2:
+            return M.error({'message': 'expected 2+ forms', 'name': 'let', 'positions': cst['_start']})
+        bindings = cst['forms'][0]
+        if bindings['_name'] != 'list':
+            return M.error({'message': 'expected list', 'name': 'let', 'positions': cst['_start']})
+        params = []
+        args = []
+        for item in bindings['_body']:
+            if item['_name'] != 'list':
+                return M.error({'message': 'expected list', 'name': 'let', 'positions': item['_start']})
+            if len(item['_body']) != 2:
+                return M.error({'message': 'expected 2 forms', 'name': 'let/binding', 'positions': item['_start']})
+            key, val = item['_body']
+            if key['_name'] != 'symbol':
+                return M.error({'message': 'expected list', 'name': 'let/binding', 'positions': key['_start']})
+            sym_error = symbol(key)
+            if sym_error.status != 'success':
+                return sym_error
+            val_error = build_ast(val)
+            if val_error.status != 'success':
+                return val_error
+            params.append(sym_error.value)
+            args.append(val_error.value)
+        body_forms = []
+        for form in cst['forms'][1:]:
+            form_error = build_ast(form)
+            if form_error.status != 'success':
+                return form_error
+            body_forms.append(form_error.value)
+        func = ast.Fn(params, body_forms)
+        app = ast.Application(func, args)
+        return M.pure(app)
+    elif symbol.value == "and":
+        eg = """{and a b} => {cond {{a b}} false}"""
+        if len(cst['forms']) != 2:
+            return M.error({'message': 'expected two forms', 'name': 'and', 'positions': cst['_start']})
+        fst_error = build_ast(cst['forms'][0])
+        if fst_error.status != 'success':
+            return fst_error
+        snd_error = build_ast(cst['forms'][1])
+        if snd_error.status != 'success':
+            return snd_error
+        return M.pure(ast.Cond([(fst_error.value, snd_error.value)], ast.Symbol("false")))
+    elif symbol.value == "or":
+        eg = """{or a b} => {cond {{a true}} b}"""
+        if len(cst['forms']) != 2:
+            return M.error({'message': 'expected two forms', 'name': 'or', 'positions': cst['_start']})
+        fst_error = build_ast(cst['forms'][0])
+        if fst_error.status != 'success':
+            return fst_error
+        snd_error = build_ast(cst['forms'][1])
+        if snd_error.status != 'success':
+            return snd_error
+        return M.pure(ast.Cond([(fst_error.value, ast.Symbol('true'))], snd_error.value))
+    elif symbol.value == "if":
+        eg = """{if a b c} => {cond {{a b}} c}"""
+        asts = []
+        for form in cst['forms']:
+            ast_error = build_ast(form)
+            if ast_error.status != 'success':
+                return ast_error
+            asts.append(ast_error.value)
+        if len(asts) != 3:
+            return M.error({'message': 'expected three forms', 'name': 'if', 'positions': cst['_start']})
+        a, b, c = asts
+        return M.pure(ast.Cond([(a, b)], c))
+    else:
+        return M.error({'message': 'unrecognized macro', 'name': cst.symbol.value, 'positions': None})
+
+SPECIALS = {
+        'cond'  : cond  ,
+        'set'   : bg_set,
+        'def'   : bg_def,
+        'fn'    : fn    ,
+        'macro' : macro ,
+    }
+
+def special(node):
+    val = node['value']
+    return SPECIALS[val['_name']](val)
+
 def beagle(cst):
     forms = []
     for cst_node in cst['forms']:
@@ -104,17 +207,6 @@ def beagle(cst):
             return ast_err
         forms.append(ast_err.value)
     return M.pure(ast.Beagle(forms))
-
-SPECIALS = {
-        'cond'  : cond  ,
-        'set'   : bg_set,
-        'def'   : bg_def,
-        'fn'    : fn    ,
-    }
-
-def special(node):
-    val = node['value']
-    return SPECIALS[val['_name']](val)
 
 NODES = {
         'number' : number ,
