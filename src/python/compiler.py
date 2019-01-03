@@ -9,6 +9,8 @@ class Boolean(object):
         self.value = value
     def bgl_type(self):
         return "boolean"
+    def bg_string(self):
+        return str(self.value)
     def __str__(self):
         return "bg-" + str(self.value)
     def __repr__(self):
@@ -44,6 +46,8 @@ class BuiltinFunc(object):
         return True
     def bgl_type(self):
         return "func"
+    def bg_string(self):
+        return self.__str__()
     def __str__(self):
         return "{{builtin func {} ({})}}".format(self.name, self.types)
     def __repr__(self):
@@ -79,13 +83,17 @@ class List(object):
         return False
     def bgl_type(self):
         return "list"
-    def __str__(self):
+    def bg_string(self):
+        return "(" + " ".join([x.bg_string() for x in self.values()]) + ")"
+    def values(self):
         values = []
         head = self
         while not head.is_empty():
             values.append(head.value)
             head = head.next
-        return "(" + " ".join(map(str, values)) + ")"
+        return values
+    def __str__(self):
+        return "(" + " ".join(map(str, self.values())) + ")"
     def __repr__(self):
         return self.__str__()
 
@@ -107,6 +115,8 @@ class Closure(object):
         return False
     def bgl_type(self):
         return "func"
+    def bg_string(self):
+        return self.__str__()
     def __str__(self):
         return "{{closure ({}@{})}}".format(self.name, self.address)
     def __repr__(self):
@@ -117,6 +127,8 @@ class Number(object):
         self.value = value
     def bgl_type(self):
         return "number"
+    def bg_string(self):
+        return str(self.value)
     def __str__(self):
         return "bg-" + str(self.value)
     def __repr__(self):
@@ -152,7 +164,7 @@ def print_action(o):
     """
     TODO should this return a void/nil/None value or something?
     """
-    print(str(o))
+    print(o.bg_string())
     return o
 bgl_print = BuiltinFunc("print", [None], print_action)
 

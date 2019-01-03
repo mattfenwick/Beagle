@@ -1,55 +1,13 @@
 
-{def test-ok
-  {fn {form message}
-   {cond {{form "ok"}}
-         message}}}
-
-{def test-not-ok
-  {fn {form message}
-   {cond {{form message}}
-         "ok"}}}
-
-
 {def not
   {fn {x}
-   {cond {{x false}}
-         true}}}
+    {if x false true}}}
 
-{def not-test
-  {fn {}
-   (test-ok
-    (and (equals? (not false) true)
-         (equals? (not true)  false)))}}
-
-
-{def and
-  {fn {x y}
-    {cond {{x y}}
-          false}}}
-
-{def and-test
-  {fn {}
-   (test-ok
-    (all [(and true true)
-          (not (and true false))
-          (not (and false true))
-          (not (and false false))])
-    "and-tests")}}
-
-
-{def or 
-  {fn {x y}
-    {cond {{x true}}
-          y}}}
-       
-{def or-test
-  {fn {}
-   (test-ok
-    (all [(or true true)
-          (or true false)
-          (or false true)
-          (not (and false false))])
-    "or-tests")}}
+;{def not-test
+;  {fn {}
+;   (test-ok
+;    {and (equals? (not false) true)
+;         (equals? (not true)  false)})}}
 
 
 {def compose
@@ -66,25 +24,26 @@
 ;; because that would reverse it
 {def map
   {fn {f xs}
-    {cond {{(null? xs) []}}
-          (cons (f (car xs))
-                (map f (cdr xs)))}}}
+    {if (nil? xs)
+        []
+        (cons (f (car xs))
+              (map f (cdr xs)))}}}
 
-{def map-test
-  {fn {}
-   (test-ok
-    (all 
-     [(eq? (map id []) [])
-      (eq? (map id [1 2 3]) [1 2 3])
-      (eq? (map {fn {x} (cons 4 x)}
-                [[1] [] [3 4]])
-           [[4 1] [4] [4 3 4]])])
-    "map-tests")}}
+; {def map-test
+;  {fn {}
+;   (test-ok
+;    (all 
+;     [(eq? (map id []) [])
+;      (eq? (map id [1 2 3]) [1 2 3])
+;      (eq? (map {fn {x} (cons 4 x)}
+;                [[1] [] [3 4]])
+;           [[4 1] [4] [4 3 4]])])
+;    "map-tests")}}
 
 
 {def filter
   {fn {f xs}
-    {cond {{(null? xs) []}
+    {cond {{(nil? xs) []}
            {(f (car xs))
              (cons (car xs) (filter f (cdr xs)))}}
           (filter f (cdr xs))}}}
@@ -96,26 +55,34 @@
 
 {def reduce
   {fn {f b xs}
-    {cond {{(null? xs) b}}
-          (reduce f 
-             (f b (car xs)) 
-             (cdr xs))}}}
-                
+    {if (nil? xs)
+        b
+        (reduce f 
+           (f b (car xs)) 
+           (cdr xs))}}}
+
+
+{def ||
+  {fn {a b}
+    {or a b}}}
 
 {def any 
   {fn {vals}
-	(reduce or false vals)}}
+	(reduce || false vals)}}
 
+{def &&
+  {fn {a b}
+    {and a b}}}
 
 {def all 
   {fn {vals}
-	(reduce and true vals)}}
+	(reduce && true vals)}}
 
 
 {def zip
   {fn {l1 l2}
-    {cond {{(null? l1) []}
-           {(null? l2) []}}
+    {cond {{(nil? l1) []}
+           {(nil? l2) []}}
           (cons [(car l1) (car l2)]
             (zip (cdr l1)
                  (cdr l2)))}}}
@@ -165,22 +132,53 @@
    (reduce (flip join-lists) [[]] ls)}}
    
    
-{def error
-  {fn {type message trace}
-   (datum "error" [type message trace])}}
+;{def error
+;  {fn {type message trace}
+;   (datum "error" [type message trace])}}
    
 ;; error-type :: Error -> String
-{def error-type
-  {fn {err}
-   (car (value err))}} ;; the 1st elem
+;{def error-type
+;  {fn {err}
+;   (car (value err))}} ;; the 1st elem
    
 ;; error-message :: Error -> String
-{def error-message
-  {fn {err}
-   (car (cdr (value err)))}} ;; the 2nd elem
+;{def error-message
+;  {fn {err}
+;   (car (cdr (value err)))}} ;; the 2nd elem
    
 ;; error-trace :: Error -> a
-{def error-trace
-  {fn {err}
-   (car (cdr (cdr (value err))))}} ;; the 3rd elem
+;{def error-trace
+;  {fn {err}
+;   (car (cdr (cdr (value err))))}} ;; the 3rd elem
    
+(print 
+  [
+   (++ [1 2 3] [4 5 6])
+   {and true false}
+   {and false true}
+   {and false false}
+   {and true true}
+   {if {or true false} 18 97}
+   {if (not true) 109 9999}
+   false
+   true])
+
+{def x true}
+(print x)
+{let [[x 3] [y 4]]
+  (print x)
+  (print y)}
+(print x)
+
+;{if 1 2 3}
+
+
+{def x false}
+{set other 34}
+{cond {} 14}
+
+
+{def plus {fn {x y} (+ x y)}}
+{if true 3 4}
+{if false 3 4}
+; (plus 313) ; oops! missing arg -- how should this be detected and reported?

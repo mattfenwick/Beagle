@@ -68,8 +68,7 @@ def fn(cst):
 #        console.log('fn symbol: ' + JSON.stringify(param))
         param = param_err.value
         if param.value in params_set:
-            # TODO -- positions
-            return M.error({'message': 'duplicate parameter name', 'name': param.name, 'positions': None})
+            return M.error({'message': 'duplicate parameter', 'name': param.value, 'positions': cst_param['_start']})
         params.append(param)
         params_set.add(param.value)
     forms = []
@@ -105,41 +104,39 @@ def macro(cst):
     symbol_err = build_ast(cst['symbol'])
     if symbol_err.status != 'success':
         return symbol_err
-    symbol = symbol_err.value
-    if symbol.value == 'let':
-        eg = """
-        {let {{x (* 5 3)} 
-              {y (/ 8 2)}}
-          (+ x y)}
-        {let [[x (* 5 3)]
-              [y (/ 8 2)]]
-          (+ x y)}
-
-        ({fn {x y} (+ x y)}
-          (* 5 3)
-          (/ 8 2))
-        """
+    macro_symbol = symbol_err.value
+    debug = {
+        'start': cst['_start'],
+        'end': cst['_end']
+    }
+    if macro_symbol.value == 'let':
         if len(cst['forms']) < 2:
             return M.error({'message': 'expected 2+ forms', 'name': 'let', 'positions': cst['_start']})
         bindings = cst['forms'][0]
         if bindings['_name'] != 'list':
             return M.error({'message': 'expected list', 'name': 'let', 'positions': cst['_start']})
         params = []
+        param_set = set()
         args = []
-        for item in bindings['_body']:
+        print(bindings.keys())
+        for item in bindings['body']:
             if item['_name'] != 'list':
                 return M.error({'message': 'expected list', 'name': 'let', 'positions': item['_start']})
-            if len(item['_body']) != 2:
+            if len(item['body']) != 2:
                 return M.error({'message': 'expected 2 forms', 'name': 'let/binding', 'positions': item['_start']})
-            key, val = item['_body']
+            key, val = item['body']
             if key['_name'] != 'symbol':
                 return M.error({'message': 'expected list', 'name': 'let/binding', 'positions': key['_start']})
-            sym_error = symbol(key)
+            sym_error = build_ast(key)
             if sym_error.status != 'success':
                 return sym_error
             val_error = build_ast(val)
             if val_error.status != 'success':
                 return val_error
+            if sym_error.value.value in param_set:
+                return M.error({'message': 'duplicate parameter {}'.format(sym_error.value.value), 'name': 'let/binding', 'positions': key['_start']})
+            param_set.add(sym_error.value.value)
+            print("param:", sym_error.value, dir(sym_error.value))
             params.append(sym_error.value)
             args.append(val_error.value)
         body_forms = []
@@ -150,8 +147,9 @@ def macro(cst):
             body_forms.append(form_error.value)
         func = ast.Fn(params, body_forms)
         app = ast.Application(func, args)
+        app._debug = debug
         return M.pure(app)
-    elif symbol.value == "and":
+    elif macro_symbol.value == "and":
         eg = """{and a b} => {cond {{a b}} false}"""
         if len(cst['forms']) != 2:
             return M.error({'message': 'expected two forms', 'name': 'and', 'positions': cst['_start']})
@@ -161,8 +159,10 @@ def macro(cst):
         snd_error = build_ast(cst['forms'][1])
         if snd_error.status != 'success':
             return snd_error
-        return M.pure(ast.Cond([(fst_error.value, snd_error.value)], ast.Symbol("false")))
-    elif symbol.value == "or":
+        cond = ast.Cond([(fst_error.value, snd_error.value)], ast.Symbol("false"))
+        cond._debug = debug
+        return M.pure(cond)
+    elif macro_symbol.value == "or":
         eg = """{or a b} => {cond {{a true}} b}"""
         if len(cst['forms']) != 2:
             return M.error({'message': 'expected two forms', 'name': 'or', 'positions': cst['_start']})
@@ -172,8 +172,10 @@ def macro(cst):
         snd_error = build_ast(cst['forms'][1])
         if snd_error.status != 'success':
             return snd_error
-        return M.pure(ast.Cond([(fst_error.value, ast.Symbol('true'))], snd_error.value))
-    elif symbol.value == "if":
+        cond = ast.Cond([(fst_error.value, ast.Symbol('true'))], snd_error.value)
+        cond._debug = debug
+        return M.pure(cond)
+    elif macro_symbol.value == "if":
         eg = """{if a b c} => {cond {{a b}} c}"""
         asts = []
         for form in cst['forms']:
@@ -184,9 +186,11 @@ def macro(cst):
         if len(asts) != 3:
             return M.error({'message': 'expected three forms', 'name': 'if', 'positions': cst['_start']})
         a, b, c = asts
-        return M.pure(ast.Cond([(a, b)], c))
+        cond = ast.Cond([(a, b)], c)
+        cond._debug = debug
+        return M.pure(cond)
     else:
-        return M.error({'message': 'unrecognized macro', 'name': cst.symbol.value, 'positions': None})
+        return M.error({'message': 'unrecognized macro', 'name': macro_symbol.value, 'positions': cst['_start']})
 
 SPECIALS = {
         'cond'  : cond  ,
@@ -226,11 +230,11 @@ def build_ast(node):
 #        if (false) { // uncomment to get rid of debugging information
         # TODO: it looks like unparse needs to be updated to support this feature,
         #   because currently it might be behind unparse-js
-#        if ast.status == 'success':
-#            ast.value._debug = {
-#                'start': node['_start'],
-#                'end': node['_end']
-#            }
+        if ast.status == 'success':
+            ast.value._debug = {
+                'start': node['_start'],
+                'end': node['_end']
+            }
         return ast
 #    console.log('invalid node name: ' + util.inspect(node, {'depth': null}))
     raise Exception('invalid node name: ' + node._name)
